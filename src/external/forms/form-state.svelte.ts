@@ -1,5 +1,6 @@
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
-import type { FieldRegistration, ValidatableForm } from "./types";
+import type { FieldRegistration } from "./types/field";
+import type { ValidatableForm } from "./types/form";
 
 class FormState {
   private form: ValidatableForm;
@@ -8,6 +9,7 @@ class FormState {
   private touched = new SvelteSet<string>();
 
   public submitAttempted = $state<boolean>(false);
+  public submitError = $state<unknown>();
 
   constructor(form: ValidatableForm) {
     this.form = form;
@@ -23,6 +25,10 @@ class FormState {
 
   public readonly isValid = $derived.by<boolean>(
     () => !this.form.fields.allIssues()?.length,
+  );
+
+  public readonly isSubmitting = $derived.by<boolean>(
+    () => this.form.pending > 0,
   );
 
   public readonly majorityRequired = $derived.by<boolean>(() => {
@@ -68,6 +74,7 @@ class FormState {
 
     this.touched.clear();
     this.submitAttempted = false;
+    this.submitError = undefined;
 
     this.validate();
   }

@@ -2,9 +2,13 @@ import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 type MessageResolver = (issue: StandardSchemaV1.Issue) => string;
 
-interface UiLabels {
+interface UiFormLabels {
   optional: string; // the "(optional)" minority marker
   generalError: string; // fallback when a submit throws
+}
+
+interface UiLabels {
+  form: UiFormLabels;
 }
 
 interface UiConfig {
@@ -13,7 +17,15 @@ interface UiConfig {
 }
 
 type PartialUiConfig = Partial<Omit<UiConfig, "labels">> & {
-  labels?: Partial<UiLabels>;
+  labels?: {
+    form?: Partial<UiFormLabels>;
+  };
 };
 
-export type { MessageResolver, PartialUiConfig, UiConfig, UiLabels };
+export type {
+  MessageResolver,
+  PartialUiConfig,
+  UiConfig,
+  UiFormLabels,
+  UiLabels,
+};

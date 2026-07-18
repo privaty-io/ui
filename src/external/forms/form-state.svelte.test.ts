@@ -1,7 +1,8 @@
 import { describe, expect, test } from "vitest";
 
 import { FormState } from "./form-state.svelte";
-import type { FieldRegistration, ValidatableForm } from "./types";
+import type { FieldRegistration } from "./types/field";
+import type { ValidatableForm } from "./types/form";
 
 interface FakeFieldOptions {
   initialValue?: unknown;
@@ -38,6 +39,7 @@ function fakeForm(
     undefined,
 ) {
   let issues = $state<readonly { message: string }[] | undefined>(undefined);
+  let pending = $state(0);
   const validateCalls: unknown[] = [];
 
   const form: ValidatableForm = {
@@ -46,6 +48,9 @@ function fakeForm(
       issues = computeIssues();
     },
     fields: { allIssues: () => issues },
+    get pending() {
+      return pending;
+    },
   };
 
   return {
@@ -53,6 +58,9 @@ function fakeForm(
     validateCalls,
     setIssues: (next: readonly { message: string }[] | undefined) => {
       issues = next;
+    },
+    setPending: (next: number) => {
+      pending = next;
     },
   };
 }
@@ -97,6 +105,21 @@ describe("isValid", () => {
 
     setIssues([]);
     expect(state.isValid).toBe(true);
+  });
+});
+
+describe("isSubmitting", () => {
+  test("tracks pending submissions", () => {
+    const { form, setPending } = fakeForm();
+    const state = new FormState(form);
+
+    expect(state.isSubmitting).toBe(false);
+
+    setPending(1);
+    expect(state.isSubmitting).toBe(true);
+
+    setPending(0);
+    expect(state.isSubmitting).toBe(false);
   });
 });
 
@@ -202,11 +225,13 @@ describe("reset", () => {
 
     state.markTouched("name");
     state.submitAttempted = true;
+    state.submitError = new Error("network");
     expect(state.shouldShowIssues("name")).toBe(true);
 
     state.reset();
 
     expect(state.submitAttempted).toBe(false);
+    expect(state.submitError).toBeUndefined();
     expect(state.shouldShowIssues("name")).toBe(false);
   });
 

@@ -11,10 +11,12 @@ describe("defaultUiConfig", () => {
     expect(defaultUiConfig.resolveMessage(issue("required"))).toBe("required");
   });
 
-  test("provides english labels", () => {
+  test("provides english labels grouped by package", () => {
     expect(defaultUiConfig.labels).toEqual({
-      optional: "(optional)",
-      generalError: "Something went wrong. Please try again.",
+      form: {
+        optional: "(optional)",
+        generalError: "Something went wrong. Please try again.",
+      },
     });
   });
 });
@@ -38,40 +40,44 @@ describe("mergeUiConfig", () => {
     expect(merged.labels).toEqual(defaultUiConfig.labels);
   });
 
-  test("merges partial labels instead of replacing them", () => {
+  test("merges partial form labels instead of replacing them", () => {
     const merged = mergeUiConfig(defaultUiConfig, {
-      labels: { optional: "(valgfri)" },
+      labels: { form: { optional: "(valgfri)" } },
     });
 
-    expect(merged.labels.optional).toBe("(valgfri)");
-    expect(merged.labels.generalError).toBe(
-      defaultUiConfig.labels.generalError,
+    expect(merged.labels.form.optional).toBe("(valgfri)");
+    expect(merged.labels.form.generalError).toBe(
+      defaultUiConfig.labels.form.generalError,
     );
   });
 
   test("inherits customizations from a non-default base", () => {
     const base = mergeUiConfig(defaultUiConfig, {
       resolveMessage: () => "from base",
-      labels: { optional: "(base)" },
+      labels: { form: { optional: "(base)" } },
     });
 
     const merged = mergeUiConfig(base, {
-      labels: { generalError: "from override" },
+      labels: { form: { generalError: "from override" } },
     });
 
     expect(merged.resolveMessage(issue("anything"))).toBe("from base");
     expect(merged.labels).toEqual({
-      optional: "(base)",
-      generalError: "from override",
+      form: {
+        optional: "(base)",
+        generalError: "from override",
+      },
     });
   });
 
   test("does not mutate the base config", () => {
     const base = mergeUiConfig(defaultUiConfig, {});
 
-    mergeUiConfig(base, { labels: { optional: "(changed)" } });
+    mergeUiConfig(base, { labels: { form: { optional: "(changed)" } } });
 
-    expect(base.labels.optional).toBe(defaultUiConfig.labels.optional);
+    expect(base.labels.form.optional).toBe(
+      defaultUiConfig.labels.form.optional,
+    );
   });
 
   test("supports the code-based translation pattern", () => {

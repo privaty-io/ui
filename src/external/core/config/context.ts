@@ -4,8 +4,10 @@ import type { PartialUiConfig, UiConfig } from "./types";
 const defaultUiConfig: UiConfig = {
   resolveMessage: (issue) => issue.message,
   labels: {
-    optional: "(optional)",
-    generalError: "Something went wrong. Please try again.",
+    form: {
+      optional: "(optional)",
+      generalError: "Something went wrong. Please try again.",
+    },
   },
 };
 
@@ -15,7 +17,9 @@ function mergeUiConfig(base: UiConfig, overrides: PartialUiConfig): UiConfig {
   return {
     ...base,
     ...overrides,
-    labels: { ...base.labels, ...overrides.labels },
+    labels: {
+      form: { ...base.labels.form, ...overrides.labels?.form },
+    },
   };
 }
 

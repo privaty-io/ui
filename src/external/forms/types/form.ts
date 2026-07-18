@@ -1,13 +1,5 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
-interface FieldRegistration {
-  name: string;
-  initialValue: unknown;
-  required: boolean;
-  getValue: () => unknown;
-  setValue: (value: unknown) => void;
-}
-
 /**
  * The slice of a SvelteKit remote form that FormState needs. Structural on
  * purpose: tests can pass a fake, and a client-only adapter can satisfy it later.
@@ -15,6 +7,7 @@ interface FieldRegistration {
 interface ValidatableForm {
   validate: (options?: { includeUntouched?: boolean }) => unknown;
   fields: { allIssues: () => readonly StandardSchemaV1.Issue[] | undefined };
+  readonly pending: number;
 }
 
-export type { FieldRegistration, ValidatableForm };
+export type { ValidatableForm };
