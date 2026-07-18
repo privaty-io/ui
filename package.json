@@ -23,6 +23,7 @@
     "@eslint/js": "^10.0.1",
     "@fontsource-variable/inter": "^5.2.8",
     "@lucide/svelte": "^1.25.0",
+    "@standard-schema/spec": "^1.1.0",
     "@sveltejs/adapter-node": "^5.5.7",
     "@sveltejs/kit": "^2.69.3",
     "@sveltejs/vite-plugin-svelte": "^7.2.0",
