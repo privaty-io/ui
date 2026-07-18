@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" %theme-preference%>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="text-scale" content="scale" />
+    <script id="themeDetector" nonce="%sveltekit.nonce%">
+      if (!document.documentElement.dataset.theme) {
+        const themePreferenceCookie = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("theme-preference="))
+          ?.split("=")[1];
+
+        const darkThemePreferred =
+          themePreferenceCookie === "dark" ||
+          (themePreferenceCookie !== "light" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+        document.documentElement.dataset.theme = darkThemePreferred
+          ? "dark"
+          : "light";
+      }
+      document.getElementById("themeDetector").remove();
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div id="app">%sveltekit.body%</div>
+  </body>
+</html>
