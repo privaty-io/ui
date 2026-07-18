@@ -1,5 +1,9 @@
 <script lang="ts">
+  import Button from "@privaty/ui/components/button.svelte";
+  import FormError from "@privaty/ui-forms/components/form-error.svelte";
+  import Submit from "@privaty/ui-forms/components/submit.svelte";
   import Form from "@privaty/ui-forms/form.svelte";
+  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
   import { createItem, getItems } from "./data.remote";
   import { createItemSchema } from "./schema";
 </script>
@@ -8,37 +12,23 @@
   <h1 class="text-2xl font-medium">Form sandbox</h1>
 
   <Form form={createItem} schema={createItemSchema}>
-    <label class="flex flex-col gap-1">
-      Name
-      <input
-        class="rounded border border-stone-400 px-2 py-1"
-        {...createItem.fields.name.as("text")}
-      />
-    </label>
-    {#each createItem.fields.name.issues() ?? [] as issue (issue.message)}
-      <p class="text-sm text-red-700 dark:text-red-500">{issue.message}</p>
-    {/each}
+    <TextInput field={createItem.fields.name} label="Name" required />
+    <TextInput
+      field={createItem.fields.description}
+      label="Description"
+      labelStyle="floating"
+    />
 
-    <label class="flex flex-col gap-1">
-      Description
-      <input
-        class="rounded border border-stone-400 px-2 py-1"
-        {...createItem.fields.description.as("text")}
-      />
-    </label>
-    {#each createItem.fields.description.issues() ?? [] as issue (issue.message)}
-      <p class="text-sm text-red-700 dark:text-red-500">{issue.message}</p>
-    {/each}
+    <FormError />
 
     <div class="flex gap-2">
-      <button
-        class="cursor-pointer rounded bg-stone-800 px-3 py-1 text-stone-50 dark:bg-stone-200 dark:text-stone-900"
+      <Submit label="Create" submittingLabel="Creating" />
+      <Button
+        type="reset"
+        class="border border-stone-400 bg-transparent text-inherit hover:bg-stone-200/50 active:bg-transparent dark:border-stone-600 dark:bg-transparent dark:text-inherit dark:hover:bg-stone-800/50 dark:active:bg-transparent"
       >
-        Create
-      </button>
-      <button type="reset" class="cursor-pointer rounded border px-3 py-1">
         Reset
-      </button>
+      </Button>
     </div>
   </Form>
 

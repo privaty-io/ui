@@ -35,42 +35,58 @@
   }: Props = $props();
 
   // The remote form instance is stable for the component's lifetime, so
-  // capturing the initial prop value is intentional.
+  // capturing the initial prop value is intentional. When a schema is given,
+  // the preflighted instance is used for everything so client-side
+  // (`preflightOnly`) validation actually has a schema to run.
   // svelte-ignore state_referenced_locally
-  const state = new FormState(form);
-  // svelte-ignore state_referenced_locally
-  setFormContext({ form, state });
+  const instance = schema ? form.preflight(schema) : form;
 
-  // svelte-ignore state_referenced_locally
-  const attributes = (schema ? form.preflight(schema) : form).enhance(
-    async (instance) => {
-      state.submitAttempted = true;
-      state.submitError = undefined;
+  const state = new FormState(instance);
+  setFormContext({ form: instance, state });
 
-      await form.validate({ includeUntouched: true });
-      if (!state.isValid) return;
+  // With a schema, typing validates client-side only — the server isn't
+  // involved until submission (which validates server-side regardless).
+  function validate() {
+    return instance.validate({
+      includeUntouched: true,
+      preflightOnly: schema !== undefined,
+    });
+  }
 
-      try {
-        if (!(await instance.submit())) return;
+  const attributes = instance.enhance(async (enhanceInstance) => {
+    state.submitError = undefined;
 
-        if (resetOnSuccess) instance.element.reset();
+    // Validate BEFORE opening the error gates: issues must be fresh when
+    // submitAttempted makes every field's issues visible.
+    await validate();
+    state.submitAttempted = true;
+    if (!state.isValid) return;
 
-        await onsuccess?.(form.result);
-      } catch (error) {
-        state.submitError = error;
-        await onerror?.(error);
-      }
-    },
-  );
+    try {
+      if (!(await enhanceInstance.submit())) return;
 
-  function handleInput(event: Event) {
+      if (resetOnSuccess) enhanceInstance.element.reset();
+
+      await onsuccess?.(instance.result);
+    } catch (error) {
+      state.submitError = error;
+      await onerror?.(error);
+    }
+  });
+
+  async function handleInput(event: Event) {
     const name =
       event.target instanceof HTMLElement
         ? event.target.getAttribute("name")
         : null;
-    if (name) state.markTouched(name);
 
-    void form.validate({ includeUntouched: true });
+    try {
+      // Same ordering rule: a newly-touched field must never flash issues
+      // that are stale from the previous validation pass.
+      await validate();
+    } finally {
+      if (name) state.markTouched(name);
+    }
   }
 </script>
 

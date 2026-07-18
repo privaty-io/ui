@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
 
 import { FormState } from "./form-state.svelte";
+import { fakeForm } from "./testing/fakes.svelte";
 import type { FieldRegistration } from "./types/field";
-import type { ValidatableForm } from "./types/form";
 
 interface FakeFieldOptions {
   initialValue?: unknown;
@@ -30,37 +30,6 @@ function fakeField(name: string, options: FakeFieldOptions = {}): FakeField {
     },
     edit: (next) => {
       value = next;
-    },
-  };
-}
-
-function fakeForm(
-  computeIssues: () => readonly { message: string }[] | undefined = () =>
-    undefined,
-) {
-  let issues = $state<readonly { message: string }[] | undefined>(undefined);
-  let pending = $state(0);
-  const validateCalls: unknown[] = [];
-
-  const form: ValidatableForm = {
-    validate: (validateOptions) => {
-      validateCalls.push(validateOptions);
-      issues = computeIssues();
-    },
-    fields: { allIssues: () => issues },
-    get pending() {
-      return pending;
-    },
-  };
-
-  return {
-    form,
-    validateCalls,
-    setIssues: (next: readonly { message: string }[] | undefined) => {
-      issues = next;
-    },
-    setPending: (next: number) => {
-      pending = next;
     },
   };
 }
