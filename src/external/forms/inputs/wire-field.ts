@@ -1,4 +1,4 @@
-import { getUiConfig } from "@privaty/ui/config/context";
+import { getUiConfig } from "#privaty/ui/config/context.js";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { onDestroy } from "svelte";
 import { getFormContext } from "../context";

@@ -1,8 +1,8 @@
-import { defineConfig } from "vitest/config";
-import { playwright } from "@vitest/browser-playwright";
 import adapter from "@sveltejs/adapter-node";
 import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
+import { playwright } from "@vitest/browser-playwright";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [
@@ -15,13 +15,7 @@ export default defineConfig({
         experimental: { async: true },
       },
       adapter: adapter(),
-      alias: {
-        "@privaty/ui": "./src/external/core",
-        "@privaty/ui-forms": "./src/external/forms",
-        "@privaty/ui-tables": "./src/external/tables",
-      },
       experimental: {
-        explicitEnvironmentVariables: true,
         remoteFunctions: true,
       },
     }),

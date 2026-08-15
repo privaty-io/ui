@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Button from "@privaty/ui/components/button.svelte";
-  import { getUiConfig } from "@privaty/ui/config/context";
+  import Button from "#privaty/ui/components/button.svelte";
+  import { getUiConfig } from "#privaty/ui/config/context.js";
   import { getFormContext } from "../context";
 
   interface Props {

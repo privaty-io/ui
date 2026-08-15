@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { cn } from "@privaty/ui/cn";
-  import Checkbox from "@privaty/ui/components/checkbox.svelte";
+  import { cn } from "#privaty/ui/cn.js";
+  import Checkbox from "#privaty/ui/components/checkbox.svelte";
   import type { CheckboxField } from "../types/field";
   import { wireField } from "./wire-field";
 

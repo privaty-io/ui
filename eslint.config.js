@@ -8,12 +8,17 @@ import ts from "typescript-eslint";
 
 const gitignorePath = path.resolve(import.meta.dirname, ".gitignore");
 
-// src/external contains future standalone packages (@privaty/ui, @privaty/ui-forms,
-// @privaty/ui-tables). They may only import from npm, themselves (relative), and each
+// src/external contains future standalone packages (#privaty/ui, #privaty/ui-forms,
+// #privaty/ui-tables). They may only import from npm, themselves (relative), and each
 // other via the package aliases — never from the app.
 const noAppImports = {
-  group: ["$lib", "$lib/**", "$app/**", "$env/**"],
+  group: ["#lib", "#lib/**", "$env/**"],
   message: "External packages must not import app code.",
+};
+const noAppRuntimeImports = {
+  group: ["$app/**"],
+  allowTypeImports: true,
+  message: "External packages may only use $app modules as type-only imports.",
 };
 
 export default defineConfig(
@@ -42,23 +47,27 @@ export default defineConfig(
   {
     files: ["src/external/**"],
     rules: {
-      "no-restricted-imports": ["error", { patterns: [noAppImports] }],
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        { patterns: [noAppImports, noAppRuntimeImports] },
+      ],
     },
   },
   {
     files: ["src/external/core/**"],
     rules: {
-      "no-restricted-imports": [
+      "@typescript-eslint/no-restricted-imports": [
         "error",
         {
           patterns: [
             noAppImports,
+            noAppRuntimeImports,
             {
               group: [
-                "@privaty/ui-forms",
-                "@privaty/ui-forms/**",
-                "@privaty/ui-tables",
-                "@privaty/ui-tables/**",
+                "#privaty/ui-forms",
+                "#privaty/ui-forms/**",
+                "#privaty/ui-tables",
+                "#privaty/ui-tables/**",
                 "**/forms/**",
                 "**/tables/**",
               ],
@@ -72,22 +81,23 @@ export default defineConfig(
   {
     files: ["src/external/forms/**"],
     rules: {
-      "no-restricted-imports": [
+      "@typescript-eslint/no-restricted-imports": [
         "error",
         {
           patterns: [
             noAppImports,
+            noAppRuntimeImports,
             {
               group: [
-                "@privaty/ui-tables",
-                "@privaty/ui-tables/**",
+                "#privaty/ui-tables",
+                "#privaty/ui-tables/**",
                 "**/tables/**",
               ],
               message: "forms must never import tables.",
             },
             {
               group: ["**/core/**"],
-              message: "Import core via the @privaty/ui alias.",
+              message: "Import core via the #privaty/ui alias.",
             },
           ],
         },
@@ -97,18 +107,19 @@ export default defineConfig(
   {
     files: ["src/external/tables/**"],
     rules: {
-      "no-restricted-imports": [
+      "@typescript-eslint/no-restricted-imports": [
         "error",
         {
           patterns: [
             noAppImports,
+            noAppRuntimeImports,
             {
               group: ["**/core/**"],
-              message: "Import core via the @privaty/ui alias.",
+              message: "Import core via the #privaty/ui alias.",
             },
             {
               group: ["**/forms/**"],
-              message: "Import forms via the @privaty/ui-forms alias.",
+              message: "Import forms via the #privaty/ui-forms alias.",
             },
           ],
         },
@@ -126,7 +137,7 @@ export default defineConfig(
             {
               group: ["**/external/**"],
               message:
-                "Import UI packages via their aliases (@privaty/ui, @privaty/ui-forms, @privaty/ui-tables).",
+                "Import UI packages via their aliases (#privaty/ui, #privaty/ui-forms, #privaty/ui-tables).",
             },
           ],
         },

@@ -1,4 +1,4 @@
-import type { RemoteFormInput } from "@sveltejs/kit";
+import type { RemoteFormInput } from "$app/server";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
@@ -38,7 +38,7 @@ describe("input validation", () => {
 
     await vi.waitFor(() =>
       expect(validateCalls).toContainEqual({
-        includeUntouched: true,
+        all: true,
         preflightOnly: true,
       }),
     );
@@ -55,7 +55,7 @@ describe("input validation", () => {
 
     await vi.waitFor(() =>
       expect(validateCalls).toContainEqual({
-        includeUntouched: true,
+        all: true,
         preflightOnly: false,
       }),
     );

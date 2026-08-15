@@ -1,4 +1,4 @@
-import { Theme } from "$lib/enums/theme";
+import { Theme } from "#lib/enums/theme.js";
 
 type ThemeStore = {
   current: Theme;

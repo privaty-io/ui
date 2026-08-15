@@ -24,8 +24,8 @@
     "@fontsource-variable/inter": "^5.3.0",
     "@lucide/svelte": "^1.31.0",
     "@standard-schema/spec": "^1.1.0",
-    "@sveltejs/adapter-node": "^5.5.7",
-    "@sveltejs/kit": "^2.70.2",
+    "@sveltejs/adapter-node": "next",
+    "@sveltejs/kit": "next",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.3.3",
@@ -49,5 +49,12 @@
     "vite": "^8.2.1",
     "vitest": "^4.1.10",
     "vitest-browser-svelte": "^3.0.0"
+  },
+  "imports": {
+    "#lib": "./src/lib/index.js",
+    "#lib/*": "./src/lib/*",
+    "#privaty/ui/*": "./src/external/core/*",
+    "#privaty/ui-forms/*": "./src/external/forms/*",
+    "#privaty/ui-tables/*": "./src/external/tables/*"
   }
 }

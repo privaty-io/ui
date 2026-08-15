@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { cn } from "@privaty/ui/cn";
-  import Button from "@privaty/ui/components/button.svelte";
-  import Spinner from "@privaty/ui/components/spinner.svelte";
-  import { getUiConfig } from "@privaty/ui/config/context";
+  import { cn } from "#privaty/ui/cn.js";
+  import Button from "#privaty/ui/components/button.svelte";
+  import Spinner from "#privaty/ui/components/spinner.svelte";
+  import { getUiConfig } from "#privaty/ui/config/context.js";
   import { getFormContext } from "../context";
 
   interface Props {

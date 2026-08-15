@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { cn } from "@privaty/ui/cn";
-  import { getUiConfig } from "@privaty/ui/config/context";
+  import { cn } from "#privaty/ui/cn.js";
+  import { getUiConfig } from "#privaty/ui/config/context.js";
   import { getFormContext } from "../context";
 
   interface Props {

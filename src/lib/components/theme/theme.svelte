@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Theme } from "$lib/enums/theme";
-  import { themeStore } from "$lib/stores/theme.svelte";
+  import { Theme } from "#lib/enums/theme.js";
+  import { themeStore } from "#lib/stores/theme.svelte.js";
   import {
     MoonIcon,
     SunIcon,

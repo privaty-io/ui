@@ -1,8 +1,8 @@
 <script lang="ts">
-  import "$lib/assets/styles/app.css";
-  import "$lib/assets/styles/fonts.css";
-  import Header from "$lib/components/layout/header.svelte";
-  import { themeStore } from "$lib/stores/theme.svelte";
+  import "#lib/assets/styles/app.css";
+  import "#lib/assets/styles/fonts.css";
+  import Header from "#lib/components/layout/header.svelte";
+  import { themeStore } from "#lib/stores/theme.svelte.js";
   import type { LayoutProps } from "./$types";
 
   let { data, children }: LayoutProps = $props();

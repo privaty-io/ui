@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Input from "@privaty/ui/components/input.svelte";
+  import Input from "#privaty/ui/components/input.svelte";
 
   let query = $state("");
 </script>

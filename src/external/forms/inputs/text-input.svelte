@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { cn } from "@privaty/ui/cn";
-  import Input from "@privaty/ui/components/input.svelte";
-  import type { LabelStyle } from "@privaty/ui/components/types";
+  import { cn } from "#privaty/ui/cn.js";
+  import Input from "#privaty/ui/components/input.svelte";
+  import type { LabelStyle } from "#privaty/ui/components/types.js";
   import type { HTMLInputAttributes } from "svelte/elements";
   import type { TextField, TextFieldType } from "../types/field";
   import { wireField } from "./wire-field";

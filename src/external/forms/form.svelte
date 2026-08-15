@@ -1,7 +1,7 @@
 <script lang="ts" generics="Input extends RemoteFormInput, Output">
-  import { cn } from "@privaty/ui/cn";
+  import { cn } from "#privaty/ui/cn.js";
+  import type { RemoteForm, RemoteFormInput } from "$app/server";
   import type { StandardSchemaV1 } from "@standard-schema/spec";
-  import type { RemoteForm, RemoteFormInput } from "@sveltejs/kit";
   import { onMount, type Snippet } from "svelte";
   import { setFormContext } from "./context";
   import { FormState } from "./form-state.svelte";
@@ -53,7 +53,7 @@
   // involved until submission (which validates server-side regardless).
   function validate() {
     return instance.validate({
-      includeUntouched: true,
+      all: true,
       preflightOnly: schema !== undefined,
     });
   }

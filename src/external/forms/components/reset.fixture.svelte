@@ -1,8 +1,8 @@
 <script lang="ts">
   // Test-only host: sets the form + config contexts Reset needs, since the
   // real context keys are private Symbols. Never used at runtime.
-  import { setUiConfig } from "@privaty/ui/config/context";
-  import type { PartialUiConfig } from "@privaty/ui/config/types";
+  import { setUiConfig } from "#privaty/ui/config/context.js";
+  import type { PartialUiConfig } from "#privaty/ui/config/types.js";
   import type { ComponentProps } from "svelte";
   import { setFormContext } from "../context";
   import { FormState } from "../form-state.svelte";

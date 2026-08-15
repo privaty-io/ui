@@ -2,7 +2,7 @@
   // Test-only host: a minimal but realistic form. The fake remote form is cast
   // to Kit's type at this single boundary — Form's prop is deliberately Kit's
   // public type, so the fake can't satisfy it structurally.
-  import type { RemoteForm, RemoteFormInput } from "@sveltejs/kit";
+  import type { RemoteForm, RemoteFormInput } from "$app/server";
   import type { StandardSchemaV1 } from "@standard-schema/spec";
   import FormError from "./components/form-error.svelte";
   import Form from "./form.svelte";

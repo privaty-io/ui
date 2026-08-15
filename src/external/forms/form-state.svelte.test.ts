@@ -165,7 +165,7 @@ describe("validate", () => {
 
     state.validate();
 
-    expect(validateCalls).toEqual([{ includeUntouched: true }]);
+    expect(validateCalls).toEqual([{ all: true }]);
   });
 });
 

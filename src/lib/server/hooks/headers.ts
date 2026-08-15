@@ -1,4 +1,4 @@
-import type { Handle } from "@sveltejs/kit";
+import type { Handle } from "@sveltejs/kit/hooks";
 
 export const headersServerHook: Handle = async ({ event, resolve }) => {
   event.setHeaders({

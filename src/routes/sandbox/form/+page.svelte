@@ -1,12 +1,12 @@
 <script lang="ts">
-  import FormError from "@privaty/ui-forms/components/form-error.svelte";
-  import Reset from "@privaty/ui-forms/components/reset.svelte";
-  import Submit from "@privaty/ui-forms/components/submit.svelte";
-  import CheckboxInput from "@privaty/ui-forms/inputs/checkbox-input.svelte";
-  import Form from "@privaty/ui-forms/form.svelte";
-  import NumberInput from "@privaty/ui-forms/inputs/number-input.svelte";
-  import SelectInput from "@privaty/ui-forms/inputs/select-input.svelte";
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
+  import FormError from "#privaty/ui-forms/components/form-error.svelte";
+  import Reset from "#privaty/ui-forms/components/reset.svelte";
+  import Submit from "#privaty/ui-forms/components/submit.svelte";
+  import CheckboxInput from "#privaty/ui-forms/inputs/checkbox-input.svelte";
+  import Form from "#privaty/ui-forms/form.svelte";
+  import NumberInput from "#privaty/ui-forms/inputs/number-input.svelte";
+  import SelectInput from "#privaty/ui-forms/inputs/select-input.svelte";
+  import TextInput from "#privaty/ui-forms/inputs/text-input.svelte";
   import { createItem, getItems } from "./data.remote";
   import { categories, createItemSchema } from "./schema";
 </script>

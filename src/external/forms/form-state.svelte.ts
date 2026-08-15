@@ -71,7 +71,7 @@ class FormState {
   }
 
   public validate(): void {
-    this.form.validate({ includeUntouched: true });
+    this.form.validate({ all: true });
   }
 
   public reset(): void {

@@ -1,7 +1,10 @@
 <script lang="ts">
-  import { cn } from "@privaty/ui/cn";
-  import Select from "@privaty/ui/components/select.svelte";
-  import type { LabelStyle, SelectOption } from "@privaty/ui/components/types";
+  import { cn } from "#privaty/ui/cn.js";
+  import Select from "#privaty/ui/components/select.svelte";
+  import type {
+    LabelStyle,
+    SelectOption,
+  } from "#privaty/ui/components/types.js";
   import type { SelectField } from "../types/field";
   import { wireField } from "./wire-field";
 

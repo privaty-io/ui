@@ -1,4 +1,4 @@
-import type { Handle } from "@sveltejs/kit";
+import type { Handle } from "@sveltejs/kit/hooks";
 
 export const preloadServerHook: Handle = async ({ event, resolve }) => {
   return await resolve(event, {

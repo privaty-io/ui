@@ -1,7 +1,7 @@
 import { flushSync } from "svelte";
 import { expect, test } from "vitest";
 
-import { Theme } from "$lib/enums/theme";
+import { Theme } from "#lib/enums/theme.js";
 
 import { themeStore } from "./theme.svelte";
 
