@@ -1,11 +1,14 @@
 <script lang="ts">
-  import Button from "@privaty/ui/components/button.svelte";
   import FormError from "@privaty/ui-forms/components/form-error.svelte";
+  import Reset from "@privaty/ui-forms/components/reset.svelte";
   import Submit from "@privaty/ui-forms/components/submit.svelte";
+  import CheckboxInput from "@privaty/ui-forms/inputs/checkbox-input.svelte";
   import Form from "@privaty/ui-forms/form.svelte";
+  import NumberInput from "@privaty/ui-forms/inputs/number-input.svelte";
+  import SelectInput from "@privaty/ui-forms/inputs/select-input.svelte";
   import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
   import { createItem, getItems } from "./data.remote";
-  import { createItemSchema } from "./schema";
+  import { categories, createItemSchema } from "./schema";
 </script>
 
 <main class="mx-auto flex w-full max-w-md flex-col gap-8 py-8">
@@ -18,24 +21,32 @@
       label="Description"
       labelStyle="floating"
     />
+    <NumberInput field={createItem.fields.price} label="Price" min={0} />
+    <SelectInput
+      field={createItem.fields.category}
+      label="Category"
+      options={categories}
+      placeholder="Choose a category"
+      required
+    />
+    <CheckboxInput field={createItem.fields.inStock} label="In stock" />
 
     <FormError />
 
     <div class="flex gap-2">
-      <Submit label="Create" submittingLabel="Creating" />
-      <Button
-        type="reset"
-        class="border border-stone-400 bg-transparent text-inherit hover:bg-stone-200/50 active:bg-transparent dark:border-stone-600 dark:bg-transparent dark:text-inherit dark:hover:bg-stone-800/50 dark:active:bg-transparent"
-      >
-        Reset
-      </Button>
+      <Submit />
+      <Reset />
     </div>
   </Form>
 
   <svelte:boundary>
     <ul class="flex flex-col gap-1">
       {#each await getItems() as item (item.id)}
-        <li>{item.name}{item.description ? ` — ${item.description}` : ""}</li>
+        <li>
+          {item.name} ({item.category}{item.inStock ? ", in stock" : ""})
+          {item.description ? ` — ${item.description}` : ""}
+          {item.price ? ` — ${item.price}` : ""}
+        </li>
       {:else}
         <li class="text-stone-500">No items yet.</li>
       {/each}

@@ -5,6 +5,9 @@ interface Item {
   id: string;
   name: string;
   description?: string;
+  price?: number;
+  category: string;
+  inStock: boolean;
 }
 
 const items: Item[] = [];
@@ -16,6 +19,9 @@ const createItem = form(createItemSchema, async (data) => {
     id: crypto.randomUUID(),
     name: data.name,
     description: data.description,
+    price: data.price,
+    category: data.category,
+    inStock: data.inStock,
   });
 
   void getItems().refresh();

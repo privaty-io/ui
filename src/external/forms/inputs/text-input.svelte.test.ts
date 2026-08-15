@@ -169,6 +169,25 @@ describe("required markers", () => {
     await expect.element(screen.getByText("(valgfri)")).toBeInTheDocument();
   });
 
+  test("shows no marker until the form has settled", async () => {
+    const { field } = fakeTextField("name");
+    const screen = await render(Fixture, {
+      form: fakeForm().form,
+      field,
+      label: "Name",
+      extraRegistrations: [registration("other", { required: true })],
+      settled: false,
+    });
+
+    await expect
+      .element(screen.getByText("(optional)"))
+      .not.toBeInTheDocument();
+
+    screen.component.state.settled = true;
+
+    await expect.element(screen.getByText("(optional)")).toBeInTheDocument();
+  });
+
   test("marks the required field when most fields are optional", async () => {
     const { field } = fakeTextField("name");
     const screen = await render(Fixture, {

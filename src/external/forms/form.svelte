@@ -2,7 +2,7 @@
   import { cn } from "@privaty/ui/cn";
   import type { StandardSchemaV1 } from "@standard-schema/spec";
   import type { RemoteForm, RemoteFormInput } from "@sveltejs/kit";
-  import type { Snippet } from "svelte";
+  import { onMount, type Snippet } from "svelte";
   import { setFormContext } from "./context";
   import { FormState } from "./form-state.svelte";
 
@@ -43,6 +43,11 @@
 
   const state = new FormState(instance);
   setFormContext({ form: instance, state });
+
+  // A parent mounts after its children, so every field has registered by now.
+  onMount(() => {
+    state.settled = true;
+  });
 
   // With a schema, typing validates client-side only — the server isn't
   // involved until submission (which validates server-side regardless).

@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { cn } from "@privaty/ui/cn";
   import Button from "@privaty/ui/components/button.svelte";
+  import Spinner from "@privaty/ui/components/spinner.svelte";
+  import { getUiConfig } from "@privaty/ui/config/context";
   import { getFormContext } from "../context";
 
   interface Props {
-    label: string;
+    label?: string;
     submittingLabel?: string;
 
     disabledUntil?: "dirty-and-valid" | "valid" | "none";
@@ -21,6 +24,9 @@
   }: Props = $props();
 
   const { state } = getFormContext();
+  const config = getUiConfig();
+
+  const resolvedLabel = $derived(label ?? config.labels.form.submit);
 
   const gateBlocked = $derived(
     disabledUntil === "dirty-and-valid"
@@ -34,11 +40,18 @@
 <Button
   type="submit"
   disabled={gateBlocked || state.isSubmitting}
-  class={classes}
+  aria-busy={state.isSubmitting}
+  class={cn("inline-flex items-center justify-center gap-2", classes)}
 >
-  {#if submittingLabel && state.isSubmitting}
-    {submittingLabel}…
+  {#if state.isSubmitting}
+    <Spinner />
+    {#if submittingLabel}
+      {submittingLabel}
+    {:else}
+      <!-- Keep the accessible name when only the spinner is visible. -->
+      <span class="sr-only">{resolvedLabel}</span>
+    {/if}
   {:else}
-    {label}
+    {resolvedLabel}
   {/if}
 </Button>

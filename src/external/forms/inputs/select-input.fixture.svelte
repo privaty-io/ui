@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Test-only host: sets the form + config contexts TextInput needs, since
+  // Test-only host: sets the form + config contexts SelectInput needs, since
   // the real context keys are private Symbols. Never used at runtime.
   import { setUiConfig } from "@privaty/ui/config/context";
   import type { PartialUiConfig } from "@privaty/ui/config/types";
@@ -8,22 +8,15 @@
   import { FormState } from "../form-state.svelte";
   import type { FieldRegistration } from "../types/field";
   import type { ValidatableForm } from "../types/form";
-  import TextInput from "./text-input.svelte";
+  import SelectInput from "./select-input.svelte";
 
-  interface Props extends ComponentProps<typeof TextInput> {
+  interface Props extends ComponentProps<typeof SelectInput> {
     form: ValidatableForm;
     uiConfig?: PartialUiConfig;
     extraRegistrations?: FieldRegistration[];
-    settled?: boolean;
   }
 
-  const {
-    form,
-    uiConfig,
-    extraRegistrations,
-    settled = true,
-    ...inputProps
-  }: Props = $props();
+  const { form, uiConfig, extraRegistrations, ...inputProps }: Props = $props();
 
   // All fixture props are stable for the component's lifetime.
   // svelte-ignore state_referenced_locally
@@ -39,8 +32,7 @@
     state.register(registration);
   }
 
-  // svelte-ignore state_referenced_locally
-  state.settled = settled;
+  state.settled = true;
 </script>
 
-<TextInput {...inputProps} />
+<SelectInput {...inputProps} />

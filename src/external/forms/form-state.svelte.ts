@@ -11,6 +11,13 @@ class FormState {
   public submitAttempted = $state<boolean>(false);
   public submitError = $state<unknown>();
 
+  /**
+   * True once every field has registered (the Form flips it on mount).
+   * Majority-dependent display like the required/optional markers waits for
+   * it — a partial registration set would render the wrong marker first.
+   */
+  public settled = $state<boolean>(false);
+
   constructor(form: ValidatableForm) {
     this.form = form;
   }

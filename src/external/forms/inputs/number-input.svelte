@@ -2,14 +2,12 @@
   import { cn } from "@privaty/ui/cn";
   import Input from "@privaty/ui/components/input.svelte";
   import type { LabelStyle } from "@privaty/ui/components/types";
-  import type { HTMLInputAttributes } from "svelte/elements";
-  import type { TextField, TextFieldType } from "../types/field";
+  import type { NumberField } from "../types/field";
   import { wireField } from "./wire-field";
 
   interface Props {
-    field: TextField;
+    field: NumberField;
     label: string;
-    type?: TextFieldType;
 
     labelStyle?: LabelStyle;
 
@@ -17,10 +15,13 @@
     disabled?: boolean;
     readonly?: boolean;
 
-    initialValue?: string;
+    initialValue?: number;
+
+    min?: number;
+    max?: number;
+    step?: number | "any";
 
     placeholder?: string;
-    autocomplete?: HTMLInputAttributes["autocomplete"];
 
     class?: string;
     labelClass?: string;
@@ -32,7 +33,6 @@
   const {
     field,
     label,
-    type = "text",
 
     labelStyle,
 
@@ -40,10 +40,13 @@
     disabled = false,
     readonly = false,
 
-    initialValue = "",
+    initialValue,
+
+    min,
+    max,
+    step,
 
     placeholder,
-    autocomplete,
 
     class: classes,
     labelClass,
@@ -52,10 +55,14 @@
     errorClass,
   }: Props = $props();
 
-  const attributes = $derived(field.as(type, initialValue));
+  const attributes = $derived(
+    initialValue === undefined
+      ? field.as("number")
+      : field.as("number", initialValue),
+  );
 
-  // The field, type, and initialValue are stable for the component's lifetime,
-  // so capturing the initial name and registration is intentional.
+  // The field and initialValue are stable for the component's lifetime, so
+  // capturing the initial name and registration is intentional.
   // svelte-ignore state_referenced_locally
   const name = attributes.name;
 
@@ -66,7 +73,7 @@
     required,
     issues: () => field.issues(),
     getValue: () => field.value(),
-    setValue: (value) => field.set(value as string),
+    setValue: (value) => field.set(value as number),
   });
 </script>
 
@@ -78,8 +85,10 @@
   marker={wired.marker}
   {disabled}
   readonly={readonly || wired.state.isSubmitting}
+  {min}
+  {max}
+  {step}
   {placeholder}
-  {autocomplete}
   class={classes}
   {labelClass}
   {inputClass}
