@@ -7,6 +7,9 @@ const defaultUiConfig: UiConfig = {
     form: {
       optional: "(optional)",
       generalError: "Something went wrong. Please try again.",
+
+      submit: "Submit",
+      reset: "Reset",
     },
   },
 };

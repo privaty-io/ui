@@ -5,6 +5,9 @@ type MessageResolver = (issue: StandardSchemaV1.Issue) => string;
 interface UiFormLabels {
   optional: string; // the "(optional)" minority marker
   generalError: string; // fallback when a submit throws
+
+  submit: string; // default Submit button label
+  reset: string; // default Reset button label
 }
 
 interface UiLabels {

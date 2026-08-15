@@ -1,3 +1,5 @@
+type ButtonVariant = "primary" | "secondary";
+
 type LabelStyle = "top" | "left" | "floating" | "hidden";
 
 /**
@@ -21,4 +23,10 @@ type InputType =
   | "time"
   | "week";
 
-export type { InputType, LabelStyle };
+interface SelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+export type { ButtonVariant, InputType, LabelStyle, SelectOption };

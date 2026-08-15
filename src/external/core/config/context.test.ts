@@ -16,6 +16,8 @@ describe("defaultUiConfig", () => {
       form: {
         optional: "(optional)",
         generalError: "Something went wrong. Please try again.",
+        submit: "Submit",
+        reset: "Reset",
       },
     });
   });
@@ -66,6 +68,8 @@ describe("mergeUiConfig", () => {
       form: {
         optional: "(base)",
         generalError: "from override",
+        submit: "Submit",
+        reset: "Reset",
       },
     });
   });

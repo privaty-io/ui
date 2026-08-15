@@ -29,6 +29,19 @@ describe("button", () => {
     await expect.element(button).toBeDisabled();
   });
 
+  test("renders the secondary variant without the primary background", async () => {
+    const screen = await render(Button, {
+      children: label("Cancel"),
+      variant: "secondary",
+    });
+
+    const button = screen.getByRole("button", { name: "Cancel" });
+    await expect.element(button).toHaveClass(/(?:^|\s)border(?:\s|$)/);
+    await expect
+      .element(button)
+      .not.toHaveClass(/(?:^|\s)bg-stone-800(?:\s|$)/);
+  });
+
   test("merges class overrides over the defaults", async () => {
     const screen = await render(Button, {
       children: label("Danger"),
