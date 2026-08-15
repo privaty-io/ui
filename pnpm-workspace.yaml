@@ -1,3 +1,6 @@
 allowBuilds:
   "@tailwindcss/oxide": true
   esbuild: true
+
+minimumReleaseAgeExclude:
+  - esrap@2.3.4

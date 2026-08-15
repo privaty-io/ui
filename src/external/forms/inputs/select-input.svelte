@@ -15,7 +15,10 @@
     labelStyle?: Exclude<LabelStyle, "floating">;
 
     required?: boolean;
-    // Selects have no native readonly, so submitting falls back to disabled.
+    // Selects have no native readonly, so submitting locks interaction with
+    // CSS instead. NEVER disable while submitting: disabled controls are
+    // excluded from FormData, and Kit validates live form data mid-submission
+    // — a disabled select vanishes from it and fails its own validation.
     disabled?: boolean;
 
     initialValue?: string;
@@ -83,10 +86,13 @@
   {placeholder}
   errors={wired.errors}
   marker={wired.marker}
-  disabled={disabled || wired.state.isSubmitting}
+  {disabled}
   class={classes}
   {labelClass}
-  {selectClass}
+  selectClass={cn(
+    wired.state.isSubmitting && "pointer-events-none",
+    selectClass,
+  )}
   markerClass={cn(required && "text-red-700 dark:text-red-500", markerClass)}
   {errorClass}
 />

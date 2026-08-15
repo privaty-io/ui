@@ -50,16 +50,20 @@ describe("wiring", () => {
     expect(screen.component.state.isDirty).toBe(false);
   });
 
-  test("disables while the form is submitting", async () => {
+  test("locks interaction while submitting without leaving the form data", async () => {
     const { field } = fakeCheckboxField("inStock");
     const { form, setPending } = fakeForm();
     const screen = await render(Fixture, { form, field, label: "In stock" });
 
-    await expect.element(screen.getByLabelText("In stock")).not.toBeDisabled();
-
     setPending(1);
 
-    await expect.element(screen.getByLabelText("In stock")).toBeDisabled();
+    // NEVER disabled while submitting — a disabled checked box is excluded
+    // from FormData and would silently submit as false.
+    const checkbox = screen.getByLabelText("In stock");
+    await expect.element(checkbox).not.toBeDisabled();
+    await expect
+      .element(checkbox)
+      .toHaveClass(/(?:^|\s)pointer-events-none(?:\s|$)/);
   });
 });
 

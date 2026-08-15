@@ -9,8 +9,9 @@
     label: string;
 
     required?: boolean;
-    // Checkboxes have no native readonly, so submitting falls back to
-    // disabled.
+    // Checkboxes have no native readonly, so submitting locks interaction
+    // with CSS instead. NEVER disable while submitting: disabled controls are
+    // excluded from FormData — a checked box would silently submit as false.
     disabled?: boolean;
 
     initialValue?: boolean;
@@ -68,10 +69,10 @@
   {label}
   errors={wired.errors}
   marker={wired.marker}
-  disabled={disabled || wired.state.isSubmitting}
+  {disabled}
   class={classes}
   {labelClass}
-  {inputClass}
+  inputClass={cn(wired.state.isSubmitting && "pointer-events-none", inputClass)}
   markerClass={cn(required && "text-red-700 dark:text-red-500", markerClass)}
   {errorClass}
 />

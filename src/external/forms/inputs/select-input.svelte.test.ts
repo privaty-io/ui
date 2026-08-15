@@ -64,7 +64,7 @@ describe("wiring", () => {
     expect(screen.component.state.isDirty).toBe(false);
   });
 
-  test("disables while the form is submitting", async () => {
+  test("locks interaction while submitting without leaving the form data", async () => {
     const { field } = fakeSelectField("category");
     const { form, setPending } = fakeForm();
     const screen = await render(Fixture, {
@@ -74,11 +74,15 @@ describe("wiring", () => {
       options,
     });
 
-    await expect.element(screen.getByLabelText("Category")).not.toBeDisabled();
-
     setPending(1);
 
-    await expect.element(screen.getByLabelText("Category")).toBeDisabled();
+    // NEVER disabled while submitting — disabled controls are excluded from
+    // FormData, which made mid-submission validation lose the field entirely.
+    const select = screen.getByLabelText("Category");
+    await expect.element(select).not.toBeDisabled();
+    await expect
+      .element(select)
+      .toHaveClass(/(?:^|\s)pointer-events-none(?:\s|$)/);
   });
 });
 
