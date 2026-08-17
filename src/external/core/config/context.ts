@@ -11,6 +11,14 @@ const defaultUiConfig: UiConfig = {
       submit: "Submit",
       reset: "Reset",
     },
+    table: {
+      actions: "Actions",
+
+      edit: "Edit",
+      save: "Save",
+      add: "Add",
+      cancel: "Cancel",
+    },
   },
 };
 
@@ -22,6 +30,7 @@ function mergeUiConfig(base: UiConfig, overrides: PartialUiConfig): UiConfig {
     ...overrides,
     labels: {
       form: { ...base.labels.form, ...overrides.labels?.form },
+      table: { ...base.labels.table, ...overrides.labels?.table },
     },
   };
 }

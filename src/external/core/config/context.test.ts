@@ -19,6 +19,13 @@ describe("defaultUiConfig", () => {
         submit: "Submit",
         reset: "Reset",
       },
+      table: {
+        actions: "Actions",
+        edit: "Edit",
+        save: "Save",
+        add: "Add",
+        cancel: "Cancel",
+      },
     });
   });
 });
@@ -53,6 +60,18 @@ describe("mergeUiConfig", () => {
     );
   });
 
+  test("merges partial table labels instead of replacing them", () => {
+    const merged = mergeUiConfig(defaultUiConfig, {
+      labels: { table: { edit: "Rediger" } },
+    });
+
+    expect(merged.labels.table.edit).toBe("Rediger");
+    expect(merged.labels.table.cancel).toBe(
+      defaultUiConfig.labels.table.cancel,
+    );
+    expect(merged.labels.form).toEqual(defaultUiConfig.labels.form);
+  });
+
   test("inherits customizations from a non-default base", () => {
     const base = mergeUiConfig(defaultUiConfig, {
       resolveMessage: () => "from base",
@@ -71,6 +90,7 @@ describe("mergeUiConfig", () => {
         submit: "Submit",
         reset: "Reset",
       },
+      table: defaultUiConfig.labels.table,
     });
   });
 

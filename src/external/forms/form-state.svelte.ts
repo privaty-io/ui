@@ -71,7 +71,11 @@ class FormState {
   }
 
   public validate(): void {
-    this.form.validate({ all: true });
+    // Kit's validate() awaits a tick before reading the form element, so it
+    // rejects if the form unmounts during that tick (e.g. reset-on-success
+    // right before the Form is removed). Validation for an unmounted form
+    // means nothing — swallow it.
+    void Promise.resolve(this.form.validate({ all: true })).catch(() => {});
   }
 
   public reset(): void {

@@ -89,6 +89,9 @@
       // Same ordering rule: a newly-touched field must never flash issues
       // that are stale from the previous validation pass.
       await validate();
+    } catch {
+      // The form can unmount mid-validation (Kit's validate awaits a tick
+      // before touching the form element) — nothing left to show issues on.
     } finally {
       if (name) state.markTouched(name);
     }

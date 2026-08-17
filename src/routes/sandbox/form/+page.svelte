@@ -39,21 +39,18 @@
     </div>
   </Form>
 
-  <svelte:boundary>
-    <ul class="flex flex-col gap-1">
-      {#each await getItems() as item (item.id)}
-        <li>
-          {item.name} ({item.category}{item.inStock ? ", in stock" : ""})
-          {item.description ? ` — ${item.description}` : ""}
-          {item.price ? ` — ${item.price}` : ""}
-        </li>
-      {:else}
-        <li class="text-stone-500">No items yet.</li>
-      {/each}
-    </ul>
-
-    {#snippet pending()}
-      <p>Loading…</p>
-    {/snippet}
-  </svelte:boundary>
+  <!-- No pending boundary: it would make the server render the pending
+       snippet instead of this list — awaiting bare is what server-renders
+       the data. -->
+  <ul class="flex flex-col gap-1">
+    {#each await getItems() as item (item.id)}
+      <li>
+        {item.name} ({item.category}{item.inStock ? ", in stock" : ""})
+        {item.description ? ` — ${item.description}` : ""}
+        {item.price ? ` — ${item.price}` : ""}
+      </li>
+    {:else}
+      <li class="text-stone-500">No items yet.</li>
+    {/each}
+  </ul>
 </main>
