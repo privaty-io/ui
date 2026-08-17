@@ -45,11 +45,21 @@ interface ColumnRegistration<Row> {
   /** One accessor serves display, the default sort, and edit seeding. */
   value: (row: Row) => unknown;
 
+  /** CSS length fixing the column's width. Required for pinned columns —
+   * pin offsets are computed from declared widths. */
+  width?: string;
+  /** Pins the column to a table edge; pinned columns are reordered to their
+   * edge and stay visible under horizontal scroll. */
+  pin?: "left" | "right";
+
   sortable: boolean;
   compare?: (a: Row, b: Row) => number;
 
   /** Seed for this column's field when the create editor opens. */
   createSeed?: unknown;
+
+  /** Cell tooltip text — defaults to the raw value as text. */
+  tooltip?: (row: Row) => string;
 
   cell?: Snippet<[{ row: Row; value: unknown }]>;
   /** Present = the column is editable. `row` is undefined on the create row. */

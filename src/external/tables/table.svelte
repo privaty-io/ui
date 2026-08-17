@@ -5,14 +5,22 @@
   import { cn } from "#privaty/ui/cn.js";
   import Button from "#privaty/ui/components/button.svelte";
   import { getUiConfig } from "#privaty/ui/config/context.js";
+  import {
+    CheckIcon,
+    ChevronRightIcon,
+    PencilIcon,
+    PlusIcon,
+    RotateCcwIcon,
+    XIcon,
+  } from "@lucide/svelte";
   import FormError from "#privaty/ui-forms/components/form-error.svelte";
   import Reset from "#privaty/ui-forms/components/reset.svelte";
   import Submit from "#privaty/ui-forms/components/submit.svelte";
   import Form from "#privaty/ui-forms/form.svelte";
   import type { RemoteForm, RemoteFormInput } from "$app/server";
   import type { StandardSchemaV1 } from "@standard-schema/spec";
-  import { onDestroy, type Snippet } from "svelte";
-  import { SvelteMap } from "svelte/reactivity";
+  import { onDestroy, onMount, type Snippet } from "svelte";
+  import { SvelteMap, SvelteSet } from "svelte/reactivity";
   import { setTableContext } from "./context";
   import { TableController } from "./table-controller.svelte";
   import type {
@@ -43,14 +51,29 @@
     /** Field name in the edit schema that carries the row id. */
     idKey?: string;
 
+    /** Width of the actions column as a CSS length. Optional — without it
+     * the column shrinks to its content; pin offsets are measured from the
+     * rendered header either way (this only serves SSR and width control). */
+    actionsWidth?: string;
+
+    /** Cell padding and type scale — "compact" for data-dense tables. */
+    density?: "comfortable" | "compact";
+
     class?: string;
+    containerClass?: string;
     headerCellClass?: string;
     cellClass?: string;
+    rowClass?: string;
     editorRowClass?: string;
 
     children: Snippet;
     /** Replaces the default actions cell on display rows. */
     actions?: Snippet<[{ row: Row; controller: TableController }]>;
+    /** Enables row expansion: an expander column is prepended and this
+     * renders full-width below an expanded row — any content goes. */
+    expanded?: Snippet<[{ row: Row }]>;
+    /** Replaces the default empty-state message in the filler row. */
+    empty?: Snippet;
   };
 
   const {
@@ -66,13 +89,21 @@
     editSchema,
     idKey = "id",
 
+    actionsWidth,
+
+    density = "comfortable",
+
     class: classes,
+    containerClass,
     headerCellClass,
     cellClass,
+    rowClass,
     editorRowClass,
 
     children,
     actions,
+    expanded,
+    empty,
   }: Props = $props();
 
   const config = getUiConfig();
@@ -95,6 +126,180 @@
   const columns = $derived([
     ...registrations.values(),
   ] as unknown as ColumnRegistration<Row>[]);
+
+  const hasActionsColumn = $derived(
+    editForm !== undefined || createForm !== undefined || actions !== undefined,
+  );
+
+  // Pinned columns are reordered to their edge — a sticky column in the
+  // middle of the table would let its unpinned neighbors scroll beneath it.
+  const orderedColumns = $derived([
+    ...columns.filter((column) => column.pin === "left"),
+    ...columns.filter((column) => column.pin === undefined),
+    ...columns.filter((column) => column.pin === "right"),
+  ]);
+
+  // SSR fallback for the expander column's width (the cell's w-10).
+  const expanderWidth = "2.5rem";
+
+  function sumWidths(parts: string[]): string {
+    if (parts.length === 0) return "0px";
+    if (parts.length === 1) return parts[0];
+    return `calc(${parts.join(" + ")})`;
+  }
+
+  // Rendered widths measured off the header cells (bind:offsetWidth). Auto
+  // table layout can distribute surplus width beyond declared widths — a
+  // declared 2.5rem expander has measured 116px — so pin offsets must come
+  // from real geometry. Declared widths only serve until hydration measures.
+  const measuredWidths = $state<Record<string, number>>({});
+  let measuredExpanderWidth = $state<number | undefined>();
+  let measuredActionsWidth = $state<number | undefined>();
+
+  function widthPart(column: ColumnRegistration<Row>): string {
+    const measured = measuredWidths[column.key];
+    return measured !== undefined ? `${measured}px` : (column.width ?? "0px");
+  }
+
+  // Sticky offsets accumulate from each edge — measured when possible,
+  // declared widths as the fallback (which is why pinned columns must
+  // declare one).
+  const pinOffsets = $derived.by(() => {
+    const offsets = new SvelteMap<
+      string,
+      { side: "left" | "right"; offset: string }
+    >();
+
+    const leftParts: string[] = expanded
+      ? [
+          measuredExpanderWidth !== undefined
+            ? `${measuredExpanderWidth}px`
+            : expanderWidth,
+        ]
+      : [];
+    for (const column of orderedColumns) {
+      if (column.pin !== "left") continue;
+      offsets.set(column.key, { side: "left", offset: sumWidths(leftParts) });
+      leftParts.push(widthPart(column));
+    }
+
+    const rightParts: string[] = hasActionsColumn
+      ? [
+          measuredActionsWidth !== undefined
+            ? `${measuredActionsWidth}px`
+            : (actionsWidth ?? "0px"),
+        ]
+      : [];
+    for (const column of [...orderedColumns].reverse()) {
+      if (column.pin !== "right") continue;
+      offsets.set(column.key, { side: "right", offset: sumWidths(rightParts) });
+      rightParts.push(widthPart(column));
+    }
+
+    return offsets;
+  });
+
+  function columnStyle(column: ColumnRegistration<Row>): string | undefined {
+    const parts: string[] = [];
+
+    if (column.width) {
+      parts.push(
+        `width: ${column.width}`,
+        `min-width: ${column.width}`,
+        `max-width: ${column.width}`,
+      );
+    }
+
+    const pin = pinOffsets.get(column.key);
+    if (pin) parts.push(`${pin.side}: ${pin.offset}`);
+
+    return parts.length > 0 ? parts.join("; ") : undefined;
+  }
+
+  // Column borders mark two things: the expander/actions columns ALWAYS
+  // carry a border towards the data (they are chrome, not data), and the
+  // outermost pinned data columns additionally mark the pinned/scrolling
+  // boundary.
+  const lastLeftPinnedKey = $derived(
+    orderedColumns.findLast((column) => column.pin === "left")?.key,
+  );
+  const firstRightPinnedKey = $derived(
+    orderedColumns.find((column) => column.pin === "right")?.key,
+  );
+
+  function columnPinClasses(
+    column: ColumnRegistration<Row>,
+  ): string | undefined {
+    if (!pinOffsets.has(column.key)) return undefined;
+
+    return cn(
+      "sticky z-10 bg-inherit",
+      column.key === lastLeftPinnedKey && "border-r",
+      column.key === firstRightPinnedKey && "border-l",
+    );
+  }
+
+  // The scroll wrapper's clientWidth — by definition excluding borders and
+  // any classic scrollbar — kept fresh by observing both the wrapper (outer
+  // resizes) and the table (content growth toggles the vertical scrollbar,
+  // which outer-box observers never see). 100cqw can't be trusted for this:
+  // Chromium doesn't subtract scrollbars from container-query units.
+  let scrollportWidth = $state<number>();
+
+  function observeScrollport(wrapper: HTMLElement) {
+    const table = wrapper.querySelector("table");
+
+    const measure = () => {
+      scrollportWidth = wrapper.clientWidth;
+    };
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(wrapper);
+    if (table) observer.observe(table);
+    measure();
+
+    return () => observer.disconnect();
+  }
+
+  // Custom scrollbars only where classic (space-taking) WebKit scrollbars
+  // render: overlay environments (macOS/iOS auto-hiding bars) and Firefox
+  // (no ::-webkit-scrollbar; keeps the app's scrollbar-color) stay native.
+  // Same trick as the form markers: the container hides overflow until the
+  // mount-time probe has decided, so native scrollbars never flash — they
+  // appear once, already styled.
+  let settled = $state(false);
+  let styledScrollbars = $state(false);
+
+  onMount(() => {
+    if (CSS.supports("selector(::-webkit-scrollbar)")) {
+      const probe = document.createElement("div");
+      probe.style.cssText =
+        "position:absolute;visibility:hidden;overflow:scroll;width:40px;height:40px";
+      document.body.append(probe);
+      styledScrollbars = probe.offsetWidth > probe.clientWidth;
+      probe.remove();
+    }
+
+    settled = true;
+  });
+
+  // Track matches the header, the thumb is inset via a transparent border,
+  // and the track carries a border towards the content — the "border against
+  // the scrollbar". `[scrollbar-color:auto]!` re-enables ::-webkit-scrollbar
+  // styling, which Chromium disables whenever a scrollbar-color is set
+  // (the app sets one globally, hence the importance).
+  const scrollbarClasses = cn(
+    "[scrollbar-color:auto]!",
+    "[&::-webkit-scrollbar]:size-2.5",
+    "[&::-webkit-scrollbar-track]:bg-stone-100 dark:[&::-webkit-scrollbar-track]:bg-stone-900",
+    "[&::-webkit-scrollbar-track]:border-stone-300 dark:[&::-webkit-scrollbar-track]:border-stone-700",
+    "[&::-webkit-scrollbar-track:vertical]:border-l",
+    "[&::-webkit-scrollbar-track:horizontal]:border-t",
+    "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-padding",
+    "[&::-webkit-scrollbar-thumb]:bg-stone-400 dark:[&::-webkit-scrollbar-thumb]:bg-stone-600",
+    "[&::-webkit-scrollbar-thumb:hover]:bg-stone-500 dark:[&::-webkit-scrollbar-thumb:hover]:bg-stone-500",
+    "[&::-webkit-scrollbar-corner]:bg-stone-100 dark:[&::-webkit-scrollbar-corner]:bg-stone-900",
+  );
 
   // The remote form's typed fields proxy is indexed by runtime column keys,
   // which its compile-time shape cannot express — the single cast site.
@@ -252,24 +457,95 @@
     return [...rows].toSorted((a, b) => factor * compare(a, b));
   });
 
-  const hasActionsColumn = $derived(
-    editForm !== undefined || createForm !== undefined || actions !== undefined,
+  const columnCount = $derived(
+    columns.length + (expanded ? 1 : 0) + (hasActionsColumn ? 1 : 0),
   );
+
+  const expandedRows = new SvelteSet<string | number>();
+
+  function toggleExpanded(key: string | number) {
+    if (expandedRows.has(key)) expandedRows.delete(key);
+    else expandedRows.add(key);
+  }
 
   function displayText(column: ColumnRegistration<Row>, row: Row): string {
     const value = column.value(row);
     return value == null ? "" : String(value);
   }
 
-  const defaultHeaderCellClasses =
-    "border border-stone-300 px-3 py-1.5 dark:border-stone-700";
-  const defaultCellClasses =
-    "border border-stone-300 px-3 py-1.5 dark:border-stone-700";
-  const defaultEditorRowClasses = "bg-stone-100 align-top dark:bg-stone-900";
+  // The empty state yields to the create editor — "No rows" next to the row
+  // being created would be a lie in progress.
+  const showEmpty = $derived(
+    rows.length === 0 && !(showEditor && session?.mode === "create"),
+  );
+
+  // Every data cell gets a tooltip: the column's accessor when given (so
+  // custom formatting can carry through), the raw value as text otherwise.
+  function cellTitle(column: ColumnRegistration<Row>, row: Row): string {
+    return column.tooltip?.(row) ?? displayText(column, row);
+  }
+
+  const compact = $derived(density === "compact");
+
+  // border-separate (not collapse): collapsed borders detach from sticky
+  // cells. Cells only own their bottom border (rows) — the scroll wrapper
+  // draws the full outer frame, keeping the scrollbars inside it. The
+  // border-color utilities stay on every cell so boundary borders (border-r/
+  // border-l on pinned edges) pick them up.
+  // whitespace-nowrap: cell content never wraps — width-less columns size to
+  // their content, width-constrained ones truncate. (Expanded content and
+  // the empty state opt back into wrapping; whitespace is inherited.)
+  const cellPadding = $derived(compact ? "px-2 py-0.5" : "px-3 py-1.5");
+  // Editor cells shed vertical padding so the input's own height (38px)
+  // lands editor rows at display-row height instead of stretching them.
+  const editorCellPadding = $derived(compact ? "py-0" : "py-0.5");
+  // Width-less columns auto-size to their display content, which can leave
+  // an input a few digits of room — editing needs usable space. Declared-
+  // width columns are unaffected (their inline style wins).
+  const editorCellMinWidth = "min-w-32";
+  const iconButtonClasses = $derived(compact ? "p-1" : "p-1.5");
+  const expanderButtonClasses = $derived(compact ? "p-1" : "p-2");
+
+  const defaultHeaderCellClasses = $derived(
+    cn(
+      "sticky top-0 z-20 border-b border-stone-300 bg-stone-100 whitespace-nowrap dark:border-stone-700 dark:bg-stone-900",
+      cellPadding,
+    ),
+  );
+  const defaultCellClasses = $derived(
+    cn(
+      "border-b border-stone-300 whitespace-nowrap dark:border-stone-700",
+      cellPadding,
+    ),
+  );
+  // Explicit row backgrounds let pinned cells (bg-inherit) mask what scrolls
+  // beneath them.
+  const defaultRowClasses = "bg-white dark:bg-stone-950";
+  // align-middle: editor and display cells share row heights now, so
+  // non-editable content centers alongside the inputs.
+  const defaultEditorRowClasses = "bg-stone-100 align-middle dark:bg-stone-900";
+  const actionsCellClasses =
+    "sticky right-0 z-10 w-px border-l bg-inherit whitespace-nowrap";
+
+  const actionsStyle = $derived(
+    actionsWidth
+      ? `width: ${actionsWidth}; min-width: ${actionsWidth}; max-width: ${actionsWidth}`
+      : undefined,
+  );
 </script>
 
 {#snippet cellContent(column: ColumnRegistration<Row>, row: Row)}
-  {#if column.cell}
+  {#if column.width}
+    <!-- Width-constrained cells clip overflowing content; the tooltip lives
+         on the td. -->
+    <span class="block truncate">
+      {#if column.cell}
+        {@render column.cell({ row, value: column.value(row) })}
+      {:else}
+        {displayText(column, row)}
+      {/if}
+    </span>
+  {:else if column.cell}
     {@render column.cell({ row, value: column.value(row) })}
   {:else}
     {displayText(column, row)}
@@ -277,8 +553,12 @@
 {/snippet}
 
 {#snippet displayCells(row: Row)}
-  {#each columns as column (column.key)}
-    <td class={cn(defaultCellClasses, cellClass)}>
+  {#each orderedColumns as column (column.key)}
+    <td
+      class={cn(defaultCellClasses, columnPinClasses(column), cellClass)}
+      style={columnStyle(column)}
+      title={cellTitle(column, row)}
+    >
       {@render cellContent(column, row)}
     </td>
   {/each}
@@ -288,8 +568,21 @@
   fields: Record<string, EditorField>,
   row: Row | undefined,
 )}
-  {#each columns as column (column.key)}
-    <td class={cn(defaultCellClasses, cellClass)}>
+  {#each orderedColumns as column (column.key)}
+    <td
+      class={cn(
+        defaultCellClasses,
+        columnPinClasses(column),
+        column.editor &&
+          fields[column.key] &&
+          cn(editorCellPadding, editorCellMinWidth),
+        cellClass,
+      )}
+      style={columnStyle(column)}
+      title={!(column.editor && fields[column.key]) && row !== undefined
+        ? cellTitle(column, row)
+        : undefined}
+    >
       <!-- The fields guard covers columns registered after the session was
            prepared (dynamic columns): they stay blank until the next
            session. -->
@@ -306,101 +599,294 @@
 
 {#snippet editorActions(submitLabel: string)}
   <div class="flex gap-1">
-    <Submit label={submitLabel} />
-    <Reset />
+    <Submit label={submitLabel} class={iconButtonClasses}>
+      <CheckIcon class="size-4" aria-hidden="true" />
+    </Submit>
+    <Reset class={iconButtonClasses}>
+      <RotateCcwIcon class="size-4" aria-hidden="true" />
+    </Reset>
     <Button
       variant="secondary"
       type="button"
+      class={iconButtonClasses}
+      title={config.labels.table.cancel}
       onclick={() => controller.close()}
     >
-      {config.labels.table.cancel}
+      <XIcon class="size-4" aria-hidden="true" />
+      <span class="sr-only">{config.labels.table.cancel}</span>
     </Button>
   </div>
 {/snippet}
 
-{#snippet tableMarkup(withForm: boolean)}
-  <table class={cn("w-full border-collapse text-left", classes)}>
-    <thead>
-      <tr>
-        {#each columns as column (column.key)}
-          <th
-            class={cn(defaultHeaderCellClasses, headerCellClass)}
-            aria-sort={sort?.key === column.key
-              ? sort.direction === "asc"
-                ? "ascending"
-                : "descending"
-              : undefined}
-          >
-            {#if column.sortable}
-              <button
-                type="button"
-                class="flex w-full cursor-pointer items-center gap-1"
-                onclick={() => cycleSort(column.key)}
-              >
-                {column.label}
-                {#if sort?.key === column.key}
-                  <span aria-hidden="true">
-                    {sort.direction === "asc" ? "↑" : "↓"}
-                  </span>
-                {/if}
-              </button>
-            {:else}
-              {column.label}
-            {/if}
-          </th>
-        {/each}
-        {#if hasActionsColumn}
-          <th class={cn(defaultHeaderCellClasses, headerCellClass)}>
-            {config.labels.table.actions}
-          </th>
-        {/if}
-      </tr>
-    </thead>
-    <tbody>
-      {#if showEditor && session?.mode === "create"}
-        <tr class={cn(defaultEditorRowClasses, editorRowClass)}>
-          {@render editorCells(session.fields, undefined)}
-          <td class={cn(defaultCellClasses, cellClass)}>
-            {@render editorActions(config.labels.table.add)}
-          </td>
-        </tr>
-      {/if}
+{#snippet expanderCell(row: Row)}
+  <!-- w-10 must match expanderWidth — and must WIN: zero cell padding keeps
+       the min-content within 2.5rem, otherwise the rendered width exceeds
+       the declared one and pinned neighbors snap left when sticky engages. -->
+  <td
+    class={cn(
+      defaultCellClasses,
+      "sticky left-0 z-10 w-10 max-w-10 min-w-10 border-r bg-inherit p-0 text-center align-middle",
+      cellClass,
+    )}
+  >
+    <button
+      type="button"
+      class={cn(
+        "inline-flex cursor-pointer items-center justify-center align-middle",
+        expanderButtonClasses,
+      )}
+      aria-expanded={expandedRows.has(rowKey(row))}
+      title={config.labels.table.expand}
+      onclick={() => toggleExpanded(rowKey(row))}
+    >
+      <ChevronRightIcon
+        class={cn(
+          "size-4 transition-transform",
+          expandedRows.has(rowKey(row)) && "rotate-90",
+        )}
+        aria-hidden="true"
+      />
+      <span class="sr-only">{config.labels.table.expand}</span>
+    </button>
+  </td>
+{/snippet}
 
-      {#each sortedRows as row (rowKey(row))}
-        {#if showEditor && session?.mode === "edit" && rowKey(row) === session.rowId}
+{#snippet expandedContent(row: Row)}
+  {#if expanded && expandedRows.has(rowKey(row))}
+    <tr class={defaultRowClasses}>
+      <td
+        colspan={columnCount}
+        class={cn(defaultCellClasses, "p-0 whitespace-normal", cellClass)}
+      >
+        <!-- Sticks to the visible scroll viewport instead of riding the
+             table's horizontal scroll; overflows on its own when wider.
+             The measured width wins over the 100cqw fallback: too wide by
+             even a scrollbar's width and the sticky block gets dragged along
+             for the final pixels of rightward scroll. -->
+        <div
+          class={cn(
+            "sticky left-0 w-[100cqw] overflow-auto",
+            styledScrollbars && scrollbarClasses,
+          )}
+          style={scrollportWidth !== undefined
+            ? `width: ${scrollportWidth}px`
+            : undefined}
+        >
+          {@render expanded({ row })}
+        </div>
+      </td>
+    </tr>
+  {/if}
+{/snippet}
+
+{#snippet tableMarkup(withForm: boolean)}
+  <!-- @container: the 100cqw fallback for expanded-row content before the
+       scrollport measurement lands. -->
+  <div
+    {@attach observeScrollport}
+    class={cn(
+      "@container h-full border border-stone-300 dark:border-stone-700",
+      settled ? "overflow-auto" : "overflow-hidden",
+      styledScrollbars && scrollbarClasses,
+      containerClass,
+    )}
+  >
+    <table
+      class={cn(
+        "h-full min-w-full border-separate border-spacing-0 text-left",
+        compact && "text-sm",
+        classes,
+      )}
+    >
+      <thead>
+        <tr>
+          {#if expanded}
+            <th
+              bind:offsetWidth={measuredExpanderWidth}
+              class={cn(
+                defaultHeaderCellClasses,
+                "left-0 z-30 w-10 max-w-10 min-w-10 border-r",
+                headerCellClass,
+              )}
+            >
+              <span class="sr-only">{config.labels.table.expand}</span>
+            </th>
+          {/if}
+          {#each orderedColumns as column (column.key)}
+            <th
+              bind:offsetWidth={measuredWidths[column.key]}
+              class={cn(
+                defaultHeaderCellClasses,
+                pinOffsets.has(column.key) && "z-30",
+                column.key === lastLeftPinnedKey && "border-r",
+                column.key === firstRightPinnedKey && "border-l",
+                headerCellClass,
+              )}
+              style={columnStyle(column)}
+              title={column.label}
+              aria-sort={sort?.key === column.key
+                ? sort.direction === "asc"
+                  ? "ascending"
+                  : "descending"
+                : undefined}
+            >
+              {#if column.sortable}
+                <button
+                  type="button"
+                  class="flex w-full cursor-pointer items-center gap-1 overflow-hidden"
+                  onclick={() => cycleSort(column.key)}
+                >
+                  <span class="truncate">{column.label}</span>
+                  {#if sort?.key === column.key}
+                    <span aria-hidden="true">
+                      {sort.direction === "asc" ? "↑" : "↓"}
+                    </span>
+                  {/if}
+                </button>
+              {:else}
+                <span class="block truncate">{column.label}</span>
+              {/if}
+            </th>
+          {/each}
+          {#if hasActionsColumn}
+            <th
+              bind:offsetWidth={measuredActionsWidth}
+              class={cn(
+                defaultHeaderCellClasses,
+                "right-0 z-30 w-px border-l whitespace-nowrap",
+                headerCellClass,
+              )}
+              style={actionsStyle}
+            >
+              {#if createForm}
+                <!-- The header hosts the Add trigger; the column keeps its
+                   accessible name via the sr-only label. -->
+                <span class="sr-only">{config.labels.table.actions}</span>
+                <Button
+                  type="button"
+                  class={iconButtonClasses}
+                  title={config.labels.table.add}
+                  disabled={showEditor && session?.mode === "create"}
+                  onclick={() => controller.startCreate()}
+                >
+                  <PlusIcon class="size-4" aria-hidden="true" />
+                  <span class="sr-only">{config.labels.table.add}</span>
+                </Button>
+              {:else}
+                {config.labels.table.actions}
+              {/if}
+            </th>
+          {/if}
+        </tr>
+      </thead>
+      <tbody>
+        {#if showEditor && session?.mode === "create"}
           <tr class={cn(defaultEditorRowClasses, editorRowClass)}>
-            {@render editorCells(session.fields, row)}
-            <td class={cn(defaultCellClasses, cellClass)}>
-              <!-- The row id rides along as a hidden input in the actions
-                   cell — it needs no column. -->
-              <input {...session.idAttributes} />
-              {@render editorActions(config.labels.table.save)}
+            {#if expanded}
+              <td
+                class={cn(
+                  defaultCellClasses,
+                  "sticky left-0 z-10 w-10 max-w-10 min-w-10 border-r bg-inherit p-0",
+                  cellClass,
+                )}
+              ></td>
+            {/if}
+            {@render editorCells(session.fields, undefined)}
+            <td
+              class={cn(defaultCellClasses, actionsCellClasses, cellClass)}
+              style={actionsStyle}
+            >
+              {@render editorActions(config.labels.table.add)}
             </td>
           </tr>
-        {:else}
-          <tr>
-            {@render displayCells(row)}
-            {#if hasActionsColumn}
-              <td class={cn(defaultCellClasses, cellClass)}>
-                {#if actions}
-                  {@render actions({ row, controller })}
-                {:else if editForm}
-                  <Button
-                    variant="secondary"
-                    type="button"
-                    class="text-sm"
-                    onclick={() => controller.startEdit(rowKey(row))}
-                  >
-                    {config.labels.table.edit}
-                  </Button>
-                {/if}
-              </td>
-            {/if}
-          </tr>
         {/if}
-      {/each}
-    </tbody>
-  </table>
+
+        {#each sortedRows as row (rowKey(row))}
+          {#if showEditor && session?.mode === "edit" && rowKey(row) === session.rowId}
+            <tr class={cn(defaultEditorRowClasses, editorRowClass)}>
+              {#if expanded}
+                {@render expanderCell(row)}
+              {/if}
+              {@render editorCells(session.fields, row)}
+              <td
+                class={cn(defaultCellClasses, actionsCellClasses, cellClass)}
+                style={actionsStyle}
+              >
+                <!-- The row id rides along as a hidden input in the actions
+                   cell — it needs no column. -->
+                <input {...session.idAttributes} />
+                {@render editorActions(config.labels.table.save)}
+              </td>
+            </tr>
+          {:else}
+            <tr class={cn(defaultRowClasses, rowClass)}>
+              {#if expanded}
+                {@render expanderCell(row)}
+              {/if}
+              {@render displayCells(row)}
+              {#if hasActionsColumn}
+                <td
+                  class={cn(defaultCellClasses, actionsCellClasses, cellClass)}
+                  style={actionsStyle}
+                >
+                  {#if actions}
+                    {@render actions({ row, controller })}
+                  {:else if editForm}
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      class={iconButtonClasses}
+                      title={config.labels.table.edit}
+                      onclick={() => controller.startEdit(rowKey(row))}
+                    >
+                      <PencilIcon class="size-4" aria-hidden="true" />
+                      <span class="sr-only">{config.labels.table.edit}</span>
+                    </Button>
+                  {/if}
+                </td>
+              {/if}
+            </tr>
+          {/if}
+          {@render expandedContent(row)}
+        {/each}
+
+        <!-- Filler row: absorbs leftover container height (the table is
+           h-full), so a sparse table still paints a full table region — and
+           hosts the empty state when there are no rows. Zero padding keeps
+           it invisible in auto-height containers. -->
+        <tr class={cn("h-full", defaultRowClasses)}>
+          <td
+            colspan={columnCount}
+            class={cn(
+              defaultCellClasses,
+              "border-b-0 p-0 align-middle whitespace-normal",
+              cellClass,
+            )}
+          >
+            {#if showEmpty}
+              <!-- Centered in the VISIBLE scroll viewport, not the scroll
+                   area — same sticky + measured-width mechanism as expanded
+                   content, so it holds the middle at any scroll position. -->
+              <div
+                class="sticky left-0 flex w-[100cqw] justify-center py-6"
+                style={scrollportWidth !== undefined
+                  ? `width: ${scrollportWidth}px`
+                  : undefined}
+              >
+                {#if empty}
+                  {@render empty()}
+                {:else}
+                  <span class="text-stone-500">
+                    {config.labels.table.empty}
+                  </span>
+                {/if}
+              </div>
+            {/if}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
   {#if withForm}
     <FormError />
@@ -414,7 +900,7 @@
     <Form
       form={session.instance}
       schema={editSchema}
-      class="block"
+      class="block h-full"
       onsuccess={() => controller.close()}
     >
       {@render tableMarkup(true)}
@@ -424,7 +910,7 @@
   <Form
     form={session.instance}
     schema={createSchema}
-    class="block"
+    class="block h-full"
     onsuccess={() => controller.close()}
   >
     {@render tableMarkup(true)}

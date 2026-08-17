@@ -25,6 +25,8 @@ describe("defaultUiConfig", () => {
         save: "Save",
         add: "Add",
         cancel: "Cancel",
+        empty: "No rows",
+        expand: "Expand row",
       },
     });
   });

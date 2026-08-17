@@ -7,11 +7,7 @@ interface Row {
   price: number;
 }
 
-const rows: Row[] = [
-  { id: "r1", name: "Comté", price: 89 },
-  { id: "r2", name: "Rioja", price: 129 },
-  { id: "r3", name: "Sourdough", price: 42 },
-];
+const rows: Row[] = [];
 
 const getRows = query(async () => rows);
 

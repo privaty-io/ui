@@ -17,6 +17,10 @@
     createForm?: Omit<RemoteForm<RemoteFormInput, unknown>, "for">;
     editForm?: RemoteForm<RemoteFormInput, unknown>;
     withCustomActions?: boolean;
+    withExpanded?: boolean;
+    withPinnedPrice?: boolean;
+    containerClass?: string;
+    density?: "comfortable" | "compact";
   }
 
   const {
@@ -25,8 +29,16 @@
     createForm,
     editForm,
     withCustomActions = false,
+    withExpanded = false,
+    withPinnedPrice = false,
+    containerClass,
+    density,
   }: Props = $props();
 </script>
+
+{#snippet rowDetails({ row }: { row: Item })}
+  <div>Details for {row.name}</div>
+{/snippet}
 
 {#snippet zapActions({ row }: { row: Item; controller: TableController })}
   <button type="button">Zap {row.name}</button>
@@ -39,6 +51,9 @@
   {createForm}
   {editForm}
   actions={withCustomActions ? zapActions : undefined}
+  expanded={withExpanded ? rowDetails : undefined}
+  {containerClass}
+  {density}
 >
   <Column key="name" label="Name" value={(row: Item) => row.name} sortable>
     {#snippet editor({ field, row })}
@@ -51,7 +66,14 @@
       />
     {/snippet}
   </Column>
-  <Column key="price" label="Price" value={(row: Item) => row.price} sortable>
+  <Column
+    key="price"
+    label="Price"
+    value={(row: Item) => row.price}
+    sortable
+    pin={withPinnedPrice ? "left" : undefined}
+    width={withPinnedPrice ? "8rem" : undefined}
+  >
     {#snippet cell({ value })}
       {value} kr
     {/snippet}

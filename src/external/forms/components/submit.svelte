@@ -3,6 +3,7 @@
   import Button from "#privaty/ui/components/button.svelte";
   import Spinner from "#privaty/ui/components/spinner.svelte";
   import { getUiConfig } from "#privaty/ui/config/context.js";
+  import type { Snippet } from "svelte";
   import { getFormContext } from "../context";
 
   interface Props {
@@ -12,6 +13,10 @@
     disabledUntil?: "dirty-and-valid" | "valid" | "none";
 
     class?: string;
+
+    /** Icon-style content rendered instead of the label text — the label
+     * stays as the accessible name (sr-only + tooltip). */
+    children?: Snippet;
   }
 
   const {
@@ -21,6 +26,8 @@
     disabledUntil = "dirty-and-valid",
 
     class: classes,
+
+    children,
   }: Props = $props();
 
   const { state } = getFormContext();
@@ -41,6 +48,7 @@
   type="submit"
   disabled={gateBlocked || state.isSubmitting}
   aria-busy={state.isSubmitting}
+  title={children ? resolvedLabel : undefined}
   class={cn("inline-flex items-center justify-center gap-2", classes)}
 >
   {#if state.isSubmitting}
@@ -51,6 +59,9 @@
       <!-- Keep the accessible name when only the spinner is visible. -->
       <span class="sr-only">{resolvedLabel}</span>
     {/if}
+  {:else if children}
+    {@render children()}
+    <span class="sr-only">{resolvedLabel}</span>
   {:else}
     {resolvedLabel}
   {/if}
