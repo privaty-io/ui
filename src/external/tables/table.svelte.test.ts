@@ -378,6 +378,23 @@ describe("layout", () => {
     );
   });
 
+  test("compact density reaches editor inputs through the core context", async () => {
+    const { editForm } = makeEditForm();
+    const controller = new TableController();
+    const screen = await render(Fixture, {
+      rows: items(),
+      editForm,
+      controller,
+      density: "compact",
+    });
+
+    controller.startEdit("r2");
+
+    const input = screen.getByLabelText("Name");
+    await expect.element(input).toHaveClass(/(?:^|\s)text-sm(?:\s|$)/);
+    await expect.element(input).toHaveClass(/(?:^|\s)py-0\.5(?:\s|$)/);
+  });
+
   test("pinned columns move to their edge with a sticky offset", async () => {
     const screen = await render(Fixture, {
       rows: items(),

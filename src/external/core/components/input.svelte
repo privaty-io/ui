@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { HTMLInputAttributes } from "svelte/elements";
   import { cn } from "../cn";
+  import { getUiDensity } from "../config/density";
   import FieldFrame from "./field-frame.svelte";
   import type { InputType, LabelStyle } from "./types";
 
@@ -43,8 +44,14 @@
   const uid = $props.id();
   const inputId = $derived(providedId ?? uid);
 
+  // Ambient density (e.g. from a compact table) sizes the control; the
+  // floating label style keeps its own vertical rhythm — the float needs
+  // the room.
+  const densityContext = getUiDensity();
+  const compact = $derived(densityContext.density === "compact");
+
   const inputClassDefaults = cn(
-    "w-full rounded px-2 py-1.5",
+    "w-full rounded px-2",
     "bg-stone-200/25 hover:bg-stone-200/75 focus:bg-stone-200/50 active:bg-stone-200/25 disabled:bg-stone-200/10",
     "border-stone-400 placeholder:text-stone-600 disabled:border-stone-400/50 disabled:text-stone-600",
     "dark:bg-stone-800/25 dark:hover:bg-stone-800/75 dark:focus:bg-stone-800/50 dark:active:bg-stone-800/25 dark:disabled:bg-stone-800/10",
@@ -73,6 +80,7 @@
       {id}
       class={cn(
         inputClassDefaults,
+        compact ? "py-0.5 text-sm" : "py-1.5",
         labelStyle === "floating" && "peer pt-4 pb-0.5",
         inputClass,
       )}

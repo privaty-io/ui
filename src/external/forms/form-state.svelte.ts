@@ -2,6 +2,21 @@ import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { FieldRegistration } from "./types/field";
 import type { ValidatableForm } from "./types/form";
 
+/**
+ * Client-side display state for a form: dirty/touched tracking and
+ * error-display gating.
+ *
+ * Kit v3 ships field.dirty(), field.touched() and form `submitted`, but none
+ * substitute for this class (evaluated against the next.23 source):
+ * - Kit's dirty() is an edited-once FLAG that never clears when a value is
+ *   edited back; isDirty here compares values, so edit-then-revert returns
+ *   to pristine — which drives Submit's dirty-and-valid gate and Reset's
+ *   disabled-while-pristine.
+ * - Kit's touched() flips on BLUR (and on set()); ours flips on input after
+ *   validation, so issues appear while typing in the flash-safe order.
+ * - Kit's `submitted` only flips once a submission actually starts;
+ *   submitAttempted must open the error gates on gate-BLOCKED attempts too.
+ */
 class FormState {
   private form: ValidatableForm;
 

@@ -5,6 +5,7 @@
   import { cn } from "#privaty/ui/cn.js";
   import Button from "#privaty/ui/components/button.svelte";
   import { getUiConfig } from "#privaty/ui/config/context.js";
+  import { setUiDensity } from "#privaty/ui/config/density.js";
   import {
     CheckIcon,
     ChevronRightIcon,
@@ -107,6 +108,15 @@
   }: Props = $props();
 
   const config = getUiConfig();
+
+  // Ambient density for everything rendered inside the table — core controls
+  // (inputs, selects) in editor snippets pick it up and size themselves to
+  // match compact rows, with no forms↔tables coupling.
+  setUiDensity({
+    get density() {
+      return density;
+    },
+  });
 
   const registrations = new SvelteMap<string, ColumnRegistration<never>>();
 
