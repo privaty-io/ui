@@ -43,3 +43,7 @@
 }
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@custom-variant theme-system (&:where([data-theme-preference=system], [data-theme-preference=system] *));
+@custom-variant theme-light (&:where([data-theme-preference=light], [data-theme-preference=light] *));
+@custom-variant theme-dark (&:where([data-theme-preference=dark], [data-theme-preference=dark] *));

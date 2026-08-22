@@ -9,8 +9,8 @@ export const themeServerHook: Handle = async ({ event, resolve }) => {
       html.replace(
         "%theme-preference%",
         themePreference === Theme.System
-          ? ""
-          : `data-theme="${themePreference}"`,
+          ? `data-theme-preference="${Theme.System}"`
+          : `data-theme="${themePreference}" data-theme-preference="${themePreference}"`,
       ),
   });
 };

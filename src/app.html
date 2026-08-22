@@ -4,23 +4,30 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="text-scale" content="scale" />
-    <script id="themeDetector" nonce="%sveltekit.nonce%">
+    <script nonce="%sveltekit.nonce%">
       if (!document.documentElement.dataset.theme) {
         const themePreferenceCookie = document.cookie
           .split("; ")
           .find((row) => row.startsWith("theme-preference="))
           ?.split("=")[1];
 
+        const themePreference =
+          themePreferenceCookie === "dark" || themePreferenceCookie === "light"
+            ? themePreferenceCookie
+            : "system";
+
         const darkThemePreferred =
-          themePreferenceCookie === "dark" ||
-          (themePreferenceCookie !== "light" &&
+          themePreference === "dark" ||
+          (themePreference === "system" &&
             window.matchMedia("(prefers-color-scheme: dark)").matches);
 
         document.documentElement.dataset.theme = darkThemePreferred
           ? "dark"
           : "light";
+        document.documentElement.dataset.themePreference = themePreference;
       }
-      document.getElementById("themeDetector").remove();
+
+      document.currentScript.remove();
     </script>
     %sveltekit.head%
   </head>

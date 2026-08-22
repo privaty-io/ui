@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Theme from "../theme/theme.svelte";
+  import ThemeButton from "../theme/theme-button.svelte";
 </script>
 
 <header class="sticky top-0 z-40 row-start-1 py-4">
@@ -8,7 +8,7 @@
   >
     <p class="col-start-1">Privaty/ui</p>
     <div class="col-start-3">
-      <Theme />
+      <ThemeButton />
     </div>
   </div>
 </header>
