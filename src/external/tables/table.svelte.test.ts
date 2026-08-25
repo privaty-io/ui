@@ -239,6 +239,50 @@ describe("editing", () => {
   });
 });
 
+describe("deleting", () => {
+  test("shows the Delete action only when a handler is attached", async () => {
+    const withoutDelete = await render(Fixture, { rows: items() });
+    await expect
+      .element(withoutDelete.getByRole("button", { name: "Delete" }).first())
+      .not.toBeInTheDocument();
+
+    const deleted: string[] = [];
+    const withDelete = await render(Fixture, {
+      rows: items(),
+      onDelete: (row) => {
+        deleted.push(row.id);
+      },
+    });
+
+    // The presence of the handler alone brings the actions column.
+    await expect.element(withDelete.getByText("Actions")).toBeInTheDocument();
+
+    await withDelete.getByRole("button", { name: "Delete" }).first().click();
+
+    expect(deleted).toEqual(["r2"]);
+  });
+
+  test("disables the row's button while the delete is in flight", async () => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    const screen = await render(Fixture, {
+      rows: items(),
+      onDelete: () => pending,
+    });
+
+    const button = screen.getByRole("button", { name: "Delete" }).first();
+    await button.click();
+
+    await expect.element(button).toBeDisabled();
+
+    release();
+    await expect.element(button).not.toBeDisabled();
+  });
+});
+
 describe("creating", () => {
   test("startCreate pins an empty editor row at the top", async () => {
     const { createForm } = makeCreateForm();

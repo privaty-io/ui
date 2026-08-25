@@ -5,7 +5,7 @@
   import { TableController } from "#privaty/ui-tables/table-controller.svelte.js";
   import Table from "#privaty/ui-tables/table.svelte";
   import Button from "#privaty/ui/components/button.svelte";
-  import { createRow, getRows, updateRow } from "./data.remote";
+  import { createRow, deleteRow, getRows, updateRow } from "./data.remote";
   import { createRowSchema, updateRowSchema } from "./schema";
 
   interface Item {
@@ -69,6 +69,7 @@
       createSchema={createRowSchema}
       editForm={updateRow}
       editSchema={updateRowSchema}
+      onDelete={(row) => deleteRow(row.id)}
       {density}
     >
       {#snippet expanded({ row })}

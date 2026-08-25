@@ -12,6 +12,7 @@
     PencilIcon,
     PlusIcon,
     RotateCcwIcon,
+    Trash2Icon,
     XIcon,
   } from "@lucide/svelte";
   import FormError from "#privaty/ui-forms/components/form-error.svelte";
@@ -67,6 +68,13 @@
     rowClass?: string;
     editorRowClass?: string;
 
+    /** Attach to show the default Delete action on display rows — the same
+     * presence rule as editForm/createForm. A Kit `command` fits naturally
+     * (no form element needed; refresh the rows query in its handler for
+     * single-flight updates). Handle errors inside — the table only tracks
+     * the in-flight state per row. */
+    onDelete?: (row: Row) => unknown;
+
     children: Snippet;
     /** Replaces the default actions cell on display rows. */
     actions?: Snippet<[{ row: Row; controller: TableController }]>;
@@ -100,6 +108,8 @@
     cellClass,
     rowClass,
     editorRowClass,
+
+    onDelete,
 
     children,
     actions,
@@ -138,8 +148,29 @@
   ] as unknown as ColumnRegistration<Row>[]);
 
   const hasActionsColumn = $derived(
-    editForm !== undefined || createForm !== undefined || actions !== undefined,
+    editForm !== undefined ||
+      createForm !== undefined ||
+      onDelete !== undefined ||
+      actions !== undefined,
   );
+
+  // In-flight deletes, keyed per row — guards double clicks and disables the
+  // row's button until the consumer's action settles.
+  const deleting = new SvelteSet<string | number>();
+
+  async function handleDelete(row: Row) {
+    if (!onDelete) return;
+
+    const key = rowKey(row);
+    if (deleting.has(key)) return;
+
+    deleting.add(key);
+    try {
+      await onDelete(row);
+    } finally {
+      deleting.delete(key);
+    }
+  }
 
   // Pinned columns are reordered to their edge — a sticky column in the
   // middle of the table would let its unpinned neighbors scroll beneath it.
@@ -841,17 +872,38 @@
                 >
                   {#if actions}
                     {@render actions({ row, controller })}
-                  {:else if editForm}
-                    <Button
-                      variant="secondary"
-                      type="button"
-                      class={iconButtonClasses}
-                      title={config.labels.table.edit}
-                      onclick={() => controller.startEdit(rowKey(row))}
-                    >
-                      <PencilIcon class="size-4" aria-hidden="true" />
-                      <span class="sr-only">{config.labels.table.edit}</span>
-                    </Button>
+                  {:else}
+                    <div class="flex gap-1">
+                      {#if editForm}
+                        <Button
+                          variant="secondary"
+                          type="button"
+                          class={iconButtonClasses}
+                          title={config.labels.table.edit}
+                          onclick={() => controller.startEdit(rowKey(row))}
+                        >
+                          <PencilIcon class="size-4" aria-hidden="true" />
+                          <span class="sr-only">
+                            {config.labels.table.edit}
+                          </span>
+                        </Button>
+                      {/if}
+                      {#if onDelete}
+                        <Button
+                          variant="secondary"
+                          type="button"
+                          class={iconButtonClasses}
+                          title={config.labels.table.delete}
+                          disabled={deleting.has(rowKey(row))}
+                          onclick={() => void handleDelete(row)}
+                        >
+                          <Trash2Icon class="size-4" aria-hidden="true" />
+                          <span class="sr-only">
+                            {config.labels.table.delete}
+                          </span>
+                        </Button>
+                      {/if}
+                    </div>
                   {/if}
                 </td>
               {/if}

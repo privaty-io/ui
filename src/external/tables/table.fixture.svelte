@@ -21,6 +21,7 @@
     withPinnedPrice?: boolean;
     containerClass?: string;
     density?: "comfortable" | "compact";
+    onDelete?: (row: Item) => unknown;
   }
 
   const {
@@ -33,6 +34,7 @@
     withPinnedPrice = false,
     containerClass,
     density,
+    onDelete,
   }: Props = $props();
 </script>
 
@@ -54,6 +56,7 @@
   expanded={withExpanded ? rowDetails : undefined}
   {containerClass}
   {density}
+  {onDelete}
 >
   <Column key="name" label="Name" value={(row: Item) => row.name} sortable>
     {#snippet editor({ field, row })}

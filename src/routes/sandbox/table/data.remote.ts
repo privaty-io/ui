@@ -1,4 +1,5 @@
-import { form, query } from "$app/server";
+import { command, form, query } from "$app/server";
+import * as v from "valibot";
 import { createRowSchema, updateRowSchema } from "./schema";
 
 interface Row {
@@ -29,4 +30,14 @@ const updateRow = form(updateRowSchema, async (data) => {
   return { updated: true };
 });
 
-export { createRow, getRows, updateRow };
+// Deletes fit Kit's `command` (imperative, no form element — a per-row
+// delete <form> could not nest inside the table's wrapping edit form);
+// refreshing the query in the handler rides the same single-flight update.
+const deleteRow = command(v.string(), async (id) => {
+  const index = rows.findIndex((candidate) => candidate.id === id);
+  if (index !== -1) rows.splice(index, 1);
+
+  void getRows().refresh();
+});
+
+export { createRow, deleteRow, getRows, updateRow };
