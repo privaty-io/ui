@@ -1,5 +1,6 @@
 import type {
   CheckboxField,
+  DateField,
   NumberField,
   SelectField,
   TextField,
@@ -19,7 +20,11 @@ type TableEditor =
  * form field to this type; the lie is safe for the same reason the slices
  * are: inputs only call the members their own field actually has.
  */
-type EditorField = TextField & NumberField & SelectField & CheckboxField;
+type EditorField = TextField &
+  NumberField &
+  SelectField &
+  CheckboxField &
+  DateField;
 
 type HiddenFieldAttributes = Omit<HTMLInputAttributes, "type"> & {
   name: string;

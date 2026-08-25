@@ -3,6 +3,7 @@
   import Reset from "#privaty/ui-forms/components/reset.svelte";
   import Submit from "#privaty/ui-forms/components/submit.svelte";
   import CheckboxInput from "#privaty/ui-forms/inputs/checkbox-input.svelte";
+  import DateInput from "#privaty/ui-forms/inputs/date-input.svelte";
   import Form from "#privaty/ui-forms/form.svelte";
   import NumberInput from "#privaty/ui-forms/inputs/number-input.svelte";
   import SelectInput from "#privaty/ui-forms/inputs/select-input.svelte";
@@ -29,6 +30,12 @@
       placeholder="Choose a category"
       required
     />
+    <DateInput
+      field={createItem.fields.availableFrom}
+      label="Available from"
+      type="month"
+      required
+    />
     <CheckboxInput field={createItem.fields.inStock} label="In stock" />
 
     <FormError />
@@ -45,7 +52,8 @@
   <ul class="flex flex-col gap-1">
     {#each await getItems() as item (item.id)}
       <li>
-        {item.name} ({item.category}{item.inStock ? ", in stock" : ""})
+        {item.name} ({item.category}{item.inStock ? ", in stock" : ""}, from
+        {item.availableFrom})
         {item.description ? ` — ${item.description}` : ""}
         {item.price ? ` — ${item.price}` : ""}
       </li>

@@ -43,6 +43,32 @@ interface TextField {
   set(value: string): void;
 }
 
+type DateFieldType = Extract<
+  InputType,
+  "date" | "datetime-local" | "month" | "time" | "week"
+>;
+
+type DateFieldAttributes = Omit<HTMLInputAttributes, "type"> & {
+  name: string;
+  type?: DateFieldType;
+};
+
+/**
+ * The slice of a SvelteKit remote form date-family field that DateInput
+ * needs. The whole family — date, month, week, time, datetime-local —
+ * carries ISO-style string values, so one slice covers all five. Same
+ * structural/method-syntax reasoning as TextField.
+ */
+interface DateField {
+  // Same tuple-union reasoning as TextField.as.
+  as(
+    ...args: [type: DateFieldType] | [type: DateFieldType, initialValue: string]
+  ): DateFieldAttributes;
+  issues(): readonly StandardSchemaV1.Issue[] | undefined;
+  value(): string | undefined;
+  set(value: string): void;
+}
+
 type NumberFieldAttributes = Omit<HTMLInputAttributes, "type"> & {
   name: string;
   type?: "number";
@@ -110,6 +136,9 @@ interface CheckboxField {
 export type {
   CheckboxField,
   CheckboxFieldAttributes,
+  DateField,
+  DateFieldAttributes,
+  DateFieldType,
   FieldRegistration,
   NumberField,
   NumberFieldAttributes,

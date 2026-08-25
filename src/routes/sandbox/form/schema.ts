@@ -14,6 +14,13 @@ const createItemSchema = v.object({
     v.optional(v.string(), ""),
     v.picklist(categories, "required"),
   ),
+  // Month inputs submit "YYYY-MM" strings; an empty one submits "", which
+  // nonEmpty turns into this field's own required code.
+  availableFrom: v.pipe(
+    v.string(),
+    v.nonEmpty("required"),
+    v.regex(/^\d{4}-\d{2}$/, "invalid-month"),
+  ),
   // Unchecked checkboxes are absent from the submitted data entirely, so the
   // schema must supply the false. (The canonical checkbox recipe.)
   inStock: v.optional(v.boolean(), false),

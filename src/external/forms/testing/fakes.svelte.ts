@@ -1,6 +1,8 @@
 import { createAttachmentKey } from "svelte/attachments";
 import type {
   CheckboxField,
+  DateField,
+  DateFieldType,
   NumberField,
   SelectField,
   TextField,
@@ -59,6 +61,39 @@ function fakeTextField(
 
   const field: TextField = {
     as: (type: TextFieldType, initialValue?: string) => ({
+      name,
+      type,
+      value: initialValue,
+    }),
+    issues: () => issues,
+    value: () => value,
+    set: (next) => {
+      value = next;
+    },
+  };
+
+  return {
+    field,
+    edit: (next: string) => {
+      value = next;
+    },
+    setIssues: (next: readonly { message: string }[] | undefined) => {
+      issues = next;
+    },
+  };
+}
+
+function fakeDateField(
+  name: string,
+  options: { issues?: readonly { message: string }[] } = {},
+) {
+  let value = $state<string | undefined>(undefined);
+  let issues = $state<readonly { message: string }[] | undefined>(
+    options.issues,
+  );
+
+  const field: DateField = {
+    as: (type: DateFieldType, initialValue?: string) => ({
       name,
       type,
       value: initialValue,
@@ -285,6 +320,7 @@ function fakeRemoteForm(options: FakeRemoteFormOptions = {}) {
 
 export {
   fakeCheckboxField,
+  fakeDateField,
   fakeForm,
   fakeNumberField,
   fakeRemoteForm,
