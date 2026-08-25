@@ -8,6 +8,7 @@
   import NumberInput from "#privaty/ui-forms/inputs/number-input.svelte";
   import SelectInput from "#privaty/ui-forms/inputs/select-input.svelte";
   import TextInput from "#privaty/ui-forms/inputs/text-input.svelte";
+  import TextareaInput from "#privaty/ui-forms/inputs/textarea-input.svelte";
   import { createItem, getItems } from "./data.remote";
   import { categories, createItemSchema } from "./schema";
 </script>
@@ -17,10 +18,10 @@
 
   <Form form={createItem} schema={createItemSchema}>
     <TextInput field={createItem.fields.name} label="Name" required />
-    <TextInput
+    <TextareaInput
       field={createItem.fields.description}
       label="Description"
-      labelStyle="floating"
+      rows={3}
     />
     <NumberInput field={createItem.fields.price} label="Price" min={0} />
     <SelectInput

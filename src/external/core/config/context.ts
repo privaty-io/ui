@@ -15,6 +15,7 @@ const defaultUiConfig: UiConfig = {
       actions: "Actions",
 
       edit: "Edit",
+      delete: "Delete",
       save: "Save",
       add: "Add",
       cancel: "Cancel",

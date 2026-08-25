@@ -14,6 +14,7 @@ interface UiTableLabels {
   actions: string; // actions column header (sr-only when the Add button shows)
 
   edit: string; // default Edit button on display rows
+  delete: string; // default Delete button on display rows
   save: string; // submit label while editing a row
   add: string; // submit label on the create row + the header Add button
   cancel: string; // leave the active editor

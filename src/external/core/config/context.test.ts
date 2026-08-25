@@ -22,6 +22,7 @@ describe("defaultUiConfig", () => {
       table: {
         actions: "Actions",
         edit: "Edit",
+        delete: "Delete",
         save: "Save",
         add: "Add",
         cancel: "Cancel",
