@@ -14,6 +14,9 @@
     options: readonly (string | SelectOption)[];
     /** Rendered as a disabled empty option, shown until a value is chosen. */
     placeholder?: string;
+    /** Marks the matching option `selected`, so a native form reset returns
+     * to it instead of the browser's first-option fallback. */
+    defaultValue?: string;
 
     errors?: string[];
     marker?: string;
@@ -31,6 +34,7 @@
 
     options,
     placeholder,
+    defaultValue,
 
     errors = [],
     marker,
@@ -93,10 +97,16 @@
       aria-describedby={errorsId}
     >
       {#if placeholder}
-        <option value="" disabled>{placeholder}</option>
+        <option value="" disabled selected={defaultValue === ""}>
+          {placeholder}
+        </option>
       {/if}
       {#each normalizedOptions as option (option.value)}
-        <option value={option.value} disabled={option.disabled}>
+        <option
+          value={option.value}
+          disabled={option.disabled}
+          selected={option.value === defaultValue}
+        >
           {option.label}
         </option>
       {/each}

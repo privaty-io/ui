@@ -15,6 +15,7 @@ describe("defaultUiConfig", () => {
     expect(defaultUiConfig.labels).toEqual({
       form: {
         optional: "(optional)",
+        required: "*",
         generalError: "Something went wrong. Please try again.",
         submit: "Submit",
         reset: "Reset",
@@ -89,6 +90,7 @@ describe("mergeUiConfig", () => {
     expect(merged.labels).toEqual({
       form: {
         optional: "(base)",
+        required: "*",
         generalError: "from override",
         submit: "Submit",
         reset: "Reset",

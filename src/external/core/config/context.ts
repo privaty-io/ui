@@ -6,6 +6,7 @@ const defaultUiConfig: UiConfig = {
   labels: {
     form: {
       optional: "(optional)",
+      required: "*",
       generalError: "Something went wrong. Please try again.",
 
       submit: "Submit",

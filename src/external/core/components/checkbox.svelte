@@ -72,7 +72,11 @@
   </div>
 
   {#if errors.length}
-    <ul id={errorsId} class={cn(errorClassDefaults, errorClass)}>
+    <ul
+      id={errorsId}
+      aria-live="polite"
+      class={cn(errorClassDefaults, errorClass)}
+    >
       {#each errors as error, index (index)}
         <li>{error}</li>
       {/each}
