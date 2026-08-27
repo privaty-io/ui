@@ -2,6 +2,10 @@
   lang="ts"
   generics="Row, CreateInput extends RemoteFormInput = RemoteFormInput, CreateOutput = unknown, EditInput extends RemoteFormInput = RemoteFormInput, EditOutput = unknown"
 >
+  import FormError from "#privaty/ui-forms/components/form-error.svelte";
+  import Reset from "#privaty/ui-forms/components/reset.svelte";
+  import Submit from "#privaty/ui-forms/components/submit.svelte";
+  import Form from "#privaty/ui-forms/form.svelte";
   import { cn } from "#privaty/ui/cn.js";
   import Button from "#privaty/ui/components/button.svelte";
   import { getUiConfig } from "#privaty/ui/config/context.js";
@@ -10,6 +14,7 @@
     setUiDensity,
     type UiDensity,
   } from "#privaty/ui/config/density.js";
+  import type { RemoteForm, RemoteFormInput } from "$app/server";
   import {
     CheckIcon,
     ChevronRightIcon,
@@ -19,15 +24,11 @@
     Trash2Icon,
     XIcon,
   } from "@lucide/svelte";
-  import FormError from "#privaty/ui-forms/components/form-error.svelte";
-  import Reset from "#privaty/ui-forms/components/reset.svelte";
-  import Submit from "#privaty/ui-forms/components/submit.svelte";
-  import Form from "#privaty/ui-forms/form.svelte";
-  import type { RemoteForm, RemoteFormInput } from "$app/server";
   import type { StandardSchemaV1 } from "@standard-schema/spec";
   import { onDestroy, onMount, type Snippet } from "svelte";
   import { SvelteMap, SvelteSet } from "svelte/reactivity";
   import { setTableContext } from "./context";
+  import { tableTheme } from "./theme";
   import { TableController } from "./table-controller.svelte";
   import type {
     ColumnRegistration,
@@ -300,6 +301,7 @@
   // which outer-box observers never see). 100cqw can't be trusted for this:
   // Chromium doesn't subtract scrollbars from container-query units.
   let scrollportWidth = $state<number>();
+  let tableWidth = $state<number>();
 
   // Editor swaps remount the whole markup (the Form wrapper is keyed) —
   // the scroll position is carried across remounts so opening or closing an
@@ -328,6 +330,7 @@
 
     const measure = () => {
       scrollportWidth = wrapper.clientWidth;
+      tableWidth = table?.offsetWidth;
     };
 
     const observer = new ResizeObserver(measure);
@@ -386,18 +389,7 @@
   // the scrollbar". `[scrollbar-color:auto]!` re-enables ::-webkit-scrollbar
   // styling, which Chromium disables whenever a scrollbar-color is set
   // (the app sets one globally, hence the importance).
-  const scrollbarClasses = cn(
-    "[scrollbar-color:auto]!",
-    "[&::-webkit-scrollbar]:size-2.5",
-    "[&::-webkit-scrollbar-track]:bg-stone-100 dark:[&::-webkit-scrollbar-track]:bg-stone-900",
-    "[&::-webkit-scrollbar-track]:border-stone-300 dark:[&::-webkit-scrollbar-track]:border-stone-700",
-    "[&::-webkit-scrollbar-track:vertical]:border-l",
-    "[&::-webkit-scrollbar-track:horizontal]:border-t",
-    "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-padding",
-    "[&::-webkit-scrollbar-thumb]:bg-stone-400 dark:[&::-webkit-scrollbar-thumb]:bg-stone-600",
-    "[&::-webkit-scrollbar-thumb:hover]:bg-stone-500 dark:[&::-webkit-scrollbar-thumb:hover]:bg-stone-500",
-    "[&::-webkit-scrollbar-corner]:bg-stone-100 dark:[&::-webkit-scrollbar-corner]:bg-stone-900",
-  );
+  const scrollbarClasses = tableTheme.scrollbar;
 
   // The remote form's typed fields proxy is indexed by runtime column keys,
   // which its compile-time shape cannot express — the single cast site.
@@ -604,28 +596,28 @@
   // Editor cells shed vertical padding so the input's own height (38px)
   // lands editor rows at display-row height instead of stretching them.
   const editorCellPadding = $derived(compact ? "py-0" : "py-0.5");
-  // Width-less columns auto-size to their display content, which can leave
-  // an input a few digits of room — editing needs usable space. Declared-
-  // width columns are unaffected (their inline style wins).
-  const editorCellMinWidth = "min-w-32";
+  const editorCellMinWidth = tableTheme.editorCellMinWidth;
   const iconButtonClasses = $derived(compact ? "p-1" : "p-1.5");
-  const expanderButtonClasses = $derived(compact ? "p-1" : "p-2");
+  const expanderButtonClasses = $derived(
+    compact
+      ? tableTheme.expanderButton.compact
+      : tableTheme.expanderButton.comfortable,
+  );
 
   const defaultHeaderCellClasses = $derived(
     cn(
-      "sticky top-0 z-20 border-b border-stone-300 bg-stone-100 whitespace-nowrap dark:border-stone-700 dark:bg-stone-900",
+      "sticky top-0 z-20 border-b whitespace-nowrap",
+      tableTheme.border,
+      tableTheme.headerBackground,
       cellPadding,
     ),
   );
   const defaultCellClasses = $derived(
-    cn(
-      "border-b border-stone-300 whitespace-nowrap dark:border-stone-700",
-      cellPadding,
-    ),
+    cn("border-b whitespace-nowrap", tableTheme.border, cellPadding),
   );
   // Explicit row backgrounds let pinned cells (bg-inherit) mask what scrolls
   // beneath them.
-  const defaultRowClasses = "bg-white dark:bg-stone-950";
+  const defaultRowClasses = tableTheme.rowBackground;
   // align-middle: editor and display cells share row heights now, so
   // non-editable content centers alongside the inputs.
   const defaultEditorRowClasses = "bg-stone-100 align-middle dark:bg-stone-900";
@@ -705,10 +697,10 @@
 {#snippet editorActions(submitLabel: string)}
   <div class="flex gap-1">
     <Submit label={submitLabel} class={iconButtonClasses}>
-      <CheckIcon class="size-4" aria-hidden="true" />
+      <CheckIcon class={tableTheme.icon} aria-hidden="true" />
     </Submit>
     <Reset class={iconButtonClasses}>
-      <RotateCcwIcon class="size-4" aria-hidden="true" />
+      <RotateCcwIcon class={tableTheme.icon} aria-hidden="true" />
     </Reset>
     <Button
       variant="secondary"
@@ -717,7 +709,7 @@
       title={config.labels.table.cancel}
       onclick={() => controller.close()}
     >
-      <XIcon class="size-4" aria-hidden="true" />
+      <XIcon class={tableTheme.icon} aria-hidden="true" />
       <span class="sr-only">{config.labels.table.cancel}</span>
     </Button>
   </div>
@@ -746,7 +738,8 @@
     >
       <ChevronRightIcon
         class={cn(
-          "size-4 transition-transform",
+          "transition-transform",
+          tableTheme.icon,
           expandedRows.has(rowKey(row)) && "rotate-90",
         )}
         aria-hidden="true"
@@ -787,10 +780,15 @@
 {#snippet tableMarkup(withForm: boolean)}
   <!-- @container: the 100cqw fallback for expanded-row content before the
        scrollport measurement lands. -->
+  <!-- flex-col + the row background on the WRAPPER paint the fill region
+       below sparse rows without any percentage heights inside the table —
+       percentage table-row heights resolve differently across surrounding
+       layouts (the phantom header-height overflow bug). -->
   <div
     {@attach observeScrollport}
     class={cn(
-      "@container h-full border border-stone-300 dark:border-stone-700",
+      "@container flex h-full flex-col",
+      tableTheme.frame,
       settled ? "overflow-auto" : "overflow-hidden",
       styledScrollbars && scrollbarClasses,
       classes,
@@ -798,8 +796,8 @@
   >
     <table
       class={cn(
-        "h-full min-w-full border-separate border-spacing-0 text-left",
-        compact && "text-sm",
+        "min-w-full shrink-0 border-separate border-spacing-0 text-left",
+        compact ? tableTheme.type.compact : tableTheme.type.comfortable,
         tableClass,
       )}
     >
@@ -874,7 +872,7 @@
                   disabled={showEditor && session?.mode === "create"}
                   onclick={() => controller.startCreate()}
                 >
-                  <PlusIcon class="size-4" aria-hidden="true" />
+                  <PlusIcon class={tableTheme.icon} aria-hidden="true" />
                   <span class="sr-only">{config.labels.table.add}</span>
                 </Button>
               {:else}
@@ -946,7 +944,10 @@
                           title={config.labels.table.edit}
                           onclick={() => controller.startEdit(rowKey(row))}
                         >
-                          <PencilIcon class="size-4" aria-hidden="true" />
+                          <PencilIcon
+                            class={tableTheme.icon}
+                            aria-hidden="true"
+                          />
                           <span class="sr-only">
                             {config.labels.table.edit}
                           </span>
@@ -961,7 +962,10 @@
                           disabled={deleting.has(rowKey(row))}
                           onclick={() => void handleDelete(row)}
                         >
-                          <Trash2Icon class="size-4" aria-hidden="true" />
+                          <Trash2Icon
+                            class={tableTheme.icon}
+                            aria-hidden="true"
+                          />
                           <span class="sr-only">
                             {config.labels.table.delete}
                           </span>
@@ -975,43 +979,34 @@
           {/if}
           {@render expandedContent(row)}
         {/each}
-
-        <!-- Filler row: absorbs leftover container height (the table is
-           h-full), so a sparse table still paints a full table region — and
-           hosts the empty state when there are no rows. Zero padding keeps
-           it invisible in auto-height containers. -->
-        <tr class={cn("h-full", defaultRowClasses, rowClass)}>
-          <td
-            colspan={columnCount}
-            class={cn(
-              defaultCellClasses,
-              "border-b-0 p-0 align-middle whitespace-normal",
-              cellClass,
-            )}
-          >
-            {#if showEmpty}
-              <!-- Centered in the VISIBLE scroll viewport, not the scroll
-                   area — same sticky + measured-width mechanism as expanded
-                   content, so it holds the middle at any scroll position. -->
-              <div
-                class="sticky left-0 flex w-[100cqw] justify-center py-6"
-                style={scrollportWidth !== undefined
-                  ? `width: ${scrollportWidth}px`
-                  : undefined}
-              >
-                {#if empty}
-                  {@render empty()}
-                {:else}
-                  <span class="text-stone-500">
-                    {config.labels.table.empty}
-                  </span>
-                {/if}
-              </div>
-            {/if}
-          </td>
-        </tr>
       </tbody>
     </table>
+
+    <!-- Grows into the leftover container height; the wrapper's background
+         paints it. Sized to the TABLE's width: sticky children cannot leave
+         their parent, so a merely scrollport-wide filler would drag the
+         empty state along the x scroll. The inner layer then sticks to the
+         VISIBLE viewport (same mechanism as expanded content). -->
+    <div
+      class="min-w-full grow"
+      style={tableWidth !== undefined ? `width: ${tableWidth}px` : undefined}
+    >
+      {#if showEmpty}
+        <div
+          class="sticky left-0 flex h-full w-[100cqw] items-center justify-center py-6"
+          style={scrollportWidth !== undefined
+            ? `width: ${scrollportWidth}px`
+            : undefined}
+        >
+          {#if empty}
+            {@render empty()}
+          {:else}
+            <span class={tableTheme.emptyText}>{config.labels.table.empty}</span
+            >
+          {/if}
+        </div>
+      {/if}
+    </div>
   </div>
 
   {#if withForm}

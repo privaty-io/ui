@@ -89,3 +89,62 @@ describe("scroll preservation", () => {
     await expect.poll(() => wrapper().scrollLeft).toBe(60);
   });
 });
+
+describe("vertical overflow", () => {
+  test("a height-constrained table has no phantom vertical overflow", async () => {
+    // Regression for the header-height phantom scroll: the fill mechanism
+    // must not create scrollable height when the content fits.
+    const empty = await render(Fixture, {
+      rows: [],
+      containerClass: "w-64 h-40",
+    });
+    const emptyWrapper = empty.container.querySelector("div") as HTMLElement;
+
+    const filled = await render(Fixture, {
+      rows: [
+        { id: "r2", name: "Rioja", price: 129 },
+        { id: "r1", name: "Comté", price: 89 },
+      ],
+      withPinnedPrice: true,
+      containerClass: "w-40 h-40",
+    });
+    const filledWrapper = filled.container.querySelector("div") as HTMLElement;
+
+    await expect
+      .poll(() => emptyWrapper.scrollHeight - emptyWrapper.clientHeight)
+      .toBe(0);
+    await expect
+      .poll(() => filledWrapper.scrollHeight - filledWrapper.clientHeight)
+      .toBe(0);
+
+    // The fill still paints: the filler region grows below sparse rows.
+    const filler = filled.container.querySelector("div.grow") as HTMLElement;
+    expect(filler.getBoundingClientRect().height).toBeGreaterThan(10);
+  });
+});
+
+describe("empty state", () => {
+  test("stays centered in the viewport under horizontal scroll", async () => {
+    // Wide pinned column + narrow container: the header alone forces
+    // horizontal overflow while the table has no rows.
+    const screen = await render(Fixture, {
+      rows: [],
+      withPinnedPrice: true,
+      containerClass: "w-40 h-40",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    await expect
+      .poll(() => wrapper.scrollWidth > wrapper.clientWidth)
+      .toBe(true);
+
+    const message = () =>
+      screen.container.querySelector("div.grow > div") as HTMLElement;
+    const before = message().getBoundingClientRect().left;
+
+    wrapper.scrollLeft = 40;
+    await expect
+      .poll(() => Math.abs(message().getBoundingClientRect().left - before))
+      .toBeLessThan(1);
+  });
+});
