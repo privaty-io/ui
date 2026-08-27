@@ -103,6 +103,41 @@ describe("sorting", () => {
       .toEqual(["Rioja", "Comté", "Sourdough"]);
   });
 
+  test("sorts Date columns chronologically with nulls last both ways", async () => {
+    const rows = [
+      { id: "r2", name: "Rioja", price: 129, added: "2026-03-01" },
+      { id: "r1", name: "Comté", price: 89 },
+      { id: "r3", name: "Sourdough", price: 42, added: "2026-01-15" },
+    ];
+    const screen = await render(Fixture, { rows, withDateColumn: true });
+    const header = screen.getByRole("button", { name: "Added" });
+
+    await header.click();
+    await expect
+      .poll(() => firstCells(screen.container))
+      .toEqual(["Sourdough", "Rioja", "Comté"]);
+
+    await header.click();
+    // Descending flips the dates but nulls STAY last.
+    await expect
+      .poll(() => firstCells(screen.container))
+      .toEqual(["Rioja", "Sourdough", "Comté"]);
+  });
+
+  test("uses a custom compare when the column declares one", async () => {
+    const screen = await render(Fixture, {
+      rows: items(),
+      withCustomCompare: true,
+    });
+
+    // The Name column's custom compare sorts by PRICE.
+    await screen.getByRole("button", { name: "Name" }).click();
+
+    await expect
+      .poll(() => firstCells(screen.container))
+      .toEqual(["Sourdough", "Comté", "Rioja"]);
+  });
+
   test("sorts numeric columns numerically", async () => {
     const screen = await render(Fixture, { rows: items() });
 
@@ -224,6 +259,114 @@ describe("editing", () => {
     expect(name.field.value()).toBe("Comté");
   });
 
+  test("a save resolving after an editor switch closes nothing else", async () => {
+    let release!: (outcome: boolean) => void;
+    const pending = new Promise<boolean>((resolve) => {
+      release = resolve;
+    });
+    const name = fakeTextField("name");
+    const id = fakeTextField("id");
+    const keyed = fakeKeyedRemoteForm(() =>
+      fakeEditableRemoteForm({ id, name }, { onSubmit: () => pending }),
+    );
+    const editForm = keyed.form as unknown as NonNullable<
+      FixtureProps["editForm"]
+    >;
+    const controller = new TableController();
+    const screen = await render(Fixture, {
+      rows: items(),
+      editForm,
+      controller,
+    });
+
+    controller.startEdit("r2");
+    name.edit("Ribera");
+    await screen.getByRole("button", { name: "Save" }).click();
+
+    // Switch while the save is in flight...
+    controller.startEdit("r1");
+    await expect.element(screen.getByLabelText("Name")).toHaveValue("Comté");
+
+    // ...then let the stale save succeed: the CURRENT editor must survive.
+    release(true);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(controller.editor).toEqual({ type: "edit", rowId: "r1" });
+    await expect.element(screen.getByLabelText("Name")).toBeInTheDocument();
+  });
+
+  test("a failed save keeps the editor open and shows the general error", async () => {
+    const name = fakeTextField("name");
+    const id = fakeTextField("id");
+    const keyed = fakeKeyedRemoteForm(() =>
+      fakeEditableRemoteForm(
+        { id, name },
+        {
+          onSubmit: () => {
+            throw new Error("boom");
+          },
+        },
+      ),
+    );
+    const editForm = keyed.form as unknown as NonNullable<
+      FixtureProps["editForm"]
+    >;
+    const controller = new TableController();
+    const screen = await render(Fixture, {
+      rows: items(),
+      editForm,
+      controller,
+    });
+
+    controller.startEdit("r2");
+    name.edit("Ribera");
+    await screen.getByRole("button", { name: "Save" }).click();
+
+    await expect
+      .element(screen.getByText("Something went wrong. Please try again."))
+      .toBeInTheDocument();
+    expect(controller.editor).toEqual({ type: "edit", rowId: "r2" });
+  });
+
+  test("closes silently when the edited row disappears", async () => {
+    const { editForm } = makeEditForm();
+    const controller = new TableController();
+    const screen = await render(Fixture, {
+      rows: items(),
+      editForm,
+      controller,
+    });
+
+    controller.startEdit("r2");
+    await expect.element(screen.getByLabelText("Name")).toBeInTheDocument();
+
+    await screen.rerender({
+      rows: items().filter((row) => row.id !== "r2"),
+    });
+
+    await expect.element(screen.getByLabelText("Name")).not.toBeInTheDocument();
+    expect(controller.editor).toEqual({ type: "idle" });
+  });
+
+  test("a table can detach and a new one re-attach the same controller", async () => {
+    const { editForm } = makeEditForm();
+    const controller = new TableController();
+    const first = await render(Fixture, {
+      rows: items(),
+      editForm,
+      controller,
+    });
+    first.unmount();
+
+    const second = await render(Fixture, {
+      rows: items(),
+      editForm,
+      controller,
+    });
+    controller.startEdit("r2");
+
+    await expect.element(second.getByLabelText("Name")).toBeInTheDocument();
+  });
+
   test("non-editable columns show their value as text while editing", async () => {
     const { editForm } = makeEditForm();
     const controller = new TableController();
@@ -249,7 +392,7 @@ describe("deleting", () => {
     const deleted: string[] = [];
     const withDelete = await render(Fixture, {
       rows: items(),
-      onDelete: (row) => {
+      ondelete: (row) => {
         deleted.push(row.id);
       },
     });
@@ -262,6 +405,24 @@ describe("deleting", () => {
     expect(deleted).toEqual(["r2"]);
   });
 
+  test("re-enables the button after a rejected delete", async () => {
+    let reject!: (reason: unknown) => void;
+    const pending = new Promise<void>((_, rej) => {
+      reject = rej;
+    });
+    const screen = await render(Fixture, {
+      rows: items(),
+      ondelete: () => pending,
+    });
+
+    const button = screen.getByRole("button", { name: "Delete" }).first();
+    await button.click();
+    await expect.element(button).toBeDisabled();
+
+    reject(new Error("denied"));
+    await expect.element(button).not.toBeDisabled();
+  });
+
   test("disables the row's button while the delete is in flight", async () => {
     let release!: () => void;
     const pending = new Promise<void>((resolve) => {
@@ -270,7 +431,7 @@ describe("deleting", () => {
 
     const screen = await render(Fixture, {
       rows: items(),
-      onDelete: () => pending,
+      ondelete: () => pending,
     });
 
     const button = screen.getByRole("button", { name: "Delete" }).first();
@@ -331,6 +492,24 @@ describe("creating", () => {
 });
 
 describe("expansion", () => {
+  test("expanded content survives a re-sort", async () => {
+    const screen = await render(Fixture, {
+      rows: items(),
+      withExpanded: true,
+    });
+
+    await screen.getByRole("button", { name: "Expand row" }).first().click();
+    await expect
+      .element(screen.getByText("Details for Rioja"))
+      .toBeInTheDocument();
+
+    await screen.getByRole("button", { name: "Name" }).click();
+
+    await expect
+      .element(screen.getByText("Details for Rioja"))
+      .toBeInTheDocument();
+  });
+
   test("renders an expander per row and toggles its content", async () => {
     const screen = await render(Fixture, {
       rows: items(),
@@ -462,6 +641,21 @@ describe("layout", () => {
 
     // The pinned/scrolling boundary carries the only column border.
     expect(cell?.className).toMatch(/(?:^|\s)border-r(?:\s|$)/);
+  });
+
+  test("right-pinned columns move before the right edge with a sticky offset", async () => {
+    const screen = await render(Fixture, {
+      rows: items(),
+      withPinnedPriceRight: true,
+    });
+
+    // Price is declared second of two but pinned right — it becomes the
+    // LAST column, sticky against the right edge.
+    const headers = [...screen.container.querySelectorAll("thead th")];
+    const last = headers.at(-1);
+    expect(last?.textContent).toContain("Price");
+    expect(last?.getAttribute("style")).toContain("right: 0px");
+    expect(last?.className).toMatch(/(?:^|\s)z-30(?:\s|$)/);
   });
 
   test("width-constrained cells truncate and expose the text as a tooltip", async () => {

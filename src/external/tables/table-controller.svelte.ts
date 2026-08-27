@@ -17,40 +17,96 @@ class TableController {
   // editor state, so nothing breaks, but no reseeding happens either.
   #prepare: ((editor: TableEditor) => boolean) | undefined;
 
+  // Runs synchronously before ANY editor transition flips state — while the
+  // outgoing DOM is still live. The Table uses it to capture scroll position
+  // (teardown hooks fire too late: attachment cleanup sees a disconnected
+  // element).
+  #onTransition: (() => void) | undefined;
+
+  // The editor key the attached Table last successfully prepared for. The
+  // draft-preserving no-op on re-triggering the OPEN editor only applies
+  // when that editor was actually prepared — otherwise a stale state (e.g.
+  // flipped before the Table attached) would deadlock its own re-trigger.
+  #preparedKey: string | undefined;
+
   get editor(): TableEditor {
     return this.#editor;
   }
 
-  startCreate(): void {
-    if (this.#editor.type === "create") return;
-    if (this.#prepare && !this.#prepare({ type: "create" })) return;
+  #keyFor(editor: TableEditor): string | undefined {
+    if (editor.type === "create") return "create";
+    if (editor.type === "edit") return `edit:${String(editor.rowId)}`;
+    return undefined;
+  }
 
-    this.#editor = { type: "create" };
+  #start(editor: TableEditor): void {
+    const key = this.#keyFor(editor);
+
+    // Re-triggering the open, prepared editor must not discard its draft.
+    if (key !== undefined && key === this.#preparedKey) return;
+
+    this.#onTransition?.();
+
+    if (this.#prepare) {
+      if (!this.#prepare(editor)) return;
+      this.#preparedKey = key;
+    }
+
+    this.#editor = editor;
+  }
+
+  startCreate(): void {
+    this.#start({ type: "create" });
   }
 
   startEdit(rowId: RowKey): void {
-    // Re-triggering the open editor must not discard its own draft.
-    if (this.#editor.type === "edit" && this.#editor.rowId === rowId) return;
-    if (this.#prepare && !this.#prepare({ type: "edit", rowId })) return;
-
-    this.#editor = { type: "edit", rowId };
+    this.#start({ type: "edit", rowId });
   }
 
   close(): void {
+    if (this.#editor.type !== "idle") this.#onTransition?.();
+    this.#preparedKey = undefined;
     this.#editor = { type: "idle" };
   }
 
+  /**
+   * Internal — called by the attached Table once its columns have
+   * registered. Honours an editor state that was set before the Table could
+   * prepare it (a pre-attach trigger): prepares it now, or closes if the
+   * table cannot honour it.
+   */
+  resync(): void {
+    if (this.#editor.type === "idle" || !this.#prepare) return;
+
+    const key = this.#keyFor(this.#editor);
+    if (key === this.#preparedKey) return;
+
+    this.#onTransition?.();
+
+    if (this.#prepare(this.#editor)) {
+      this.#preparedKey = key;
+    } else {
+      this.close();
+    }
+  }
+
   /** Internal — called by the Table. Not part of the consumer API. */
-  attach(prepare: (editor: TableEditor) => boolean): () => void {
+  attach(
+    prepare: (editor: TableEditor) => boolean,
+    onTransition?: () => void,
+  ): () => void {
     if (this.#prepare)
       throw new Error(
         "TableController: a controller can only drive one <Table>",
       );
 
     this.#prepare = prepare;
+    this.#onTransition = onTransition;
 
     return () => {
       this.#prepare = undefined;
+      this.#onTransition = undefined;
+      this.#preparedKey = undefined;
     };
   }
 }

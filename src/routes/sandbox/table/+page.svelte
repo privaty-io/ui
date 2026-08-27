@@ -69,7 +69,7 @@
       createSchema={createRowSchema}
       editForm={updateRow}
       editSchema={updateRowSchema}
-      onDelete={(row) => deleteRow(row.id)}
+      ondelete={(row) => deleteRow(row.id)}
       {density}
     >
       {#snippet expanded({ row })}

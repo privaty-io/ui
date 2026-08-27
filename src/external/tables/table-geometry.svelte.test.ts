@@ -1,7 +1,14 @@
 import { describe, expect, test } from "vitest";
 import { render } from "vitest-browser-svelte";
 
+import type { ComponentProps } from "svelte";
+import { fakeTextField } from "#privaty/ui-forms/testing/fakes.svelte.js";
 import Fixture from "./table.fixture.svelte";
+import { TableController } from "./table-controller.svelte";
+import {
+  fakeEditableRemoteForm,
+  fakeKeyedRemoteForm,
+} from "./testing/fakes.svelte";
 import "./testing/tailwind.css";
 
 describe("pinned geometry", () => {
@@ -41,5 +48,44 @@ describe("pinned geometry", () => {
     // be measuring an unstyled table.
     const expanderCell = screen.container.querySelector("tbody td");
     expect(expanderCell?.getBoundingClientRect().width).toBeLessThan(60);
+  });
+});
+
+describe("scroll preservation", () => {
+  test("editor swaps keep the scroll position", async () => {
+    const name = fakeTextField("name");
+    const id = fakeTextField("id");
+    const keyed = fakeKeyedRemoteForm(() =>
+      fakeEditableRemoteForm({ id, name }),
+    );
+    const editForm = keyed.form as unknown as NonNullable<
+      ComponentProps<typeof Fixture>["editForm"]
+    >;
+    const controller = new TableController();
+
+    const screen = await render(Fixture, {
+      rows: [
+        { id: "r2", name: "Rioja", price: 129 },
+        { id: "r1", name: "Comté", price: 89 },
+      ],
+      withExpanded: true,
+      withPinnedPrice: true,
+      editForm,
+      controller,
+      containerClass: "w-64",
+    });
+
+    const wrapper = () => screen.container.querySelector("div") as HTMLElement;
+    wrapper().scrollLeft = 60;
+    await expect.poll(() => wrapper().scrollLeft).toBe(60);
+
+    // Opening an editor remounts the markup — the scroll must carry over.
+    controller.startEdit("r2");
+    await expect.element(screen.getByLabelText("Name")).toBeInTheDocument();
+    await expect.poll(() => wrapper().scrollLeft).toBe(60);
+
+    controller.close();
+    await expect.element(screen.getByLabelText("Name")).not.toBeInTheDocument();
+    await expect.poll(() => wrapper().scrollLeft).toBe(60);
   });
 });

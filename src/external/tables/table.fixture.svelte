@@ -9,6 +9,7 @@
     id: string;
     name: string;
     price: number;
+    added?: string;
   }
 
   interface Props {
@@ -19,9 +20,12 @@
     withCustomActions?: boolean;
     withExpanded?: boolean;
     withPinnedPrice?: boolean;
+    withPinnedPriceRight?: boolean;
+    withDateColumn?: boolean;
+    withCustomCompare?: boolean;
     containerClass?: string;
     density?: "comfortable" | "compact";
-    onDelete?: (row: Item) => unknown;
+    ondelete?: (row: Item) => unknown;
   }
 
   const {
@@ -32,9 +36,12 @@
     withCustomActions = false,
     withExpanded = false,
     withPinnedPrice = false,
+    withPinnedPriceRight = false,
+    withDateColumn = false,
+    withCustomCompare = false,
     containerClass,
     density,
-    onDelete,
+    ondelete,
   }: Props = $props();
 </script>
 
@@ -54,11 +61,19 @@
   {editForm}
   actions={withCustomActions ? zapActions : undefined}
   expanded={withExpanded ? rowDetails : undefined}
-  {containerClass}
+  class={containerClass}
   {density}
-  {onDelete}
+  {ondelete}
 >
-  <Column key="name" label="Name" value={(row: Item) => row.name} sortable>
+  <Column
+    key="name"
+    label="Name"
+    value={(row: Item) => row.name}
+    sortable
+    compare={withCustomCompare
+      ? (a: Item, b: Item) => a.price - b.price
+      : undefined}
+  >
     {#snippet editor({ field, row })}
       <TextInput
         {field}
@@ -74,11 +89,19 @@
     label="Price"
     value={(row: Item) => row.price}
     sortable
-    pin={withPinnedPrice ? "left" : undefined}
-    width={withPinnedPrice ? "8rem" : undefined}
+    pin={withPinnedPriceRight ? "right" : withPinnedPrice ? "left" : undefined}
+    width={withPinnedPrice || withPinnedPriceRight ? "8rem" : undefined}
   >
     {#snippet cell({ value })}
       {value} kr
     {/snippet}
   </Column>
+  {#if withDateColumn}
+    <Column
+      key="added"
+      label="Added"
+      sortable
+      value={(row: Item) => (row.added ? new Date(row.added) : null)}
+    />
+  {/if}
 </Table>

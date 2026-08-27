@@ -5,7 +5,11 @@
   import { cn } from "#privaty/ui/cn.js";
   import Button from "#privaty/ui/components/button.svelte";
   import { getUiConfig } from "#privaty/ui/config/context.js";
-  import { setUiDensity } from "#privaty/ui/config/density.js";
+  import {
+    getUiDensity,
+    setUiDensity,
+    type UiDensity,
+  } from "#privaty/ui/config/density.js";
   import {
     CheckIcon,
     ChevronRightIcon,
@@ -46,10 +50,12 @@
     controller?: TableController;
 
     createForm?: Omit<RemoteForm<CreateInput, CreateOutput>, "for">;
-    createSchema?: StandardSchemaV1<CreateInput>;
+    /** Output deliberately unconstrained — transform schemas are
+     * Kit-legal. */
+    createSchema?: StandardSchemaV1<CreateInput, unknown>;
 
     editForm?: RemoteForm<EditInput, EditOutput>;
-    editSchema?: StandardSchemaV1<EditInput>;
+    editSchema?: StandardSchemaV1<EditInput, unknown>;
     /** Field name in the edit schema that carries the row id. */
     idKey?: string;
 
@@ -58,11 +64,13 @@
      * rendered header either way (this only serves SSR and width control). */
     actionsWidth?: string;
 
-    /** Cell padding and type scale — "compact" for data-dense tables. */
-    density?: "comfortable" | "compact";
+    /** Cell padding and type scale — "compact" for data-dense tables.
+     * Defaults to the ambient density context. */
+    density?: UiDensity;
 
+    /** Styles the root element (the scroll wrapper). */
     class?: string;
-    containerClass?: string;
+    tableClass?: string;
     headerCellClass?: string;
     cellClass?: string;
     rowClass?: string;
@@ -73,7 +81,7 @@
      * (no form element needed; refresh the rows query in its handler for
      * single-flight updates). Handle errors inside — the table only tracks
      * the in-flight state per row. */
-    onDelete?: (row: Row) => unknown;
+    ondelete?: (row: Row) => unknown;
 
     children: Snippet;
     /** Replaces the default actions cell on display rows. */
@@ -100,16 +108,16 @@
 
     actionsWidth,
 
-    density = "comfortable",
+    density,
 
     class: classes,
-    containerClass,
+    tableClass,
     headerCellClass,
     cellClass,
     rowClass,
     editorRowClass,
 
-    onDelete,
+    ondelete,
 
     children,
     actions,
@@ -121,10 +129,13 @@
 
   // Ambient density for everything rendered inside the table — core controls
   // (inputs, selects) in editor snippets pick it up and size themselves to
-  // match compact rows, with no forms↔tables coupling.
+  // match compact rows, with no forms↔tables coupling. The prop overrides;
+  // otherwise the table inherits the ambient context it sits in.
+  const ambientDensity = getUiDensity();
+  const resolvedDensity = $derived(density ?? ambientDensity.density);
   setUiDensity({
     get density() {
-      return density;
+      return resolvedDensity;
     },
   });
 
@@ -150,7 +161,7 @@
   const hasActionsColumn = $derived(
     editForm !== undefined ||
       createForm !== undefined ||
-      onDelete !== undefined ||
+      ondelete !== undefined ||
       actions !== undefined,
   );
 
@@ -159,14 +170,17 @@
   const deleting = new SvelteSet<string | number>();
 
   async function handleDelete(row: Row) {
-    if (!onDelete) return;
+    if (!ondelete) return;
 
     const key = rowKey(row);
     if (deleting.has(key)) return;
 
     deleting.add(key);
     try {
-      await onDelete(row);
+      await ondelete(row);
+    } catch {
+      // Error handling is the consumer's contract (inside their handler) —
+      // but their rejection must not surface as an unhandled promise here.
     } finally {
       deleting.delete(key);
     }
@@ -287,8 +301,30 @@
   // Chromium doesn't subtract scrollbars from container-query units.
   let scrollportWidth = $state<number>();
 
+  // Editor swaps remount the whole markup (the Form wrapper is keyed) —
+  // the scroll position is carried across remounts so opening or closing an
+  // editor doesn't snap the table back to 0,0.
+  let savedScrollLeft = 0;
+  let savedScrollTop = 0;
+  let scrollWrapper: HTMLElement | undefined;
+
+  // Called by the controller synchronously before ANY editor transition —
+  // the only moment the outgoing wrapper is reliably still connected
+  // (attachment cleanup runs on an already-detached element, and scroll
+  // events dispatch async).
+  function captureScroll() {
+    if (scrollWrapper?.isConnected) {
+      savedScrollLeft = scrollWrapper.scrollLeft;
+      savedScrollTop = scrollWrapper.scrollTop;
+    }
+  }
+
   function observeScrollport(wrapper: HTMLElement) {
     const table = wrapper.querySelector("table");
+    scrollWrapper = wrapper;
+
+    wrapper.scrollLeft = savedScrollLeft;
+    wrapper.scrollTop = savedScrollTop;
 
     const measure = () => {
       scrollportWidth = wrapper.clientWidth;
@@ -299,7 +335,10 @@
     if (table) observer.observe(table);
     measure();
 
-    return () => observer.disconnect();
+    return () => {
+      if (scrollWrapper === wrapper) scrollWrapper = undefined;
+      observer.disconnect();
+    };
   }
 
   // Custom scrollbars only where classic (space-taking) WebKit scrollbars
@@ -322,6 +361,24 @@
     }
 
     settled = true;
+
+    // A pre-attach trigger flipped the controller before this table could
+    // prepare it — columns are registered by now, so honour it (or close if
+    // it cannot be honoured).
+    controller.resync();
+  });
+
+  // The edited row can vanish underneath the editor (deleted remotely, rows
+  // refreshed) — close silently, consistent with drafts dropping on editor
+  // switches.
+  $effect(() => {
+    const active = controller.editor;
+    if (
+      active.type === "edit" &&
+      !rows.some((row) => rowKey(row) === active.rowId)
+    ) {
+      controller.close();
+    }
   });
 
   // Track matches the header, the thumb is inset via a transparent border,
@@ -462,7 +519,7 @@
   // The controller is stable for the component's lifetime — capturing it for
   // attach/detach is intentional.
   // svelte-ignore state_referenced_locally
-  const detach = controller.attach(prepare);
+  const detach = controller.attach(prepare, captureScroll);
   onDestroy(detach);
 
   let sort = $state<{ key: string; direction: "asc" | "desc" } | undefined>(
@@ -476,10 +533,9 @@
   }
 
   function defaultCompare(a: unknown, b: unknown): number {
-    if (a == null && b == null) return 0;
-    if (a == null) return 1;
-    if (b == null) return -1;
     if (typeof a === "number" && typeof b === "number") return a - b;
+    if (a instanceof Date && b instanceof Date)
+      return a.getTime() - b.getTime();
     return String(a).localeCompare(String(b));
   }
 
@@ -490,12 +546,20 @@
     const column = columns.find((candidate) => candidate.key === active.key);
     if (!column) return rows;
 
-    const compare =
-      column.compare ??
-      ((a: Row, b: Row) => defaultCompare(column.value(a), column.value(b)));
     const factor = active.direction === "asc" ? 1 : -1;
 
-    return [...rows].toSorted((a, b) => factor * compare(a, b));
+    return [...rows].toSorted((a, b) => {
+      if (column.compare) return factor * column.compare(a, b);
+
+      // Nullish values sort last in BOTH directions — outside the factor.
+      const aValue = column.value(a);
+      const bValue = column.value(b);
+      const aNull = aValue == null;
+      const bNull = bValue == null;
+      if (aNull || bNull) return aNull && bNull ? 0 : aNull ? 1 : -1;
+
+      return factor * defaultCompare(aValue, bValue);
+    });
   });
 
   const columnCount = $derived(
@@ -526,7 +590,7 @@
     return column.tooltip?.(row) ?? displayText(column, row);
   }
 
-  const compact = $derived(density === "compact");
+  const compact = $derived(resolvedDensity === "compact");
 
   // border-separate (not collapse): collapsed borders detach from sticky
   // cells. Cells only own their bottom border (rows) — the scroll wrapper
@@ -694,7 +758,7 @@
 
 {#snippet expandedContent(row: Row)}
   {#if expanded && expandedRows.has(rowKey(row))}
-    <tr class={defaultRowClasses}>
+    <tr class={cn(defaultRowClasses, rowClass)}>
       <td
         colspan={columnCount}
         class={cn(defaultCellClasses, "p-0 whitespace-normal", cellClass)}
@@ -729,14 +793,14 @@
       "@container h-full border border-stone-300 dark:border-stone-700",
       settled ? "overflow-auto" : "overflow-hidden",
       styledScrollbars && scrollbarClasses,
-      containerClass,
+      classes,
     )}
   >
     <table
       class={cn(
         "h-full min-w-full border-separate border-spacing-0 text-left",
         compact && "text-sm",
-        classes,
+        tableClass,
       )}
     >
       <thead>
@@ -888,7 +952,7 @@
                           </span>
                         </Button>
                       {/if}
-                      {#if onDelete}
+                      {#if ondelete}
                         <Button
                           variant="secondary"
                           type="button"
@@ -916,7 +980,7 @@
            h-full), so a sparse table still paints a full table region — and
            hosts the empty state when there are no rows. Zero padding keeps
            it invisible in auto-height containers. -->
-        <tr class={cn("h-full", defaultRowClasses)}>
+        <tr class={cn("h-full", defaultRowClasses, rowClass)}>
           <td
             colspan={columnCount}
             class={cn(
@@ -959,21 +1023,33 @@
 
 {#if showEditor && session?.mode === "edit"}
   {#key session.key}
+    <!-- Capture the session so a save resolving AFTER the user switched
+         editors doesn't close the editor that is open now. -->
+    {@const succeededKey = session.key}
     <Form
       form={session.instance}
       schema={editSchema}
       class="block h-full"
-      onsuccess={() => controller.close()}
+      onsuccess={() => {
+        if (sessionKeyFor(controller.editor) === succeededKey) {
+          controller.close();
+        }
+      }}
     >
       {@render tableMarkup(true)}
     </Form>
   {/key}
 {:else if showEditor && session?.mode === "create"}
+  {@const succeededKey = session.key}
   <Form
     form={session.instance}
     schema={createSchema}
     class="block h-full"
-    onsuccess={() => controller.close()}
+    onsuccess={() => {
+      if (sessionKeyFor(controller.editor) === succeededKey) {
+        controller.close();
+      }
+    }}
   >
     {@render tableMarkup(true)}
   </Form>
