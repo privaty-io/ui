@@ -27,6 +27,12 @@ class FormState {
   public submitError = $state<unknown>();
 
   /**
+   * True when the form has a client-side (preflight) schema, so validation
+   * triggered from here can stay off the network. Set by the Form component.
+   */
+  public clientOnlyValidation = false;
+
+  /**
    * True once every field has registered (the Form flips it on mount).
    * Majority-dependent display like the required/optional markers waits for
    * it — a partial registration set would render the wrong marker first.
@@ -39,8 +45,11 @@ class FormState {
 
   public readonly isDirty = $derived.by<boolean>(() => {
     for (const field of this.fields.values()) {
-      const value = field.getValue() ?? field.initialValue;
-      if (value !== field.initialValue) return true;
+      // Both sides pass through the field's normalizer: Kit stores raw DOM
+      // strings mid-edit while registrations hold typed seeds, so "5" vs 5
+      // and "on" vs true must compare equal.
+      const value = field.normalize(field.getValue() ?? field.initialValue);
+      if (value !== field.normalize(field.initialValue)) return true;
     }
     return false;
   });
@@ -86,11 +95,14 @@ class FormState {
   }
 
   public validate(): void {
-    // Kit's validate() awaits a tick before reading the form element, so it
-    // rejects if the form unmounts during that tick (e.g. reset-on-success
-    // right before the Form is removed). Validation for an unmounted form
-    // means nothing — swallow it.
-    void Promise.resolve(this.form.validate({ all: true })).catch(() => {});
+    // Defensive catch: validation for a form that unmounted (or failed a
+    // network round-trip) mid-call has nowhere useful to surface from here.
+    void Promise.resolve(
+      this.form.validate({
+        all: true,
+        preflightOnly: this.clientOnlyValidation,
+      }),
+    ).catch(() => {});
   }
 
   public reset(): void {

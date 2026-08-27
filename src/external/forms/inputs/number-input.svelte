@@ -74,6 +74,9 @@
     issues: () => field.issues(),
     getValue: () => field.value(),
     setValue: (value) => field.set(value as number),
+    // Kit stores the raw DOM string mid-edit; "" (cleared) means unset.
+    normalize: (value) =>
+      value === "" || value == null ? undefined : Number(value),
   });
 </script>
 
@@ -83,6 +86,7 @@
   {labelStyle}
   errors={wired.errors}
   marker={wired.marker}
+  aria-invalid={wired.errors.length > 0 ? true : undefined}
   {disabled}
   readonly={readonly || wired.state.isSubmitting}
   {min}

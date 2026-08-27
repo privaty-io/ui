@@ -45,8 +45,29 @@ describe("wiring", () => {
       initialValue: true,
     });
 
-    await expect.element(screen.getByLabelText("In stock")).toBeChecked();
+    const box = screen.getByLabelText("In stock");
+    await expect.element(box).toBeChecked();
     expect(field.value()).toBe(true);
+    expect(screen.component.state.isDirty).toBe(false);
+
+    // Native reset restores defaultChecked — the seed must live there too,
+    // or an untouched checked box would revert to unchecked.
+    expect((box.element() as HTMLInputElement).defaultChecked).toBe(true);
+  });
+
+  test("a user toggle round-trip returns to pristine (raw DOM values)", async () => {
+    const { field, edit } = fakeCheckboxField("inStock");
+    const screen = await render(Fixture, {
+      form: fakeForm().form,
+      field,
+      label: "In stock",
+      initialValue: true,
+    });
+
+    // Kit stores "on"/null mid-edit — normalization keeps dirty value-based.
+    edit(false);
+    expect(screen.component.state.isDirty).toBe(true);
+    edit(true);
     expect(screen.component.state.isDirty).toBe(false);
   });
 

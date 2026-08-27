@@ -5,7 +5,7 @@ import type { StandardSchemaV1 } from "@standard-schema/spec";
  * purpose: tests can pass a fake, and a client-only adapter can satisfy it later.
  */
 interface ValidatableForm {
-  validate: (options?: { all?: boolean }) => unknown;
+  validate: (options?: { all?: boolean; preflightOnly?: boolean }) => unknown;
   fields: { allIssues: () => readonly StandardSchemaV1.Issue[] | undefined };
   readonly pending: number;
 }

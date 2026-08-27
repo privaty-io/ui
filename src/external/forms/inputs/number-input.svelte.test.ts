@@ -15,6 +15,7 @@ function registration(
     required: false,
     getValue: () => "",
     setValue: () => {},
+    normalize: (value) => value,
     ...overrides,
   };
 }

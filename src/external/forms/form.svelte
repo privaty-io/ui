@@ -2,13 +2,20 @@
   import { cn } from "#privaty/ui/cn.js";
   import type { RemoteForm, RemoteFormInput } from "$app/server";
   import type { StandardSchemaV1 } from "@standard-schema/spec";
-  import { onMount, type Snippet } from "svelte";
+  import { onDestroy, onMount, type Snippet } from "svelte";
   import { setFormContext } from "./context";
   import { FormState } from "./form-state.svelte";
 
   type Props = {
     form: Omit<RemoteForm<Input, Output>, "for">;
-    schema?: StandardSchemaV1<Input>;
+    /** Output deliberately unconstrained: transform schemas (Output ≠ Input)
+     * are Kit-legal and only the Input side matters for preflight. */
+    schema?: StandardSchemaV1<Input, unknown>;
+
+    /** Debounce (ms) for validation while typing on SCHEMA-LESS forms, where
+     * each validation is a server round-trip. Schema'd forms validate
+     * client-side and stay immediate. */
+    validationDebounce?: number;
 
     resetOnSuccess?: boolean;
 
@@ -23,6 +30,8 @@
   const {
     form,
     schema,
+
+    validationDebounce = 400,
 
     resetOnSuccess = true,
 
@@ -42,6 +51,8 @@
   const instance = schema ? form.preflight(schema) : form;
 
   const state = new FormState(instance);
+  // svelte-ignore state_referenced_locally
+  state.clientOnlyValidation = schema !== undefined;
   setFormContext({ form: instance, state });
 
   // A parent mounts after its children, so every field has registered by now.
@@ -61,13 +72,15 @@
   const attributes = instance.enhance(async (enhanceInstance) => {
     state.submitError = undefined;
 
-    // Validate BEFORE opening the error gates: issues must be fresh when
-    // submitAttempted makes every field's issues visible.
-    await validate();
-    state.submitAttempted = true;
-    if (!state.isValid) return;
-
     try {
+      // Validate BEFORE opening the error gates: issues must be fresh when
+      // submitAttempted makes every field's issues visible. Inside the try:
+      // a schema-less validate() is a server round-trip whose failure must
+      // surface as submitError, not escalate to the nearest +error page.
+      await validate();
+      state.submitAttempted = true;
+      if (!state.isValid) return;
+
       if (!(await enhanceInstance.submit())) return;
 
       if (resetOnSuccess) enhanceInstance.element.reset();
@@ -79,22 +92,54 @@
     }
   });
 
+  // With a schema, Kit's preflight runs BEFORE the enhance callback and
+  // silently swallows invalid submits — the callback never gets to flip
+  // submitAttempted, so a rejected click would show nothing anywhere. This
+  // form-level listener fires regardless of Kit's gate, validates (fresh
+  // issues before the gates open — the flash rule), then opens them.
+  function handleSubmit() {
+    if (schema === undefined) return;
+
+    void Promise.resolve(validate())
+      .catch(() => {})
+      .finally(() => {
+        state.submitAttempted = true;
+      });
+  }
+
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  onDestroy(() => clearTimeout(debounceTimer));
+
   async function handleInput(event: Event) {
     const name =
       event.target instanceof HTMLElement
         ? event.target.getAttribute("name")
         : null;
 
-    try {
-      // Same ordering rule: a newly-touched field must never flash issues
-      // that are stale from the previous validation pass.
-      await validate();
-    } catch {
-      // The form can unmount mid-validation (Kit's validate awaits a tick
-      // before touching the form element) — nothing left to show issues on.
-    } finally {
-      if (name) state.markTouched(name);
+    if (schema !== undefined) {
+      try {
+        // Same ordering rule: a newly-touched field must never flash issues
+        // that are stale from the previous validation pass.
+        await validate();
+      } catch {
+        // The form can unmount mid-validation — nothing left to show on.
+      } finally {
+        if (name) state.markTouched(name);
+      }
+      return;
     }
+
+    // Schema-less: every validation is a server round-trip, so typing is
+    // debounced. The touch waits for the validation, preserving the
+    // no-stale-issues ordering.
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      void Promise.resolve(validate())
+        .catch(() => {})
+        .finally(() => {
+          if (name) state.markTouched(name);
+        });
+    }, validationDebounce);
   }
 </script>
 
@@ -102,6 +147,7 @@
   {...attributes}
   class={cn("flex flex-col gap-3", classes)}
   oninput={handleInput}
+  onsubmit={handleSubmit}
   onreset={() => state.reset()}
 >
   {@render children()}

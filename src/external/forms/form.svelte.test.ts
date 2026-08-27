@@ -86,10 +86,19 @@ describe("input validation", () => {
     const { field } = fakeTextField("name", {
       issues: [{ message: "required" }],
     });
-    const { form, releaseValidate } = fakeRemoteForm({ gateValidate: true });
-    const screen = await render(Fixture, { form, field });
+    const { form, releaseValidate, validateCalls } = fakeRemoteForm({
+      gateValidate: true,
+    });
+    const screen = await render(Fixture, {
+      form,
+      field,
+      validationDebounce: 0,
+    });
 
     await screen.getByLabelText("Name").fill("x");
+    // Schema-less input validation is debounced — wait for the call before
+    // releasing its gate.
+    await vi.waitFor(() => expect(validateCalls.length).toBeGreaterThan(0));
     releaseValidate();
 
     await expect.element(screen.getByText("required")).toBeInTheDocument();
@@ -97,6 +106,59 @@ describe("input validation", () => {
 });
 
 describe("submission", () => {
+  test("a schema'd invalid submit still opens the error gates", async () => {
+    // Kit runs preflight BEFORE the enhance callback and swallows invalid
+    // submits entirely — the form-level submit listener must open the gates
+    // regardless (the dead-click regression).
+    const { field } = fakeTextField("name", {
+      issues: [{ message: "required" }],
+    });
+    const { form, submitCount } = fakeRemoteForm({
+      onValidate: () => [{ message: "required", path: ["name"] }],
+    });
+    const schema = {
+      "~standard": {
+        version: 1,
+        vendor: "fake",
+        validate: (v: unknown) => ({ value: v }),
+      },
+    };
+    const screen = await render(Fixture, {
+      form,
+      field,
+      schema: schema as never,
+    });
+
+    await screen.getByRole("button", { name: "Send" }).click();
+
+    // The submit was swallowed by the preflight gate...
+    await vi.waitFor(() => expect(submitCount()).toBe(0));
+    // ...but the gates opened and the untouched field shows its issue.
+    await expect.element(screen.getByText("required")).toBeInTheDocument();
+  });
+
+  test("a failing submit-time validation surfaces inline, not as a crash", async () => {
+    // Schema-less validation is a server round-trip; its failure belongs in
+    // submitError (FormError), never escalated out of the enhance callback.
+    const { field } = fakeTextField("name");
+    let failValidation = false;
+    const { form, submitCount } = fakeRemoteForm({
+      onValidate: () => {
+        if (failValidation) throw new Error("network down");
+        return undefined;
+      },
+    });
+    const screen = await render(Fixture, { form, field });
+
+    failValidation = true;
+    await screen.getByRole("button", { name: "Send" }).click();
+
+    await expect
+      .element(screen.getByText("Something went wrong. Please try again."))
+      .toBeInTheDocument();
+    expect(submitCount()).toBe(0);
+  });
+
   test("submits, resets, and reports the result on success", async () => {
     const { field } = fakeTextField("name");
     const onsuccess = vi.fn();
@@ -211,6 +273,8 @@ describe("reset", () => {
     // form's own job (the `as(type, value)` reset contract) — the fake
     // doesn't emulate that, so it's covered by the sandbox, not this spec.
     await vi.waitFor(() => expect(field.value()).toBe("Ost"));
-    expect(validateCalls.length).toBeGreaterThan(1);
+    // Reset re-validates on its own; the debounced input validation may or
+    // may not have fired yet.
+    expect(validateCalls.length).toBeGreaterThanOrEqual(1);
   });
 });

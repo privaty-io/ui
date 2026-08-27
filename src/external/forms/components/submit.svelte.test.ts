@@ -16,6 +16,7 @@ function editableRegistration(name: string) {
     setValue: (next) => {
       value = next as string;
     },
+    normalize: (next) => next,
   };
 
   return {

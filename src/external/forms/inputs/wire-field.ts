@@ -11,6 +11,7 @@ interface WireFieldOptions {
   issues: () => readonly StandardSchemaV1.Issue[] | undefined;
   getValue: () => unknown;
   setValue: (value: unknown) => void;
+  normalize: (value: unknown) => unknown;
 }
 
 interface WiredField {
@@ -38,6 +39,7 @@ function wireField(options: WireFieldOptions): WiredField {
       required: options.required,
       getValue: options.getValue,
       setValue: options.setValue,
+      normalize: options.normalize,
     }),
   );
 
@@ -58,7 +60,7 @@ function wireField(options: WireFieldOptions): WiredField {
           ? undefined
           : config.labels.form.optional
         : options.required
-          ? "*"
+          ? config.labels.form.required
           : undefined;
     },
   };

@@ -120,7 +120,8 @@ function fakeNumberField(
   name: string,
   options: { issues?: readonly { message: string }[] } = {},
 ) {
-  let value = $state<number | undefined>(undefined);
+  // Kit stores raw DOM strings mid-edit; set() stores typed values.
+  let value = $state<number | string | undefined>(undefined);
   let issues = $state<readonly { message: string }[] | undefined>(
     options.issues,
   );
@@ -140,8 +141,9 @@ function fakeNumberField(
 
   return {
     field,
+    /** Simulates USER typing: stores the raw DOM string, like Kit does. */
     edit: (next: number | undefined) => {
-      value = next;
+      value = next === undefined ? "" : String(next);
     },
     setIssues: (next: readonly { message: string }[] | undefined) => {
       issues = next;
@@ -185,7 +187,8 @@ function fakeCheckboxField(
   name: string,
   options: { issues?: readonly { message: string }[] } = {},
 ) {
-  let value = $state<boolean | undefined>(undefined);
+  // Kit stores the raw DOM value mid-edit: "on" checked, null unchecked.
+  let value = $state<boolean | string | null | undefined>(undefined);
   let issues = $state<readonly { message: string }[] | undefined>(
     options.issues,
   );
@@ -195,7 +198,7 @@ function fakeCheckboxField(
       name,
       type,
       get checked() {
-        return value ?? false;
+        return value === true || value === "on";
       },
     }),
     issues: () => issues,
@@ -207,8 +210,9 @@ function fakeCheckboxField(
 
   return {
     field,
+    /** Simulates a USER toggle: raw DOM value, like Kit's input listener. */
     edit: (next: boolean) => {
-      value = next;
+      value = next ? "on" : null;
     },
     setIssues: (next: readonly { message: string }[] | undefined) => {
       issues = next;
@@ -227,8 +231,8 @@ interface FakeRemoteFormOptions {
     options: FakeValidateOptions | undefined,
   ) => readonly FakeIssue[] | undefined;
   /** Submission outcome: return false for "rejected by validation", throw for
-   * a failed request (default: true — success). */
-  onSubmit?: () => boolean;
+   * a failed request (default: true — success). May return a promise. */
+  onSubmit?: () => boolean | Promise<boolean>;
   /** Hold every validate() unresolved until releaseValidate() is called. */
   gateValidate?: boolean;
   /** The value exposed as `form.result` after submission. */
@@ -267,7 +271,7 @@ function fakeRemoteForm(options: FakeRemoteFormOptions = {}) {
         pending += 1;
 
         try {
-          return options.onSubmit ? options.onSubmit() : true;
+          return await (options.onSubmit ? options.onSubmit() : true);
         } finally {
           pending -= 1;
         }
@@ -292,7 +296,16 @@ function fakeRemoteForm(options: FakeRemoteFormOptions = {}) {
       [createAttachmentKey()]: (node: HTMLFormElement) => {
         const onSubmit = (event: SubmitEvent) => {
           event.preventDefault();
-          void callback(makeEnhanceInstance(node));
+          void (async () => {
+            // Kit runs preflight BEFORE the enhance callback and swallows
+            // the submit entirely when the schema rejects — mirror that
+            // whenever a schema was registered via preflight().
+            if (preflightCalls.length > 0) {
+              await validate({ all: true, preflightOnly: true });
+              if ((issues ?? []).length > 0) return;
+            }
+            await callback(makeEnhanceInstance(node));
+          })();
         };
 
         node.addEventListener("submit", onSubmit);

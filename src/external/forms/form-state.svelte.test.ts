@@ -28,6 +28,7 @@ function fakeField(name: string, options: FakeFieldOptions = {}): FakeField {
     setValue: (next) => {
       value = next;
     },
+    normalize: (next) => next,
     edit: (next) => {
       value = next;
     },
@@ -165,7 +166,7 @@ describe("validate", () => {
 
     state.validate();
 
-    expect(validateCalls).toEqual([{ all: true }]);
+    expect(validateCalls).toEqual([{ all: true, preflightOnly: false }]);
   });
 });
 

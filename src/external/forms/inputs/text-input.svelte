@@ -67,6 +67,7 @@
     issues: () => field.issues(),
     getValue: () => field.value(),
     setValue: (value) => field.set(value as string),
+    normalize: (value) => (value == null ? "" : String(value)),
   });
 </script>
 
@@ -76,6 +77,7 @@
   {labelStyle}
   errors={wired.errors}
   marker={wired.marker}
+  aria-invalid={wired.errors.length > 0 ? true : undefined}
   {disabled}
   readonly={readonly || wired.state.isSubmitting}
   {placeholder}

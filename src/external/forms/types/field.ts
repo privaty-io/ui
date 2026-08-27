@@ -11,6 +11,10 @@ interface FieldRegistration {
   required: boolean;
   getValue: () => unknown;
   setValue: (value: unknown) => void;
+  /** Maps raw field values onto the initialValue's domain before dirty
+   * comparison — Kit stores raw DOM strings mid-edit ("5", "on") while
+   * registrations hold typed seeds (5, true). */
+  normalize: (value: unknown) => unknown;
 }
 
 type TextFieldType = Extract<
@@ -84,7 +88,8 @@ interface NumberField {
     ...args: [type: "number"] | [type: "number", initialValue: number]
   ): NumberFieldAttributes;
   issues(): readonly StandardSchemaV1.Issue[] | undefined;
-  value(): number | undefined;
+  /** Raw DOM strings appear mid-edit — Kit only coerces at submit/reset. */
+  value(): number | string | undefined;
   set(value: number): void;
 }
 
@@ -129,7 +134,9 @@ type CheckboxFieldAttributes = Omit<HTMLInputAttributes, "type"> & {
 interface CheckboxField {
   as(type: "checkbox"): CheckboxFieldAttributes;
   issues(): readonly StandardSchemaV1.Issue[] | undefined;
-  value(): boolean | undefined;
+  /** Mid-edit, Kit stores the raw DOM value ("on") or null for unchecked —
+   * coercion to boolean only happens at submit/reset. */
+  value(): boolean | string | null | undefined;
   set: (value: boolean) => void;
 }
 

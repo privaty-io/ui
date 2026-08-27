@@ -2,6 +2,7 @@
   import { cn } from "#privaty/ui/cn.js";
   import Input from "#privaty/ui/components/input.svelte";
   import type { LabelStyle } from "#privaty/ui/components/types.js";
+  import type { HTMLInputAttributes } from "svelte/elements";
   import type { DateField, DateFieldType } from "../types/field";
   import { wireField } from "./wire-field";
 
@@ -24,6 +25,8 @@
 
     min?: string;
     max?: string;
+
+    autocomplete?: HTMLInputAttributes["autocomplete"];
 
     class?: string;
     labelClass?: string;
@@ -48,6 +51,8 @@
     min,
     max,
 
+    autocomplete,
+
     class: classes,
     labelClass,
     inputClass,
@@ -70,6 +75,7 @@
     issues: () => field.issues(),
     getValue: () => field.value(),
     setValue: (value) => field.set(value as string),
+    normalize: (value) => (value == null ? "" : String(value)),
   });
 </script>
 
@@ -79,10 +85,12 @@
   {labelStyle}
   errors={wired.errors}
   marker={wired.marker}
+  aria-invalid={wired.errors.length > 0 ? true : undefined}
   {disabled}
   readonly={readonly || wired.state.isSubmitting}
   {min}
   {max}
+  {autocomplete}
   class={classes}
   {labelClass}
   {inputClass}

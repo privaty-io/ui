@@ -61,7 +61,19 @@
     // false.
     getValue: () => field.value() ?? false,
     setValue: (value) => field.set(value as boolean),
+    // Mid-edit Kit stores the raw DOM value: "on" when checked, null when
+    // unchecked.
+    normalize: (value) => value === true || value === "on",
   });
+
+  // pointer-events-none blocks the mouse while submitting but not the
+  // keyboard — swallow value-changing keys too (Tab stays free).
+  function lockKeysWhileSubmitting(event: KeyboardEvent) {
+    if (!wired.state.isSubmitting) return;
+    if ([" ", "Enter"].includes(event.key)) {
+      event.preventDefault();
+    }
+  }
 </script>
 
 <Checkbox
@@ -69,6 +81,9 @@
   {label}
   errors={wired.errors}
   marker={wired.marker}
+  aria-invalid={wired.errors.length > 0 ? true : undefined}
+  defaultChecked={initialValue}
+  onkeydown={lockKeysWhileSubmitting}
   {disabled}
   class={classes}
   {labelClass}

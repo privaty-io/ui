@@ -14,6 +14,7 @@
   interface Props {
     form: unknown;
     schema?: StandardSchemaV1<RemoteFormInput>;
+    validationDebounce?: number;
     resetOnSuccess?: boolean;
     onsuccess?: (result: unknown) => void;
     onerror?: (error: unknown) => void;
@@ -25,6 +26,7 @@
   const {
     form,
     schema,
+    validationDebounce,
     resetOnSuccess,
     onsuccess,
     onerror,
@@ -34,7 +36,14 @@
   }: Props = $props();
 </script>
 
-<Form form={form as FormProp} {schema} {resetOnSuccess} {onsuccess} {onerror}>
+<Form
+  form={form as FormProp}
+  {schema}
+  {validationDebounce}
+  {resetOnSuccess}
+  {onsuccess}
+  {onerror}
+>
   <TextInput {field} label="Name" {initialValue} />
   <FormError />
 

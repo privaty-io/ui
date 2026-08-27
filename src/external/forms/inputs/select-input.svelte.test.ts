@@ -57,6 +57,12 @@ describe("wiring", () => {
     await expect.element(screen.getByLabelText("Category")).toHaveValue("wine");
     expect(screen.component.state.isDirty).toBe(false);
 
+    // The seed rides the option's selected attribute so a native reset
+    // returns to it instead of the browser's first-option fallback.
+    await expect
+      .element(screen.getByRole("option", { name: "wine" }))
+      .toHaveAttribute("selected");
+
     edit("bread");
     expect(screen.component.state.isDirty).toBe(true);
 

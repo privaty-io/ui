@@ -78,7 +78,26 @@
     issues: () => field.issues(),
     getValue: () => field.value(),
     setValue: (value) => field.set(value as never),
+    normalize: (value) => (value == null ? "" : String(value)),
   });
+
+  // pointer-events-none blocks the mouse while submitting but not the
+  // keyboard — swallow value-changing keys too (Tab stays free).
+  function lockKeysWhileSubmitting(event: KeyboardEvent) {
+    if (!wired.state.isSubmitting) return;
+    if (
+      [
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+        " ",
+        "Enter",
+      ].includes(event.key)
+    ) {
+      event.preventDefault();
+    }
+  }
 </script>
 
 <Select
@@ -89,6 +108,9 @@
   {placeholder}
   errors={wired.errors}
   marker={wired.marker}
+  aria-invalid={wired.errors.length > 0 ? true : undefined}
+  defaultValue={seed}
+  onkeydown={lockKeysWhileSubmitting}
   {disabled}
   class={classes}
   {labelClass}
