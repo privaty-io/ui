@@ -237,6 +237,10 @@ interface FakeRemoteFormOptions {
   /** Submission outcome: return false for "rejected by validation", throw for
    * a failed request (default: true — success). May return a promise. */
   onSubmit?: () => boolean | Promise<boolean>;
+  /** Issues installed — server-flagged, replacing the whole set — when
+   * onSubmit rejects, like Kit's rejected submissions do. Left unset, a
+   * rejection leaves the issue set untouched. */
+  serverIssues?: readonly FakeIssue[];
   /** Hold every validate() unresolved until releaseValidate() is called. */
   gateValidate?: boolean;
   /** The value exposed as `form.result` after submission. */
@@ -249,13 +253,21 @@ interface FakeRemoteFormOptions {
  * intercepts native submits (like Kit's does), so tests drive real buttons.
  */
 function fakeRemoteForm(options: FakeRemoteFormOptions = {}) {
-  let issues = $state<readonly FakeIssue[] | undefined>(undefined);
+  // Kit flags every issue with its origin (client preflight vs server) and
+  // the flag drives merge semantics — but strips it from the public issues()
+  // and allIssues() shapes, so the library can never read it. The fake keeps
+  // both properties faithful: internal flag, stripped exposure.
+  type InternalIssue = FakeIssue & { server: boolean };
+
+  let issues = $state<readonly InternalIssue[] | undefined>(undefined);
   let pending = $state(0);
 
   const validateCalls: (FakeValidateOptions | undefined)[] = [];
   const preflightCalls: unknown[] = [];
   const validateGates: (() => void)[] = [];
   let submitCount = 0;
+
+  const pathName = (issue: FakeIssue) => (issue.path ?? []).join(".");
 
   async function validate(validateOptions?: FakeValidateOptions) {
     validateCalls.push(validateOptions);
@@ -264,7 +276,30 @@ function fakeRemoteForm(options: FakeRemoteFormOptions = {}) {
       await new Promise<void>((resolve) => validateGates.push(resolve));
     }
 
-    issues = options.onValidate?.(validateOptions);
+    const computed = (options.onValidate?.(validateOptions) ?? []).map(
+      (issue) => ({
+        ...issue,
+        server: validateOptions?.preflightOnly !== true,
+      }),
+    );
+
+    if (validateOptions?.preflightOnly) {
+      // Kit's merge: server issues persist through client-side validation
+      // unless a client issue lands on the same path — nothing else can
+      // refresh them (merge_with_server_issues, next.25).
+      const clientNames = computed.map(pathName);
+      issues = [
+        ...(issues ?? []).filter(
+          (issue) => issue.server && !clientNames.includes(pathName(issue)),
+        ),
+        ...computed,
+      ];
+    } else {
+      // Full validation ends in a server round-trip whose result replaces
+      // the entire issue set. (Kit short-circuits on client-schema failures
+      // first — the fake folds both stages into onValidate.)
+      issues = computed;
+    }
   }
 
   function makeEnhanceInstance(node: HTMLFormElement) {
@@ -275,7 +310,22 @@ function fakeRemoteForm(options: FakeRemoteFormOptions = {}) {
         pending += 1;
 
         try {
-          return await (options.onSubmit ? options.onSubmit() : true);
+          const succeeded = await (options.onSubmit
+            ? options.onSubmit()
+            : true);
+
+          // Kit derives success from the response's issue set: a success
+          // clears it, a rejection replaces it with the server's issues.
+          if (succeeded) {
+            issues = [];
+          } else if (options.serverIssues) {
+            issues = options.serverIssues.map((issue) => ({
+              ...issue,
+              server: true,
+            }));
+          }
+
+          return succeeded;
         } finally {
           pending -= 1;
         }
@@ -303,10 +353,12 @@ function fakeRemoteForm(options: FakeRemoteFormOptions = {}) {
           void (async () => {
             // Kit runs preflight BEFORE the enhance callback and swallows
             // the submit entirely when the schema rejects — mirror that
-            // whenever a schema was registered via preflight().
+            // whenever a schema was registered via preflight(). Only CLIENT
+            // issues block: persisted server issues pass through, because
+            // the submission itself is what re-judges them.
             if (preflightCalls.length > 0) {
               await validate({ all: true, preflightOnly: true });
-              if ((issues ?? []).length > 0) return;
+              if ((issues ?? []).some((issue) => !issue.server)) return;
             }
             await callback(makeEnhanceInstance(node));
           })();
@@ -323,7 +375,11 @@ function fakeRemoteForm(options: FakeRemoteFormOptions = {}) {
     get pending() {
       return pending;
     },
-    fields: { allIssues: () => issues },
+    fields: {
+      // Kit's allIssues() strips issues down to { path, message } — the
+      // server flag never reaches the library.
+      allIssues: () => issues?.map(({ message, path }) => ({ message, path })),
+    },
   };
 
   return {
@@ -332,6 +388,11 @@ function fakeRemoteForm(options: FakeRemoteFormOptions = {}) {
     preflightCalls,
     submitCount: () => submitCount,
     releaseValidate: () => validateGates.shift()?.(),
+    /** Installs server-flagged issues directly — models the SSR-restored
+     * issue set of a rejected no-JS submission. */
+    setServerIssues: (next: readonly FakeIssue[]) => {
+      issues = next.map((issue) => ({ ...issue, server: true }));
+    },
   };
 }
 

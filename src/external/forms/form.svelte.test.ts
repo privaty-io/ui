@@ -255,6 +255,97 @@ describe("submission", () => {
   });
 });
 
+describe("server issues", () => {
+  // Kit persists server-produced issues through every client-side validation
+  // pass (merge_with_server_issues) — these specs cover the two escapes the
+  // Form provides: never re-gating a schema'd resubmission on them, and
+  // escalating input revalidation to full validation while they linger.
+
+  test("a server-rejected submission does not deadlock resubmission", async () => {
+    const { field } = fakeTextField("name");
+    let reject = true;
+    const { form, submitCount } = fakeRemoteForm({
+      onSubmit: () => !reject,
+      serverIssues: [{ message: "cap exceeded", path: ["name"] }],
+    });
+    const screen = await render(Fixture, {
+      form,
+      field,
+      schema: fakeSchema,
+    });
+
+    await screen.getByRole("button", { name: "Send" }).click();
+    await vi.waitFor(() => expect(submitCount()).toBe(1));
+
+    // The user "fixes the problem" (server-side state, invisible to the
+    // client schema) and resubmits — the lingering server issue must not
+    // block the attempt.
+    reject = false;
+    await screen.getByRole("button", { name: "Send" }).click();
+    await vi.waitFor(() => expect(submitCount()).toBe(2));
+  });
+
+  test("input revalidation escalates to full validation while server issues linger", async () => {
+    const { field } = fakeTextField("name");
+    const { form, submitCount, validateCalls } = fakeRemoteForm({
+      onSubmit: () => false,
+      serverIssues: [{ message: "cap exceeded", path: ["name"] }],
+    });
+    const screen = await render(Fixture, {
+      form,
+      field,
+      schema: fakeSchema,
+      validationDebounce: 0,
+    });
+
+    await screen.getByRole("button", { name: "Send" }).click();
+    await vi.waitFor(() => expect(submitCount()).toBe(1));
+
+    // Editing ANY field now revalidates against the server, so the
+    // server-judged rule refreshes live (the cross-field staleness bug).
+    await screen.getByLabelText("Name").fill("Ost");
+    await vi.waitFor(() =>
+      expect(validateCalls).toContainEqual({ all: true, preflightOnly: false }),
+    );
+
+    // That pass came back clean (no onValidate — the fake replaces the set
+    // with nothing), so the cadence drops back to immediate client-only.
+    const fullIndex = validateCalls.findIndex(
+      (call) => call?.preflightOnly === false,
+    );
+    await screen.getByLabelText("Name").fill("Osten");
+    await vi.waitFor(() =>
+      expect(validateCalls.slice(fullIndex + 1)).toContainEqual({
+        all: true,
+        preflightOnly: true,
+      }),
+    );
+  });
+
+  test("restored server issues escalate revalidation from the start", async () => {
+    // A rejected no-JS submission SSR-restores its issue set — no client-side
+    // submit() ever ran, so mount is where their presence must be noticed.
+    const { field } = fakeTextField("name");
+    const rig = fakeRemoteForm();
+    rig.setServerIssues([{ message: "cap exceeded", path: ["name"] }]);
+    const screen = await render(Fixture, {
+      form: rig.form,
+      field,
+      schema: fakeSchema,
+      validationDebounce: 0,
+    });
+
+    await screen.getByLabelText("Name").fill("Ost");
+
+    await vi.waitFor(() =>
+      expect(rig.validateCalls).toContainEqual({
+        all: true,
+        preflightOnly: false,
+      }),
+    );
+  });
+});
+
 describe("reset", () => {
   test("a native reset re-seeds the field state", async () => {
     const { field } = fakeTextField("name");

@@ -12,9 +12,10 @@
      * are Kit-legal and only the Input side matters for preflight. */
     schema?: StandardSchemaV1<Input, unknown>;
 
-    /** Debounce (ms) for validation while typing on SCHEMA-LESS forms, where
-     * each validation is a server round-trip. Schema'd forms validate
-     * client-side and stay immediate. */
+    /** Debounce (ms) for validation while typing wherever validation is a
+     * server round-trip: always on SCHEMA-LESS forms, and on schema'd forms
+     * while server-produced issues are being refreshed. Client-side-only
+     * validation stays immediate. */
     validationDebounce?: number;
 
     resetOnSuccess?: boolean;
@@ -55,9 +56,23 @@
   state.clientOnlyValidation = schema !== undefined;
   setFormContext({ form: instance, state });
 
+  // Kit flags issues that came from the SERVER (a rejected submission, a
+  // server validation round-trip) and persists them through every client-side
+  // validation pass — no edit can refresh them, only another round-trip
+  // (merge_with_server_issues, verified against next.25). The flag itself is
+  // stripped from the public issues shape, so their presence is tracked here:
+  // set on rejection, cleared by a clean full validation, submission or
+  // reset. While set, input revalidation escalates to full validation so
+  // server-judged rules (a cross-field cap, a uniqueness check) stay live.
+  let serverIssuesPresent = false;
+
   // A parent mounts after its children, so every field has registered by now.
   onMount(() => {
     state.settled = true;
+
+    // Issues present before any client-side validation could have run are
+    // server-produced — the SSR-restored rejection of a no-JS submission.
+    serverIssuesPresent = (instance.fields.allIssues()?.length ?? 0) > 0;
   });
 
   // With a schema, typing validates client-side only — the server isn't
@@ -73,15 +88,27 @@
     state.submitError = undefined;
 
     try {
-      // Validate BEFORE opening the error gates: issues must be fresh when
-      // submitAttempted makes every field's issues visible. Inside the try:
-      // a schema-less validate() is a server round-trip whose failure must
-      // surface as submitError, not escalate to the nearest +error page.
-      await validate();
-      state.submitAttempted = true;
-      if (!state.isValid) return;
+      // Schema-less only: validate BEFORE opening the error gates (issues
+      // must be fresh when submitAttempted makes them all visible) and gate
+      // the submit on the fresh result. Inside the try: the validation is a
+      // server round-trip whose failure must surface as submitError, not
+      // escalate to the nearest +error page. Schema'd forms skip this — Kit's
+      // preflight already gated client validity before this callback ran
+      // (handleSubmit opens their gates), and lingering SERVER issues must
+      // never block here: client-side validation cannot refresh them, so
+      // gating on isValid would deadlock resubmission on problems the user
+      // already fixed. The submission itself re-judges them authoritatively.
+      if (schema === undefined) {
+        await validate();
+        state.submitAttempted = true;
+        if (!state.isValid) return;
+      }
 
-      if (!(await enhanceInstance.submit())) return;
+      if (!(await enhanceInstance.submit())) {
+        serverIssuesPresent = true;
+        return;
+      }
+      serverIssuesPresent = false;
 
       if (resetOnSuccess) enhanceInstance.element.reset();
 
@@ -116,7 +143,12 @@
         ? event.target.getAttribute("name")
         : null;
 
-    if (schema !== undefined) {
+    // Schema'd forms validate client-side and immediately — EXCEPT while
+    // server issues linger, which client-side validation can never refresh:
+    // those passes escalate to full validation (client schema first, then —
+    // only once it passes — the server round-trip that replaces the whole
+    // issue set), so a server-judged rule updates live as its inputs change.
+    if (schema !== undefined && !serverIssuesPresent) {
       try {
         // Same ordering rule: a newly-touched field must never flash issues
         // that are stale from the previous validation pass.
@@ -129,12 +161,20 @@
       return;
     }
 
-    // Schema-less: every validation is a server round-trip, so typing is
+    // Every validation from here is a server round-trip, so typing is
     // debounced. The touch waits for the validation, preserving the
     // no-stale-issues ordering.
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      void Promise.resolve(validate())
+      void Promise.resolve(
+        instance.validate({ all: true, preflightOnly: false }),
+      )
+        .then(() => {
+          // An empty result proves the server issues are gone — drop back to
+          // the immediate client-only cadence. Non-empty stays escalated: the
+          // set may still hold server issues (their flag isn't visible here).
+          serverIssuesPresent = (instance.fields.allIssues()?.length ?? 0) > 0;
+        })
         .catch(() => {})
         .finally(() => {
           if (name) state.markTouched(name);
@@ -148,7 +188,12 @@
   class={cn("flex flex-col gap-3", classes)}
   oninput={handleInput}
   onsubmit={handleSubmit}
-  onreset={() => state.reset()}
+  onreset={() => {
+    // Kit's own reset handler clears the whole issue set, server issues
+    // included.
+    serverIssuesPresent = false;
+    state.reset();
+  }}
 >
   {@render children()}
 </form>

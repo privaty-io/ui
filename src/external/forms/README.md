@@ -48,6 +48,18 @@ label stays as the accessible name.
 - Issues per field appear once the field is touched or a submit was
   attempted; `FormError` shows path-less issues and submit failures
   (`labels.form.generalError`).
+- **Server issues** (a rejected submission, a server validation round-trip)
+  are persisted by Kit through every client-side validation pass — no edit
+  can refresh them, only another round-trip. The Form handles both
+  consequences: a schema'd resubmission is never gated on them (the
+  submission re-judges them authoritatively), and while they linger, input
+  revalidation escalates to full validation — client schema first, then the
+  server round-trip that replaces the whole issue set — debounced like
+  schema-less typing. Rules that depend on server data (a cross-field cap, a
+  uniqueness check) therefore belong in the **server schema** (an async check
+  is fine) if they should refresh live while the user edits; issues raised in
+  the _handler_ (`invalid()`) clear optimistically on the next round-trip and
+  are re-judged at submit.
 
 ## Schema recipes (the footguns)
 
