@@ -5,18 +5,35 @@ import { getFormContext } from "../context";
 import type { FormState } from "../form-state.svelte";
 
 interface WireFieldOptions {
+  /** The field's form name (from the attributes Kit's `as(...)` returned).
+   * Must be unique within the form. */
   name: string;
+  /** The typed seed value — the baseline for dirty comparison and what
+   * reset restores. */
   initialValue: unknown;
+  /** Whether the field is required — feeds the majority-aware marker. */
   required: boolean;
+  /** Returns the field's current issues (the field's `issues()`). */
   issues: () => readonly StandardSchemaV1.Issue[] | undefined;
+  /** Reads the field's current value — raw DOM strings can appear mid-edit. */
   getValue: () => unknown;
+  /** Writes a value back to the field — used by the form-level reset. */
   setValue: (value: unknown) => void;
+  /** Maps raw field values onto the initialValue's domain before dirty
+   * comparison (e.g. "5" vs 5, "on" vs true). */
   normalize: (value: unknown) => unknown;
 }
 
 interface WiredField {
+  /** The owning form's FormState — inputs read e.g. isSubmitting from it. */
   state: FormState;
+  /** Resolver-translated issue messages, or empty while the field's issues
+   * are gated (not yet touched and no submit attempted). Recomputed on
+   * access, so template reads stay reactive. */
   readonly errors: string[];
+  /** The required/optional label text for the field's marker, or undefined —
+   * only the form's minority kind is marked, and nothing renders until every
+   * field has registered. */
   readonly marker: string | undefined;
 }
 

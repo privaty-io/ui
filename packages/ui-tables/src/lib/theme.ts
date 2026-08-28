@@ -32,15 +32,21 @@ const tableTheme = {
    * boundaries) are drawn by the mechanics. */
   border: "border-stone-300 dark:border-stone-700",
 
+  /** Sticky header background — opaque, per the rules above. */
   headerBackground: "bg-stone-100 dark:bg-stone-900",
+  /** Display-row background — pinned cells inherit it as their mask. */
   rowBackground: "bg-stone-50 dark:bg-stone-950",
+  /** Background for the create/edit editor rows. */
   editorRowBackground: "bg-stone-100 dark:bg-stone-900",
 
+  /** Empty-state message color. */
   emptyText: "text-stone-500",
 
   /** Icon sizing for every action/expander icon. */
   icon: "size-4",
+  /** Padding for the square icon action buttons per density. */
   iconButton: { comfortable: "p-1.5", compact: "p-1" },
+  /** Padding for the row-expander toggle per density. */
   expanderButton: { comfortable: "p-2", compact: "p-1" },
 
   /** Custom scrollbars (classic-scrollbar environments only). Tracks and

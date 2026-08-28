@@ -5,7 +5,7 @@ import Input from "./input.svelte";
 import Select from "./select.svelte";
 import "../testing/tailwind.css";
 
-// This stylesheet loads Tailwind WITHOUT @tailwindcss/forms — proving the
+// This stylesheet loads Tailwind WITHOUT `@tailwindcss/forms` — proving the
 // controls carry their own chrome. Published packages land in apps that
 // don't have the plugin; these computed-style guards fail if a control
 // starts leaning on it again.

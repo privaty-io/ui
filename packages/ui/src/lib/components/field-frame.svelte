@@ -1,3 +1,11 @@
+<!-- @component
+Shared field chrome — label, optional marker, and error list — around a
+control provided as a snippet. The snippet receives { id, errorsId }, which
+the control must apply as its `id` and `aria-describedby` for the label link
+and error announcement to work. The "floating" labelStyle additionally
+requires a cooperating control: it must carry the `peer` class and reserve
+room for the label to float into (see input.svelte).
+-->
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { cn } from "../cn";
@@ -5,18 +13,45 @@
   import type { LabelStyle } from "./types";
 
   interface Props {
+    /**
+     * Id for the control: the label's `for` points at it, and the errors
+     * list id derives from it (`${id}-errors`).
+     */
     id: string;
+    /** Visible label text (rendered sr-only when labelStyle is "hidden"). */
     label: string;
+    /**
+     * Label placement: "top" (default), "left" (inline before the control),
+     * "floating" (overlaid; floats up on focus or content — needs a
+     * cooperating control, see the component note), or "hidden" (visually
+     * hidden, still read by screen readers).
+     */
     labelStyle?: LabelStyle;
 
+    /**
+     * Validation messages rendered below the control and announced politely
+     * (aria-live). When present, `errorsId` is passed to the control snippet
+     * for aria-describedby.
+     */
     errors?: string[];
+    /** Small annotation rendered after the label text (e.g. "*" for
+     * required). */
     marker?: string;
 
+    /** Extra classes for the wrapper <div>. */
     class?: string;
+    /** Extra classes for the <label> element. */
     labelClass?: string;
+    /** Extra classes for the marker <span>. */
     markerClass?: string;
+    /** Extra classes for the error <ul>. */
     errorClass?: string;
 
+    /**
+     * Renders the actual form control. Receives { id, errorsId } — apply
+     * them as the control's `id` and `aria-describedby` (errorsId is
+     * undefined while there are no errors).
+     */
     control: Snippet<[{ id: string; errorsId: string | undefined }]>;
   }
 

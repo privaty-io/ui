@@ -1,3 +1,9 @@
+<!-- @component
+Labeled multi-line text control wrapping a native `<textarea>`. All remaining
+native textarea attributes pass through and `value` is bindable. Sizes itself
+from the ambient UI density context; the floating label style is not
+available.
+-->
 <script lang="ts">
   import type { HTMLTextareaAttributes } from "svelte/elements";
   import { cn } from "../cn";
@@ -6,19 +12,32 @@
   import { coreTheme } from "../theme";
   import type { LabelStyle } from "./types";
 
-  // No floating label style: the float-in-the-box mechanics are tuned to the
-  // single-line input box; multi-line boxes get the regular label styles.
   interface Props extends Omit<HTMLTextareaAttributes, "class"> {
+    /** Label text. Always rendered — the "hidden" label style keeps it
+     * screen-reader-only. */
     label: string;
+    /** Label placement: "top" (default), "left", or "hidden". No floating
+     * label style: the float-in-the-box mechanics are tuned to the
+     * single-line input box; multi-line boxes get the regular label
+     * styles. */
     labelStyle?: Exclude<LabelStyle, "floating">;
 
+    /** Validation messages rendered as a list under the control, linked to
+     * it via `aria-describedby` and announced politely when they appear. */
     errors?: string[];
+    /** Small annotation rendered after the label text (e.g. "*" for
+     * required). */
     marker?: string;
 
+    /** Extra classes for the outer field wrapper. */
     class?: string;
+    /** Extra classes for the <label> element. */
     labelClass?: string;
+    /** Extra classes for the <textarea> element. */
     textareaClass?: string;
+    /** Extra classes for the marker <span>. */
     markerClass?: string;
+    /** Extra classes for the error <ul>. */
     errorClass?: string;
   }
 

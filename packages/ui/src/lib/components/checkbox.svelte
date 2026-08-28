@@ -1,23 +1,47 @@
+<!-- @component
+Labeled checkbox with an optional marker and error list. Binds `checked`
+(defaults to false), not `value`. Errors are linked to the input via
+aria-describedby and announced politely. Generates its own id when none is
+provided.
+-->
 <script lang="ts">
   import type { HTMLInputAttributes } from "svelte/elements";
   import { cn } from "../cn";
   import { coreTheme } from "../theme";
 
-  // Structurally different from Input on purpose: the box renders before the
-  // label in a single row, binds `checked` instead of `value`, and label
-  // styles (floating included) don't apply.
+  /**
+   * Structurally different from Input on purpose: the box renders before the
+   * label in a single row, binds `checked` instead of `value`, and label
+   * styles (floating included) don't apply.
+   */
   interface Props extends Omit<HTMLInputAttributes, "class" | "type"> {
+    /**
+     * Always renders as type="checkbox" — the prop exists only so an
+     * explicit `type="checkbox"` type-checks.
+     */
     type?: "checkbox";
 
+    /** Visible label text, linked via `for`/`id` — clicking it toggles the box. */
     label: string;
 
+    /**
+     * Validation messages rendered below the row, linked to the input via
+     * aria-describedby and announced politely (aria-live).
+     */
     errors?: string[];
+    /** Small annotation rendered after the label text (e.g. "*" for
+     * required). */
     marker?: string;
 
+    /** Extra classes for the wrapper <div>. */
     class?: string;
+    /** Extra classes for the <label> element. */
     labelClass?: string;
+    /** Extra classes for the <input> element. */
     inputClass?: string;
+    /** Extra classes for the marker <span>. */
     markerClass?: string;
+    /** Extra classes for the error <ul>. */
     errorClass?: string;
   }
 

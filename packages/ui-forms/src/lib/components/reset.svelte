@@ -1,3 +1,9 @@
+<!-- @component
+Reset button — must render inside a <Form> (throws otherwise). Disabled
+while the form is pristine or submitting; clicking fires a native reset,
+which the Form's onreset handler turns into a full state reset (initial
+values restored, issues and error gates cleared).
+-->
 <script lang="ts">
   import Button from "@privaty/ui/components/button.svelte";
   import { getUiConfig } from "@privaty/ui/config/context.js";
@@ -6,8 +12,10 @@
   import type { Snippet } from "svelte";
 
   interface Props {
+    /** Button label — defaults to the configured `labels.form.reset`. */
     label?: string;
 
+    /** Extra classes for the button. */
     class?: string;
 
     /** Icon-style content rendered instead of the label text — the label

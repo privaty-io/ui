@@ -1,9 +1,18 @@
+<!-- @component
+Form-level error list — must render inside a <Form> (throws otherwise).
+Shows the configured `labels.form.generalError` line when a submission threw,
+plus every validation issue without a path (e.g. from `invalid("...")` in the
+handler), translated through the configured `resolveMessage`; field-level
+issues render at their inputs instead. Renders nothing while there are no
+messages.
+-->
 <script lang="ts">
   import { cn } from "@privaty/ui/cn.js";
   import { getUiConfig } from "@privaty/ui/config/context.js";
   import { getFormContext } from "../context";
 
   interface Props {
+    /** Extra classes for the <ul> element. */
     class?: string;
   }
 

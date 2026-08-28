@@ -29,6 +29,7 @@ class TableController {
   // flipped before the Table attached) would deadlock its own re-trigger.
   #preparedKey: string | undefined;
 
+  /** The current editor state — $state-backed, safe to read reactively. */
   get editor(): TableEditor {
     return this.#editor;
   }
@@ -55,14 +56,21 @@ class TableController {
     this.#editor = editor;
   }
 
+  /** Opens the create editor. Re-triggering while it is already open is a
+   * no-op — the draft survives. Vetoed when the table has no create form. */
   startCreate(): void {
     this.#start({ type: "create" });
   }
 
+  /** Opens the edit editor for the row with id `rowId` (as the Table's
+   * `rowKey` produces it). Re-triggering the open editor is a no-op — the
+   * draft survives; vetoed when the table has no edit form or no such row. */
   startEdit(rowId: RowKey): void {
     this.#start({ type: "edit", rowId });
   }
 
+  /** Returns to idle. Safe to call when already idle. Any open draft is
+   * effectively dropped — the next trigger reseeds its editor's fields. */
   close(): void {
     if (this.#editor.type !== "idle") this.#onTransition?.();
     this.#preparedKey = undefined;

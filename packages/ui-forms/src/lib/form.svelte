@@ -1,3 +1,10 @@
+<!-- @component
+Wrapper around a SvelteKit remote form: enhances it and provides the context
+every `@privaty/ui-forms` input and button requires. With a `schema`, typing
+validates client-side (preflight); without one, validation is a debounced
+server round-trip. A field's issues stay hidden until it is touched or a
+submit is attempted; submission always validates server-side regardless.
+-->
 <script lang="ts" generics="Input extends RemoteFormInput, Output">
   import { cn } from "@privaty/ui/cn.js";
   import type { RemoteForm, RemoteFormInput } from "$app/server";
@@ -7,24 +14,37 @@
   import { FormState } from "./form-state.svelte";
 
   type Props = {
+    /** The SvelteKit remote form instance to enhance. Captured on first
+     * render — it must stay the same instance for the component's lifetime. */
     form: Omit<RemoteForm<Input, Output>, "for">;
-    /** Output deliberately unconstrained: transform schemas (Output ≠ Input)
+    /** Standard Schema for client-side (preflight) validation while typing —
+     * without it, every validation pass is a server round-trip.
+     * Output deliberately unconstrained: transform schemas (Output ≠ Input)
      * are Kit-legal and only the Input side matters for preflight. */
     schema?: StandardSchemaV1<Input, unknown>;
 
     /** Debounce (ms) for validation while typing wherever validation is a
      * server round-trip: always on SCHEMA-LESS forms, and on schema'd forms
      * while server-produced issues are being refreshed. Client-side-only
-     * validation stays immediate. */
+     * validation stays immediate. Defaults to 400. */
     validationDebounce?: number;
 
+    /** Reset the form after a successful submission, restoring every field's
+     * initial value. Defaults to true. */
     resetOnSuccess?: boolean;
 
+    /** Called after a successful submission with the remote function's
+     * result (after the reset when `resetOnSuccess` is on). */
     onsuccess?: (result: Output | undefined) => void | Promise<void>;
+    /** Called when the submission flow throws — the round-trip, the submit
+     * itself, or `onsuccess`. The same error is kept as FormState.submitError,
+     * which <FormError> renders as a general error message. */
     onerror?: (error: unknown) => void | Promise<void>;
 
+    /** Extra classes for the <form> element. */
     class?: string;
 
+    /** Form content — the inputs and buttons that read this form's context. */
     children: Snippet;
   };
 

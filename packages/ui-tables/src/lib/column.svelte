@@ -1,10 +1,19 @@
+<!-- @component
+Declares one table column. Render inside a <Table>'s children — a Column
+registers its definition with the table during init and renders no markup of
+its own. Props are captured once: updates after init are not observed, so a
+column must be destroyed and recreated to change.
+-->
 <script lang="ts" generics="Row">
   import { onDestroy, type Snippet } from "svelte";
   import { getTableContext } from "./context";
   import type { EditorField } from "./types";
 
   interface Props {
+    /** Unique column identity — and the field name looked up on the
+     * create/edit form's `fields` when the column is editable. */
     key: string;
+    /** Header text (also the header cell's tooltip). */
     label: string;
 
     /** One accessor serves display, the default sort, and edit seeding. */
@@ -17,7 +26,14 @@
      * their edge and stay visible under horizontal scroll. */
     pin?: "left" | "right";
 
+    /** Renders the header as a sort toggle cycling ascending → descending →
+     * off. Defaults to false. */
     sortable?: boolean;
+    /** Custom comparator for sorting — receives full rows and returns the
+     * ascending order; the table negates it for descending. Without one,
+     * `value` results are compared: numbers and Dates numerically, everything
+     * else as localeCompare'd text, with nullish values last in both
+     * directions. */
     compare?: (a: Row, b: Row) => number;
 
     /** Seed for this column's field when the create editor opens. */
@@ -26,6 +42,9 @@
     /** Cell tooltip text — defaults to the raw value as text. */
     tooltip?: (row: Row) => string;
 
+    /** Replaces the default text rendering of the cell — receives the row
+     * and its `value` result. The cell tooltip still defaults to the raw
+     * value as text. */
     cell?: Snippet<[{ row: Row; value: unknown }]>;
     /** Present = the column is editable. `row` is undefined on the create
      * row. */

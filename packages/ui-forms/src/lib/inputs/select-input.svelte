@@ -1,3 +1,10 @@
+<!-- @component
+Select wired to a SvelteKit remote form field — must render inside a <Form>,
+whose context it registers with. Shows resolver-translated validation errors
+once the form state reveals them, plus a majority-aware required/optional
+marker. While submitting it locks interaction with CSS and key swallowing
+instead of disabling — a disabled select is excluded from FormData.
+-->
 <script lang="ts">
   import { cn } from "@privaty/ui/cn.js";
   import Select from "@privaty/ui/components/select.svelte";
@@ -9,27 +16,53 @@
   import { wireField } from "./wire-field";
 
   interface Props {
+    /** The SvelteKit remote form field to bind. Structural — anything
+     * satisfying the SelectField slice works, e.g. a fake from the public
+     * testing subpath. */
     field: SelectField;
+    /** Visible label text for the control. */
     label: string;
 
+    /** Options to render, in order. A plain string is shorthand for
+     * `{ value: s, label: s }`; values must be unique — they key the
+     * rendered list. */
     options: readonly (string | SelectOption)[];
+    /** Rendered as a disabled empty option, shown until a value is chosen.
+     * Its presence also makes "" the default seed for an unseeded field. */
     placeholder?: string;
 
+    /** Label placement: "top" (default), "left", or "hidden" — floating is
+     * not offered for selects. */
     labelStyle?: Exclude<LabelStyle, "floating">;
 
+    /** Marks the field required: feeds the majority-aware required/optional
+     * marker (required markers styled red) — forms where at least half the
+     * fields are required mark the optional ones instead. Validation itself
+     * comes from the field's schema, not this flag, and it is not forwarded
+     * as a native `required` attribute. */
     required?: boolean;
-    // Selects have no native readonly, so submitting locks interaction with
-    // CSS instead. NEVER disable while submitting: disabled controls are
-    // excluded from FormData, and Kit validates live form data mid-submission
-    // — a disabled select vanishes from it and fails its own validation.
+    /**
+     * Selects have no native readonly, so submitting locks interaction with
+     * CSS instead. NEVER disable while submitting: disabled controls are
+     * excluded from FormData, and Kit validates live form data mid-submission
+     * — a disabled select vanishes from it and fails its own validation.
+     */
     disabled?: boolean;
 
+    /** Seeds the field and marks the matching option `selected`, so native
+     * reset restores it. Omitted with a placeholder present, the field is
+     * seeded with "" and the placeholder is the initial state. */
     initialValue?: string;
 
+    /** Extra classes for the outer field wrapper. */
     class?: string;
+    /** Extra classes for the <label> element. */
     labelClass?: string;
+    /** Extra classes for the <select> element. */
     selectClass?: string;
+    /** Extra classes for the required/optional marker. */
     markerClass?: string;
+    /** Extra classes for the error <ul>. */
     errorClass?: string;
   }
 

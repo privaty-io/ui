@@ -3,6 +3,8 @@ import type { ColumnRegistration } from "./types";
 
 const tableContextKey = Symbol("privaty-ui-table-context");
 
+/** What a <Table> provides to the column components rendered in its
+ * children. */
 interface TableContext {
   /**
    * `never` on purpose: the row type only appears in parameter (input)
@@ -12,10 +14,14 @@ interface TableContext {
   register: (registration: ColumnRegistration<never>) => () => void;
 }
 
+/** Installs the table context — called by <Table> during its init, before
+ * its children (the columns) render. */
 function setTableContext(context: TableContext) {
   setContext<TableContext>(tableContextKey, context);
 }
 
+/** Reads the enclosing <Table>'s context. Throws when called outside a
+ * <Table>. */
 function getTableContext(): TableContext {
   const context = getContext<TableContext>(tableContextKey);
 

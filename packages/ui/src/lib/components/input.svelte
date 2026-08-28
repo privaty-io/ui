@@ -1,3 +1,9 @@
+<!-- @component
+Labeled single-line text control wrapping a native `<input>`. All remaining
+native input attributes pass through and `value` is bindable. Sizes itself
+from the ambient UI density context; in the floating label style the label
+doubles as the placeholder and a consumer-provided `placeholder` is ignored.
+-->
 <script lang="ts">
   import type { HTMLInputAttributes } from "svelte/elements";
   import { cn } from "../cn";
@@ -7,18 +13,36 @@
   import type { InputType, LabelStyle } from "./types";
 
   interface Props extends Omit<HTMLInputAttributes, "class" | "type"> {
+    /** Input type, restricted to box-shaped, `value`-bindable types — see
+     * `InputType` for what is excluded and why. Omitted, the browser
+     * defaults to `text`. */
     type?: InputType;
 
+    /** Label text. Always rendered — the "hidden" label style keeps it
+     * screen-reader-only. */
     label: string;
+    /** Label placement: "top" (default), "left", "floating", or "hidden"
+     * (visually hidden, still read by screen readers). With "floating" the
+     * label doubles as the placeholder and the `placeholder` prop is
+     * ignored. */
     labelStyle?: LabelStyle;
 
+    /** Validation messages rendered as a list under the control, linked to
+     * it via `aria-describedby` and announced politely when they appear. */
     errors?: string[];
+    /** Small annotation rendered after the label text (e.g. "*" for
+     * required). */
     marker?: string;
 
+    /** Extra classes for the outer field wrapper. */
     class?: string;
+    /** Extra classes for the <label> element. */
     labelClass?: string;
+    /** Extra classes for the <input> element. */
     inputClass?: string;
+    /** Extra classes for the marker <span>. */
     markerClass?: string;
+    /** Extra classes for the error <ul>. */
     errorClass?: string;
   }
 

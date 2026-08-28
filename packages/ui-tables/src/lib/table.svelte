@@ -1,3 +1,12 @@
+<!-- @component
+Data table with self-registering <Column> children, sticky headers, pinned
+columns, tri-state client-side sorting, row expansion, and inline CRUD editing
+built on remote forms. Actions appear by presence — Edit with editForm, the
+header Add button with createForm, Delete with ondelete — and exactly one
+editor is open at a time; switching drops the open draft silently. Fully
+server-renderable; the root is h-full and scrolls internally, so give the
+surrounding container a height.
+-->
 <script
   lang="ts"
   generics="Row, CreateInput extends RemoteFormInput = RemoteFormInput, CreateOutput = unknown, EditInput extends RemoteFormInput = RemoteFormInput, EditOutput = unknown"
@@ -43,21 +52,36 @@
   type EditRowKey = Parameters<RemoteForm<EditInput, EditOutput>["for"]>[0];
 
   type Props = {
+    /** The data to display. Sorting copies — the array is never mutated. */
     rows: readonly Row[];
+    /** Stable identity for a row — keys rendering, expansion, in-flight
+     * delete tracking, and edit targeting. For editing it must return the
+     * value the edit schema's id field carries: it is passed to
+     * `editForm.for()` and seeded into the hidden id input. */
     rowKey: (row: Row) => EditRowKey;
 
     /** Pass your own controller to trigger the editors from anywhere;
      * without one the Table still offers its per-row Edit button. */
     controller?: TableController;
 
+    /** Remote form driving the create editor — its presence puts the Add
+     * trigger in the actions header. Used as-is (the create singleton, no
+     * `.for()`). */
     createForm?: Omit<RemoteForm<CreateInput, CreateOutput>, "for">;
-    /** Output deliberately unconstrained — transform schemas are
+    /** Client-side validation schema for the create editor's Form. Output
+     * deliberately unconstrained — transform schemas are
      * Kit-legal. */
     createSchema?: StandardSchemaV1<CreateInput, unknown>;
 
+    /** Remote form driving the per-row edit editor — its presence adds the
+     * default Edit button. Instantiated per row via `.for(rowKey(row))`. */
     editForm?: RemoteForm<EditInput, EditOutput>;
+    /** Client-side validation schema for the edit editor's Form — same
+     * output freedom as createSchema. */
     editSchema?: StandardSchemaV1<EditInput, unknown>;
-    /** Field name in the edit schema that carries the row id. */
+    /** Field name in the edit schema that carries the row id — rendered
+     * automatically as a hidden input in the editor row. Defaults to
+     * "id". */
     idKey?: string;
 
     /** Width of the actions column as a CSS length. Optional — without it
@@ -71,10 +95,16 @@
 
     /** Styles the root element (the scroll wrapper). */
     class?: string;
+    /** Extra classes for the <table> element. */
     tableClass?: string;
+    /** Extra classes for every header cell. */
     headerCellClass?: string;
+    /** Extra classes for every body cell. */
     cellClass?: string;
+    /** Extra classes for display rows and the expanded-content rows beneath
+     * them (editor rows use editorRowClass). */
     rowClass?: string;
+    /** Extra classes for the create/edit editor rows. */
     editorRowClass?: string;
 
     /** Attach to show the default Delete action on display rows — the same
@@ -84,6 +114,8 @@
      * the in-flight state per row. */
     ondelete?: (row: Row) => unknown;
 
+    /** The <Column> definitions — columns self-register with the table via
+     * context while this renders. */
     children: Snippet;
     /** Replaces the default actions cell on display rows. */
     actions?: Snippet<[{ row: Row; controller: TableController }]>;
@@ -597,7 +629,9 @@
   // lands editor rows at display-row height instead of stretching them.
   const editorCellPadding = $derived(compact ? "py-0" : "py-0.5");
   const editorCellMinWidth = tableTheme.editorCellMinWidth;
-  const iconButtonClasses = $derived(compact ? "p-1" : "p-1.5");
+  const iconButtonClasses = $derived(
+    compact ? tableTheme.iconButton.compact : tableTheme.iconButton.comfortable,
+  );
   const expanderButtonClasses = $derived(
     compact
       ? tableTheme.expanderButton.compact
@@ -620,7 +654,10 @@
   const defaultRowClasses = tableTheme.rowBackground;
   // align-middle: editor and display cells share row heights now, so
   // non-editable content centers alongside the inputs.
-  const defaultEditorRowClasses = "bg-stone-100 align-middle dark:bg-stone-900";
+  const defaultEditorRowClasses = cn(
+    "align-middle",
+    tableTheme.editorRowBackground,
+  );
   const actionsCellClasses =
     "sticky right-0 z-10 w-px border-l bg-inherit whitespace-nowrap";
 

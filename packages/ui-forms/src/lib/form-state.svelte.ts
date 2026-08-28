@@ -23,7 +23,17 @@ class FormState {
   private fields = new SvelteMap<string, FieldRegistration>();
   private touched = new SvelteSet<string>();
 
+  /**
+   * True once a submit has been attempted — including attempts a validation
+   * gate blocked before any submission started. Opens issue display for every
+   * field. Cleared by reset().
+   */
   public submitAttempted = $state<boolean>(false);
+
+  /**
+   * The error the latest submission flow threw, or undefined. Cleared when
+   * the next submission flow starts and by reset().
+   */
   public submitError = $state<unknown>();
 
   /**
@@ -43,6 +53,11 @@ class FormState {
     this.form = form;
   }
 
+  /**
+   * True while any registered field's current value differs from its initial
+   * value (compared through the field's normalizer), so edit-then-revert
+   * returns to pristine.
+   */
   public readonly isDirty = $derived.by<boolean>(() => {
     for (const field of this.fields.values()) {
       // Both sides pass through the field's normalizer: Kit stores raw DOM
@@ -58,14 +73,21 @@ class FormState {
     return false;
   });
 
+  /** True when the form currently has no issues — client- or server-produced. */
   public readonly isValid = $derived.by<boolean>(
     () => !this.form.fields.allIssues()?.length,
   );
 
+  /** True while a submission is in flight (the form's `pending` count > 0). */
   public readonly isSubmitting = $derived.by<boolean>(
     () => this.form.pending > 0,
   );
 
+  /**
+   * True when at least as many registered fields are required as optional.
+   * Drives the marker convention: only the minority kind gets a marker, so
+   * mostly-required forms mark the optional fields and vice versa.
+   */
   public readonly majorityRequired = $derived.by<boolean>(() => {
     let required = 0;
     let optional = 0;
@@ -78,6 +100,11 @@ class FormState {
     return required >= optional;
   });
 
+  /**
+   * Registers a field for dirty tracking, markers and reset. Returns the
+   * unregister function — pass it to onDestroy. Field names must be unique
+   * within a form; a duplicate name throws.
+   */
   public register(field: FieldRegistration): () => void {
     if (this.fields.has(field.name))
       throw new Error(`FormState: field '${field.name}' is already registered`);
@@ -90,14 +117,27 @@ class FormState {
     };
   }
 
+  /**
+   * Marks a field touched so shouldShowIssues() starts returning true for it.
+   * The Form calls this AFTER a validation pass settles, so a newly-touched
+   * field never flashes issues stale from the previous pass.
+   */
   public markTouched(name: string): void {
     this.touched.add(name);
   }
 
+  /**
+   * Whether the named field's issues may be displayed: everything shows once
+   * a submit was attempted, before that only touched fields do.
+   */
   public shouldShowIssues(name: string): boolean {
     return this.submitAttempted || this.touched.has(name);
   }
 
+  /**
+   * Fire-and-forget full validation of the underlying form — preflight-only
+   * (off the network) when clientOnlyValidation is set.
+   */
   public validate(): void {
     // Defensive catch: validation for a form that unmounted (or failed a
     // network round-trip) mid-call has nowhere useful to surface from here.
@@ -109,6 +149,10 @@ class FormState {
     ).catch(() => {});
   }
 
+  /**
+   * Restores every registered field to its initial value, clears touched and
+   * submit state, and revalidates so stale issues don't outlive the reset.
+   */
   public reset(): void {
     for (const field of this.fields.values()) {
       field.setValue(field.initialValue);

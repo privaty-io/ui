@@ -1,3 +1,11 @@
+<!-- @component
+Checkbox wired to a SvelteKit remote form boolean field — must render inside
+a <Form>, whose context it registers with. Shows resolver-translated
+validation errors once the form state reveals them, plus a majority-aware
+required/optional marker. While submitting it locks interaction with CSS and
+key swallowing instead of disabling — a disabled checkbox is excluded from
+FormData and would silently submit as false.
+-->
 <script lang="ts">
   import { cn } from "@privaty/ui/cn.js";
   import Checkbox from "@privaty/ui/components/checkbox.svelte";
@@ -5,21 +13,39 @@
   import { wireField } from "./wire-field";
 
   interface Props {
+    /** The SvelteKit remote form field to bind. Structural — anything
+     * satisfying the CheckboxField slice works, e.g. a fake from the public
+     * testing subpath. */
     field: CheckboxField;
+    /** Visible label text, rendered next to the box. */
     label: string;
 
+    /** Marks the field required: feeds the majority-aware required/optional
+     * marker (required markers styled red) — forms where at least half the
+     * fields are required mark the optional ones instead. Validation itself
+     * comes from the field's schema, not this flag, and it is not forwarded
+     * as a native `required` attribute. */
     required?: boolean;
-    // Checkboxes have no native readonly, so submitting locks interaction
-    // with CSS instead. NEVER disable while submitting: disabled controls are
-    // excluded from FormData — a checked box would silently submit as false.
+    /**
+     * Checkboxes have no native readonly, so submitting locks interaction
+     * with CSS instead. NEVER disable while submitting: disabled controls are
+     * excluded from FormData — a checked box would silently submit as false.
+     */
     disabled?: boolean;
 
+    /** Initial checked state (default false); native form reset restores
+     * it. */
     initialValue?: boolean;
 
+    /** Extra classes for the outer field wrapper. */
     class?: string;
+    /** Extra classes for the <label> element. */
     labelClass?: string;
+    /** Extra classes for the <input> element. */
     inputClass?: string;
+    /** Extra classes for the required/optional marker. */
     markerClass?: string;
+    /** Extra classes for the error <ul>. */
     errorClass?: string;
   }
 

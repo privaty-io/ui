@@ -2,8 +2,8 @@ import { fakeRemoteForm } from "@privaty/ui-forms/testing/fakes.svelte.js";
 import { SvelteMap } from "svelte/reactivity";
 
 /**
- * Test doubles for the table's remote-form surface. Only for use in specs —
- * never imported by library runtime code.
+ * Test doubles for the table's remote-form surface. For use in specs and
+ * consumers' own tests — never imported by library runtime code.
  */
 
 /** Field handles keyed by field name, as produced by the forms field fakes
@@ -13,7 +13,8 @@ type FakeFieldHandles = Record<string, { field: unknown }>;
 /**
  * A fake remote form whose `fields` object is indexable by field name — the
  * way the Table reads it — while keeping `allIssues()` for the Form
- * component.
+ * component. `options` forwards to the underlying fakeRemoteForm; the result
+ * is that fake's handle plus the given `fieldHandles` for assertions.
  */
 function fakeEditableRemoteForm(
   fieldHandles: FakeFieldHandles,
@@ -37,7 +38,8 @@ function fakeEditableRemoteForm(
 type FakeEditableRemoteForm = ReturnType<typeof fakeEditableRemoteForm>;
 
 /** A fake keyed remote form: `.for(key)` returns one cached editable fake per
- * key, like Kit's instance cache does. */
+ * key, like Kit's instance cache does. `instanceFor(key)` hands specs the
+ * same cached instance, with its field handles, for assertions. */
 function fakeKeyedRemoteForm(
   makeInstance: (key: string | number) => FakeEditableRemoteForm,
 ) {

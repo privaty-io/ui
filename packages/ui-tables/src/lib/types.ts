@@ -8,8 +8,17 @@ import type {
 import type { Snippet } from "svelte";
 import type { HTMLInputAttributes } from "svelte/elements";
 
+/**
+ * Row identity as the Table's `rowKey` accessor produces it. Deliberately
+ * loose (string | number) so the controller API stays untied to any edit
+ * schema's key type.
+ */
 type RowKey = string | number;
 
+/**
+ * A table's editor state: idle, the create row open, or one row open for
+ * editing. Exactly one editor is active at a time.
+ */
 type TableEditor =
   { type: "idle" } | { type: "create" } | { type: "edit"; rowId: RowKey };
 
@@ -26,6 +35,10 @@ type EditorField = TextField &
   CheckboxField &
   DateField;
 
+/**
+ * Spread attributes for the hidden row-id input, as returned by
+ * `HiddenField.as("hidden", ...)`.
+ */
 type HiddenFieldAttributes = Omit<HTMLInputAttributes, "type"> & {
   name: string;
   type?: "hidden";
@@ -37,14 +50,25 @@ type HiddenFieldAttributes = Omit<HTMLInputAttributes, "type"> & {
  * `set: never` reasoning as the forms field slices.
  */
 interface HiddenField {
+  /** Attributes for the hidden input, optionally seeding an initial value —
+   * same tuple-union call shape as the forms field slices. */
   as(
     ...args: [type: "hidden"] | [type: "hidden", initialValue: string | number]
   ): HiddenFieldAttributes;
+  /** Reseeds the row id on edit entry. Typed `never` so any concrete field's
+   * `set` stays assignable to this slice — see the forms field slices. */
   set: (value: never) => void;
 }
 
+/**
+ * A column's definition as captured by <Column> during its init and read by
+ * the Table — mirrors Column's props.
+ */
 interface ColumnRegistration<Row> {
+  /** Unique column identity — the registry key, and the field name looked up
+   * on the create/edit form's `fields` when the column is editable. */
   key: string;
+  /** Header text (also the header cell's tooltip). */
   label: string;
 
   /** One accessor serves display, the default sort, and edit seeding. */
@@ -57,7 +81,14 @@ interface ColumnRegistration<Row> {
    * edge and stay visible under horizontal scroll. */
   pin?: "left" | "right";
 
+  /** Renders the header as a sort toggle cycling ascending → descending →
+   * off. */
   sortable: boolean;
+  /** Custom comparator for sorting — receives full rows and returns the
+   * ascending order; the table negates it for descending. Without one,
+   * `value` results are compared: numbers and Dates numerically, everything
+   * else as localeCompare'd text, with nullish values last in both
+   * directions. */
   compare?: (a: Row, b: Row) => number;
 
   /** Seed for this column's field when the create editor opens. */
@@ -66,6 +97,8 @@ interface ColumnRegistration<Row> {
   /** Cell tooltip text — defaults to the raw value as text. */
   tooltip?: (row: Row) => string;
 
+  /** Replaces the default text rendering of the cell — receives the row and
+   * its `value` result. */
   cell?: Snippet<[{ row: Row; value: unknown }]>;
   /** Present = the column is editable. `row` is undefined on the create row. */
   editor?: Snippet<[{ field: EditorField; row: Row | undefined }]>;

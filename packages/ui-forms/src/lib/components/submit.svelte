@@ -1,3 +1,9 @@
+<!-- @component
+Submit button — must render inside a <Form> (throws otherwise). Disabled
+per `disabledUntil` (default "dirty-and-valid") and always while submitting,
+when it shows a spinner, sets aria-busy, and swaps to `submittingLabel` when
+one is given.
+-->
 <script lang="ts">
   import { cn } from "@privaty/ui/cn.js";
   import Button from "@privaty/ui/components/button.svelte";
@@ -7,11 +13,19 @@
   import { getFormContext } from "../context";
 
   interface Props {
+    /** Button label — defaults to the configured `labels.form.submit`. */
     label?: string;
+    /** Label shown next to the spinner while submitting. Without it only the
+     * spinner is visible and the label stays as the sr-only accessible name. */
     submittingLabel?: string;
 
+    /** Validity gate: "dirty-and-valid" (default) disables the button until
+     * the form is both dirty and issue-free, "valid" only requires issue-free,
+     * "none" removes the gate. The button is always disabled while submitting
+     * regardless. */
     disabledUntil?: "dirty-and-valid" | "valid" | "none";
 
+    /** Extra classes for the button. */
     class?: string;
 
     /** Icon-style content rendered instead of the label text — the label

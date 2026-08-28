@@ -11,15 +11,28 @@ import type {
 import type { ValidatableForm } from "../types/form";
 
 /**
- * Test doubles for the structural form interfaces. Only for use in specs (and
- * eventually consumers' own tests) — never imported by library runtime code.
+ * Test doubles for the structural form interfaces. For use in specs and
+ * consumers' own tests — never imported by library runtime code.
  */
 
+/**
+ * The minimal issue shape the library reads back from a form — a Standard
+ * Schema issue narrowed to what tests need to construct.
+ */
 interface FakeIssue {
+  /** Human-readable validation message. */
   message: string;
+  /** Path segments locating the field the issue belongs to (Standard Schema
+   * shape). Omit for form-level issues. */
   path?: readonly (string | number)[];
 }
 
+/**
+ * Minimal `ValidatableForm` fake for FormState-level tests. `computeIssues`
+ * runs on every `validate()` call and its result becomes the issue set that
+ * `fields.allIssues()` exposes (default: always valid). State is reactive —
+ * effects re-run on `setIssues`/`setPending`.
+ */
 function fakeForm(
   computeIssues: () => readonly FakeIssue[] | undefined = () => undefined,
 ) {
@@ -39,17 +52,26 @@ function fakeForm(
   };
 
   return {
+    /** The fake form — pass it where a `ValidatableForm` is expected. */
     form,
+    /** Arguments of every `validate()` call, in order. */
     validateCalls,
+    /** Replaces the issue set directly, bypassing `validate()`. */
     setIssues: (next: readonly FakeIssue[] | undefined) => {
       issues = next;
     },
+    /** Sets the form's `pending` submission count. */
     setPending: (next: number) => {
       pending = next;
     },
   };
 }
 
+/**
+ * Structural `TextField` fake for TextInput/TextareaInput tests. `as()`
+ * returns plain spreadable attributes (no attachment); value and issues are
+ * reactive state. Pass `options.issues` to seed the field with issues.
+ */
 function fakeTextField(
   name: string,
   options: { issues?: readonly { message: string }[] } = {},
@@ -73,16 +95,25 @@ function fakeTextField(
   };
 
   return {
+    /** The fake field — pass it as the input component's `field` prop. */
     field,
+    /** Simulates USER typing (string fields store the same value `set()`
+     * would — no raw/typed split here). */
     edit: (next: string) => {
       value = next;
     },
+    /** Replaces the field's issue set. */
     setIssues: (next: readonly { message: string }[] | undefined) => {
       issues = next;
     },
   };
 }
 
+/**
+ * Structural `DateField` fake for DateInput tests. The whole date family
+ * (date, month, week, time, datetime-local) carries ISO-style string values,
+ * so one fake covers all five. Same shape and reactivity as `fakeTextField`.
+ */
 function fakeDateField(
   name: string,
   options: { issues?: readonly { message: string }[] } = {},
@@ -106,16 +137,26 @@ function fakeDateField(
   };
 
   return {
+    /** The fake field — pass it as the input component's `field` prop. */
     field,
+    /** Simulates USER input — an ISO-style string, same as `set()` would
+     * store. */
     edit: (next: string) => {
       value = next;
     },
+    /** Replaces the field's issue set. */
     setIssues: (next: readonly { message: string }[] | undefined) => {
       issues = next;
     },
   };
 }
 
+/**
+ * Structural `NumberField` fake for NumberInput tests. Mirrors Kit's mid-edit
+ * behavior: `edit()` stores the raw DOM string a user's typing would produce,
+ * while `set()` stores the typed number — the distinction is what makes
+ * dirty-tracking tests meaningful.
+ */
 function fakeNumberField(
   name: string,
   options: { issues?: readonly { message: string }[] } = {},
@@ -140,17 +181,24 @@ function fakeNumberField(
   };
 
   return {
+    /** The fake field — pass it as the input component's `field` prop. */
     field,
     /** Simulates USER typing: stores the raw DOM string, like Kit does. */
     edit: (next: number | undefined) => {
       value = next === undefined ? "" : String(next);
     },
+    /** Replaces the field's issue set. */
     setIssues: (next: readonly { message: string }[] | undefined) => {
       issues = next;
     },
   };
 }
 
+/**
+ * Structural `SelectField` fake for SelectInput tests. Same shape and
+ * reactivity as `fakeTextField` — select values are plain strings on both
+ * the DOM and typed sides.
+ */
 function fakeSelectField(
   name: string,
   options: { issues?: readonly { message: string }[] } = {},
@@ -173,16 +221,26 @@ function fakeSelectField(
   };
 
   return {
+    /** The fake field — pass it as the input component's `field` prop. */
     field,
+    /** Simulates the USER choosing an option: stores its string value. */
     edit: (next: string) => {
       value = next;
     },
+    /** Replaces the field's issue set. */
     setIssues: (next: readonly { message: string }[] | undefined) => {
       issues = next;
     },
   };
 }
 
+/**
+ * Structural `CheckboxField` fake for CheckboxInput tests. Like Kit's
+ * `as("checkbox", seed)`, the returned attributes expose `checked` and
+ * `defaultChecked` getters (the latter is what makes native reset restore
+ * the seed). `edit()` stores the raw DOM value ("on"/null) while `set()`
+ * stores the typed boolean — mirroring Kit's mid-edit behavior.
+ */
 function fakeCheckboxField(
   name: string,
   options: { issues?: readonly { message: string }[] } = {},
@@ -213,22 +271,33 @@ function fakeCheckboxField(
   };
 
   return {
+    /** The fake field — pass it as the input component's `field` prop. */
     field,
     /** Simulates a USER toggle: raw DOM value, like Kit's input listener. */
     edit: (next: boolean) => {
       value = next ? "on" : null;
     },
+    /** Replaces the field's issue set. */
     setIssues: (next: readonly { message: string }[] | undefined) => {
       issues = next;
     },
   };
 }
 
+/** The options object Kit's `validate()` accepts, as the fakes model it. */
 interface FakeValidateOptions {
+  /** Kit's flag to also surface issues on fields not yet edited and blurred
+   * (ignored after first submission). The fake attaches no behavior to it —
+   * it is only recorded in `validateCalls` and forwarded to `onValidate`. */
   all?: boolean;
+  /** True for client-schema-only validation with no server round-trip. In
+   * the fake it decides issue origin (preflight issues are client-flagged,
+   * full validations server-flagged) and the merge-vs-replace semantics of
+   * the resulting issue set. */
   preflightOnly?: boolean;
 }
 
+/** Behavior knobs for `fakeRemoteForm`. */
 interface FakeRemoteFormOptions {
   /** Issues the next validation resolves with (default: none — valid). */
   onValidate?: (
@@ -383,10 +452,16 @@ function fakeRemoteForm(options: FakeRemoteFormOptions = {}) {
   };
 
   return {
+    /** The fake remote form — pass it as the Form component's form. */
     form,
+    /** Arguments of every `validate()` call, in order. */
     validateCalls,
+    /** Schemas passed to `preflight()`, in order. */
     preflightCalls,
+    /** Number of enhance submissions started so far. */
     submitCount: () => submitCount,
+    /** Resolves the oldest still-gated `validate()` — pairs with the
+     * `gateValidate` option. */
     releaseValidate: () => validateGates.shift()?.(),
     /** Installs server-flagged issues directly — models the SSR-restored
      * issue set of a rejected no-JS submission. */

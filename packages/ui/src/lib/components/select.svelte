@@ -1,3 +1,10 @@
+<!-- @component
+Labeled dropdown wrapping a native `<select>` with an overlaid themed
+chevron. Options are plain strings or `{ value, label, disabled? }` objects;
+`value` is bindable and remaining native select attributes pass through.
+Sizes itself from the ambient UI density context. Single-select only —
+`multiple` is deliberately unsupported.
+-->
 <script lang="ts">
   import { ChevronDownIcon } from "@lucide/svelte";
   import type { HTMLSelectAttributes } from "svelte/elements";
@@ -10,9 +17,17 @@
   // `multiple` is excluded on purpose: multi-selects bind string arrays and
   // belong to a future dedicated component, not a boolean on this one.
   interface Props extends Omit<HTMLSelectAttributes, "class" | "multiple"> {
+    /** Label text. Always rendered — the "hidden" label style keeps it
+     * screen-reader-only. */
     label: string;
+    /** Label placement: "top" (default), "left", or "hidden". No floating
+     * style: the float mechanics depend on `:placeholder-shown`, which a
+     * select never matches. */
     labelStyle?: Exclude<LabelStyle, "floating">;
 
+    /** Options to render, in order. A plain string is shorthand for
+     * `{ value: s, label: s }`. Values must be unique — they key the
+     * rendered list. */
     options: readonly (string | SelectOption)[];
     /** Rendered as a disabled empty option, shown until a value is chosen. */
     placeholder?: string;
@@ -20,13 +35,22 @@
      * to it instead of the browser's first-option fallback. */
     defaultValue?: string;
 
+    /** Validation messages rendered as a list under the control, linked to
+     * it via `aria-describedby` and announced politely when they appear. */
     errors?: string[];
+    /** Small annotation rendered after the label text (e.g. "*" for
+     * required). */
     marker?: string;
 
+    /** Extra classes for the outer field wrapper. */
     class?: string;
+    /** Extra classes for the <label> element. */
     labelClass?: string;
+    /** Extra classes for the <select> element. */
     selectClass?: string;
+    /** Extra classes for the marker <span>. */
     markerClass?: string;
+    /** Extra classes for the error <ul>. */
     errorClass?: string;
   }
 

@@ -7,12 +7,14 @@ import { cn } from "./cn";
  *
  * SELF-SUFFICIENT ON PURPOSE: controls carry their own border width,
  * appearance reset, and select chevron — they must not rely on app-level
- * plugins like @tailwindcss/forms (published packages land in apps that
+ * plugins like `@tailwindcss/forms` (published packages land in apps that
  * don't have it).
  */
 const coreTheme = {
   /** Shared box chrome for input, textarea, and select. */
   controlBase: "w-full appearance-none rounded border px-2",
+  /** Neutral stone surface, border, and placeholder colors for the box
+   * controls, with focus/hover/active/disabled states in light and dark. */
   controlSurface: cn(
     "bg-stone-200/25 focus:bg-stone-200/50 enabled:hover:bg-stone-200/75 enabled:active:bg-stone-200/25 disabled:bg-stone-200/10",
     "border-stone-400 placeholder:text-stone-600 disabled:border-stone-400/50 disabled:text-stone-600",
@@ -36,21 +38,27 @@ const coreTheme = {
   ),
 
   checkbox: {
+    /** The native checkbox itself — colored via accent-color so the check
+     * follows the theme without replacing the native control. */
     box: cn(
       "size-4 cursor-pointer disabled:cursor-not-allowed",
       "accent-stone-800 dark:accent-stone-200",
     ),
+    /** The clickable label text next to the box. */
     label: "cursor-pointer text-stone-600 dark:text-stone-400",
   },
 
   button: {
+    /** Chrome shared by both variants — sizing, radius, cursor. */
     base: "cursor-pointer rounded px-3 py-1.5 disabled:cursor-not-allowed",
+    /** Filled high-contrast variant. */
     primary: cn(
       "bg-stone-800 text-stone-50 enabled:hover:bg-stone-700 enabled:active:bg-stone-800",
       "disabled:bg-stone-800/50",
       "dark:bg-stone-200 dark:text-stone-900 dark:enabled:hover:bg-stone-300 dark:enabled:active:bg-stone-200",
       "dark:disabled:bg-stone-200/50",
     ),
+    /** Outlined transparent variant. */
     secondary: cn(
       "border border-stone-400 bg-transparent text-inherit enabled:hover:bg-stone-200/50 enabled:active:bg-transparent",
       "disabled:border-stone-400/50 disabled:text-stone-500",
@@ -60,8 +68,11 @@ const coreTheme = {
   },
 
   field: {
+    /** The field's label text. */
     label: "text-nowrap text-stone-600 dark:text-stone-400",
+    /** The required/optional minority marker beside the label. */
     marker: "text-xs",
+    /** Validation error text. */
     error: "text-sm text-red-700 dark:text-red-500",
   },
 };
