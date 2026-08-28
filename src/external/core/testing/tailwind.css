@@ -1,0 +1,5 @@
+/* Loads Tailwind into browser-mode specs that assert real geometry —
+   component classes are inert without it and measurements are meaningless
+   (e.g. an unstyled table has 2px default border-spacing, content-sized columns,
+   and no sticky offsets). */
+@import "tailwindcss";

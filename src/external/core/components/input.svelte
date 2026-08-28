@@ -3,6 +3,7 @@
   import { cn } from "../cn";
   import { getUiDensity } from "../config/density";
   import FieldFrame from "./field-frame.svelte";
+  import { coreTheme } from "../theme";
   import type { InputType, LabelStyle } from "./types";
 
   interface Props extends Omit<HTMLInputAttributes, "class" | "type"> {
@@ -51,11 +52,8 @@
   const compact = $derived(densityContext.density === "compact");
 
   const inputClassDefaults = cn(
-    "w-full rounded px-2",
-    "bg-stone-200/25 focus:bg-stone-200/50 enabled:hover:bg-stone-200/75 enabled:active:bg-stone-200/25 disabled:bg-stone-200/10",
-    "border-stone-400 placeholder:text-stone-600 disabled:border-stone-400/50 disabled:text-stone-600",
-    "dark:bg-stone-800/25 dark:focus:bg-stone-800/50 dark:enabled:hover:bg-stone-800/75 dark:enabled:active:bg-stone-800/25 dark:disabled:bg-stone-800/10",
-    "dark:border-stone-600 dark:placeholder:text-stone-400 dark:disabled:border-stone-600/50 dark:disabled:text-stone-400",
+    coreTheme.controlBase,
+    coreTheme.controlSurface,
   );
 </script>
 
@@ -80,7 +78,9 @@
       {id}
       class={cn(
         inputClassDefaults,
-        compact ? "py-0.5 text-sm" : "py-1.5",
+        compact
+          ? coreTheme.controlPadding.compact
+          : coreTheme.controlPadding.comfortable,
         labelStyle === "floating" && "peer pt-4 pb-0.5",
         inputClass,
       )}

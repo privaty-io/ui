@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { cn } from "../cn";
+  import { coreTheme } from "../theme";
   import type { LabelStyle } from "./types";
 
   interface Props {
@@ -38,12 +39,9 @@
   const errorsId = $derived(errors.length ? `${id}-errors` : undefined);
 
   const classDefaults = cn("flex w-full flex-col gap-1");
-  const labelClassDefaults = cn(
-    "text-nowrap",
-    "text-stone-600 dark:text-stone-400",
-  );
-  const markerClassDefaults = cn("text-xs");
-  const errorClassDefaults = cn("text-sm text-red-700 dark:text-red-500");
+  const labelClassDefaults = coreTheme.field.label;
+  const markerClassDefaults = coreTheme.field.marker;
+  const errorClassDefaults = coreTheme.field.error;
 </script>
 
 {#snippet labelText()}

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { HTMLInputAttributes } from "svelte/elements";
   import { cn } from "../cn";
+  import { coreTheme } from "../theme";
 
   // Structurally different from Input on purpose: the box renders before the
   // label in a single row, binds `checked` instead of `value`, and label
@@ -42,15 +43,10 @@
   const inputId = $derived(providedId ?? uid);
   const errorsId = $derived(errors.length ? `${inputId}-errors` : undefined);
 
-  const labelClassDefaults = cn(
-    "cursor-pointer text-stone-600 dark:text-stone-400",
-  );
-  const inputClassDefaults = cn(
-    "size-4 cursor-pointer disabled:cursor-not-allowed",
-    "accent-stone-800 dark:accent-stone-200",
-  );
-  const markerClassDefaults = cn("text-xs");
-  const errorClassDefaults = cn("text-sm text-red-700 dark:text-red-500");
+  const labelClassDefaults = coreTheme.checkbox.label;
+  const inputClassDefaults = coreTheme.checkbox.box;
+  const markerClassDefaults = coreTheme.field.marker;
+  const errorClassDefaults = coreTheme.field.error;
 </script>
 
 <div class={cn("flex w-full flex-col gap-1", classes)}>

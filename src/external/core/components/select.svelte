@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { ChevronDownIcon } from "@lucide/svelte";
   import type { HTMLSelectAttributes } from "svelte/elements";
   import { cn } from "../cn";
   import { getUiDensity } from "../config/density";
   import FieldFrame from "./field-frame.svelte";
+  import { coreTheme } from "../theme";
   import type { LabelStyle, SelectOption } from "./types";
 
   // `multiple` is excluded on purpose: multi-selects bind string arrays and
@@ -65,11 +67,9 @@
   const compact = $derived(densityContext.density === "compact");
 
   const selectClassDefaults = cn(
-    "w-full cursor-pointer rounded px-2 disabled:cursor-not-allowed",
-    "bg-stone-200/25 focus:bg-stone-200/50 enabled:hover:bg-stone-200/75 disabled:bg-stone-200/10",
-    "border-stone-400 disabled:border-stone-400/50 disabled:text-stone-600",
-    "dark:bg-stone-800/25 dark:focus:bg-stone-800/50 dark:enabled:hover:bg-stone-800/75 dark:disabled:bg-stone-800/10",
-    "dark:border-stone-600 dark:disabled:border-stone-600/50 dark:disabled:text-stone-400",
+    coreTheme.controlBase,
+    coreTheme.controlSurface,
+    coreTheme.select,
   );
 </script>
 
@@ -85,31 +85,38 @@
   {errorClass}
 >
   {#snippet control({ id, errorsId })}
-    <select
-      {...rest}
-      bind:value
-      {id}
-      class={cn(
-        selectClassDefaults,
-        compact ? "py-0.5 text-sm" : "py-1.5",
-        selectClass,
-      )}
-      aria-describedby={errorsId}
-    >
-      {#if placeholder}
-        <option value="" disabled selected={defaultValue === ""}>
-          {placeholder}
-        </option>
-      {/if}
-      {#each normalizedOptions as option (option.value)}
-        <option
-          value={option.value}
-          disabled={option.disabled}
-          selected={option.value === defaultValue}
-        >
-          {option.label}
-        </option>
-      {/each}
-    </select>
+    <!-- A select cannot contain children, so the chevron overlays it from a
+         relative wrapper (appearance-none removed the native arrow). -->
+    <div class="relative w-full">
+      <select
+        {...rest}
+        bind:value
+        {id}
+        class={cn(
+          selectClassDefaults,
+          compact
+            ? coreTheme.controlPadding.compact
+            : coreTheme.controlPadding.comfortable,
+          selectClass,
+        )}
+        aria-describedby={errorsId}
+      >
+        {#if placeholder}
+          <option value="" disabled selected={defaultValue === ""}>
+            {placeholder}
+          </option>
+        {/if}
+        {#each normalizedOptions as option (option.value)}
+          <option
+            value={option.value}
+            disabled={option.disabled}
+            selected={option.value === defaultValue}
+          >
+            {option.label}
+          </option>
+        {/each}
+      </select>
+      <ChevronDownIcon class={coreTheme.selectChevron} aria-hidden="true" />
+    </div>
   {/snippet}
 </FieldFrame>
