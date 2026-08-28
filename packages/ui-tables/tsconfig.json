@@ -1,0 +1,4 @@
+{
+  "extends": "@config/typescript/kit-package.json",
+  "include": ["src"]
+}

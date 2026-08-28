@@ -1,0 +1,8 @@
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    // Loads Kit's ambient module declarations ($app/server types) without a
+    // SvelteKit project — the packages import $app modules type-only.
+    "types": ["@sveltejs/kit"]
+  }
+}

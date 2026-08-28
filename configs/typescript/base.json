@@ -1,0 +1,22 @@
+{
+  // Shared base for the library packages. Mirrors the essential/recommended
+  // options SvelteKit generates for the playground ($app/tsconfig), so code
+  // type-checks identically on both sides of the package boundary.
+  "compilerOptions": {
+    "strict": true,
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "noEmit": true
+  }
+}

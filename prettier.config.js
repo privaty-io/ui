@@ -4,7 +4,7 @@ const config = {
 
   overrides: [{ files: "*.svelte", options: { parser: "svelte" } }],
 
-  tailwindStylesheet: "./src/lib/assets/styles/app.css",
+  tailwindStylesheet: "./apps/playground/src/lib/assets/styles/app.css",
   tailwindFunctions: ["clsx", "twMerge", "cn"],
 };
 

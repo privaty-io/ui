@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* The workspace packages live outside this app's Vite root, so Tailwind's
+   automatic source detection cannot see their class names — the same
+   @source rule every consumer of the published packages needs. */
+@source "../../../../../../packages/ui/src/lib";
+@source "../../../../../../packages/ui-forms/src/lib";
+@source "../../../../../../packages/ui-tables/src/lib";
+
+@theme {
+  --font-sans: "Inter Variable", sans-serif;
+
+  --grid-template-rows-layout: auto 1fr auto;
+  --grid-template-columns-layout: auto 1fr auto;
+}
+
+@layer base {
+  html {
+    &[data-theme="light"] {
+      scrollbar-color: var(--color-stone-400) var(--color-stone-50);
+      color-scheme: only light;
+
+      * {
+        scrollbar-color: var(--color-stone-400) transparent;
+      }
+    }
+
+    &[data-theme="dark"] {
+      scrollbar-color: var(--color-stone-600) var(--color-stone-950);
+      color-scheme: only dark;
+
+      * {
+        scrollbar-color: var(--color-stone-600) transparent;
+      }
+    }
+  }
+
+  body {
+    @apply bg-stone-50 text-stone-800 dark:bg-stone-950 dark:text-stone-200;
+
+    > div#app {
+      @apply mx-auto grid min-h-svh max-w-7xl grid-rows-layout px-2;
+
+      > * {
+        @apply col-start-1;
+      }
+    }
+  }
+}
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@custom-variant theme-system (&:where([data-theme-preference=system], [data-theme-preference=system] *));
+@custom-variant theme-light (&:where([data-theme-preference=light], [data-theme-preference=light] *));
+@custom-variant theme-dark (&:where([data-theme-preference=dark], [data-theme-preference=dark] *));

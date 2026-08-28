@@ -1,0 +1,54 @@
+{
+  "name": "@privaty/ui-tables",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "build": "svelte-package && find dist \\( -name '*.test.*' -o -name '*.fixture.*' \\) -delete",
+    "lint": "eslint ."
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    "./*": {
+      "svelte": "./src/lib/*",
+      "default": "./src/lib/*"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      "./package.json": "./package.json",
+      "./*": {
+        "svelte": "./dist/*",
+        "default": "./dist/*"
+      }
+    }
+  },
+  "peerDependencies": {
+    "@privaty/ui": "workspace:^",
+    "@privaty/ui-forms": "workspace:^",
+    "@sveltejs/kit": "^3.0.0-next.0",
+    "svelte": "^5.0.0"
+  },
+  "dependencies": {
+    "@lucide/svelte": "catalog:",
+    "@standard-schema/spec": "catalog:"
+  },
+  "devDependencies": {
+    "@config/eslint": "workspace:*",
+    "@config/typescript": "workspace:*",
+    "@privaty/ui": "workspace:*",
+    "@privaty/ui-forms": "workspace:*",
+    "@sveltejs/kit": "catalog:",
+    "@sveltejs/package": "catalog:",
+    "eslint": "catalog:",
+    "svelte": "catalog:",
+    "svelte-check": "catalog:",
+    "typescript": "catalog:"
+  }
+}
