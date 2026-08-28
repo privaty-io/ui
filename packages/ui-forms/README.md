@@ -5,7 +5,11 @@ Form components built on **SvelteKit remote functions** (experimental):
 and a small `FormState` layer adds the display semantics Kit doesn't ship —
 value-based dirty tracking, touch-gated error display, submit gating.
 
-> **Not yet published.** Requires `@privaty/ui` as a **peerDependency**
+```bash
+pnpm add @privaty/ui @privaty/ui-forms
+```
+
+> Requires `@privaty/ui` as a **peerDependency** at the same lockstep version
 > (single instance — Symbol-keyed contexts), `@sveltejs/kit` with
 > `experimental.remoteFunctions` + `compilerOptions.experimental.async`, and
 > Tailwind v4 (`@source` the package, see the core README).

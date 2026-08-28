@@ -5,9 +5,13 @@ A declarative data table for SvelteKit remote functions: self-registering
 columns, row expansion, an empty/fill state — and inline CRUD editing built
 on `@privaty/ui-forms`.
 
-> **Not yet published.** Requires `@privaty/ui` AND `@privaty/ui-forms` as
-> **peerDependencies** (single instances — Symbol-keyed contexts), plus the
-> Kit/Tailwind setup from their READMEs.
+```bash
+pnpm add @privaty/ui @privaty/ui-forms @privaty/ui-tables
+```
+
+> Requires `@privaty/ui` AND `@privaty/ui-forms` as **peerDependencies** at
+> the same lockstep version (single instances — Symbol-keyed contexts), plus
+> the Kit/Tailwind setup from their READMEs.
 
 ## Quickstart
 

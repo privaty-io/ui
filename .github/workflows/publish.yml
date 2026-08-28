@@ -1,0 +1,66 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # npm provenance attestation (requires the repository to be public —
+      # remove this and NPM_CONFIG_PROVENANCE below if it ever goes private).
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      # Lockstep guard: every packages/* manifest must match the tag.
+      - name: Verify tag matches package versions
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          for manifest in packages/*/package.json; do
+            version=$(node -p "require('./$manifest').version")
+            if [ "$version" != "$tag" ]; then
+              echo "::error::$manifest is $version but tag is $tag"
+              exit 1
+            fi
+          done
+
+      # vitest browser mode runs the component specs in real Chromium.
+      - run: pnpm exec playwright install chromium --with-deps
+
+      - run: pnpm check
+      - run: pnpm lint
+      - run: pnpm test --run
+      - run: pnpm build
+
+      # pnpm rewrites workspace:^ peers to the lockstep version and applies
+      # each package's publishConfig (exports -> dist). Private workspace
+      # projects (playground, configs) are skipped automatically.
+      #
+      # TOKENLESS PLAN: npm cannot trusted-publish a package's FIRST version
+      # (the package must exist before a Trusted Publisher can be configured
+      # on it — npm/cli#8544), so the first release uses NPM_TOKEN. After it:
+      # configure a Trusted Publisher on each package (npmjs.com -> package
+      # -> Settings: repo privaty-io/ui, workflow publish.yml), delete the
+      # token + the NODE_AUTH_TOKEN line, and pnpm's OIDC support takes over
+      # via the id-token permission (provenance then happens automatically).
+      # If that hits pnpm 11's OIDC 404 regression (pnpm/pnpm#11513), swap
+      # this step for `pnpm -r pack` + `npm publish` of the tarballs — pack
+      # applies the same publishConfig/workspace rewrites.
+      - name: Publish to npm
+        run: pnpm publish -r --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

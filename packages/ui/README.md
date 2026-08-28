@@ -4,8 +4,12 @@ Core building blocks shared by `@privaty/ui-forms` and `@privaty/ui-tables`:
 the base controls (Input, Textarea, Select, Checkbox, Button, Spinner,
 FieldFrame), the `cn()` class merger, and the configuration contexts.
 
-> **Not yet published** — currently consumed in-repo via the `@privaty/ui/*`
-> subpath imports.
+```bash
+pnpm add @privaty/ui
+```
+
+> Pre-1.0 until SvelteKit 3 is stable — all `@privaty/*` packages version in
+> lockstep, so install matching versions.
 
 ## Requirements
 
