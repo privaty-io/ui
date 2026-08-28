@@ -27,7 +27,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "svelte": "catalog:",
     "tailwindcss": "catalog:",
-    "turbo": "^2.5.0",
+    "turbo": "^2.10.12",
     "typescript": "catalog:",
     "vitest": "^4.1.11",
     "vitest-browser-svelte": "^3.0.0"
