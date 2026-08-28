@@ -39,17 +39,15 @@
     errorClass,
   }: Props = $props();
 
-  const attributes = $derived(field.as("checkbox"));
+  // The seed rides Kit's as(): it supplies both `checked` and the
+  // `defaultChecked` getter (native reset restores the seed). Kit's
+  // defaultChecked is non-configurable — never add our own on top.
+  const attributes = $derived(field.as("checkbox", initialValue));
 
   // The field and initialValue are stable for the component's lifetime, so
   // capturing the initial name and registration is intentional.
   // svelte-ignore state_referenced_locally
   const name = attributes.name;
-
-  // Seed a checked edit-form checkbox through the field itself, so the remote
-  // form's state and the rendered checked attribute agree from the start.
-  // svelte-ignore state_referenced_locally
-  if (initialValue) field.set(true);
 
   // svelte-ignore state_referenced_locally
   const wired = wireField({
@@ -57,9 +55,12 @@
     initialValue,
     required,
     issues: () => field.issues(),
-    // Unchecked checkboxes are absent from the data, so undefined means
-    // false.
-    getValue: () => field.value() ?? false,
+    // Kit's field state: undefined = untouched (fall back to the seed);
+    // null = explicitly UNCHECKED (must not fall through to the seed).
+    getValue: () => {
+      const value = field.value();
+      return value === undefined ? initialValue : value;
+    },
     setValue: (value) => field.set(value as boolean),
     // Mid-edit Kit stores the raw DOM value: "on" when checked, null when
     // unchecked.
@@ -82,7 +83,6 @@
   errors={wired.errors}
   marker={wired.marker}
   aria-invalid={wired.errors.length > 0 ? true : undefined}
-  defaultChecked={initialValue}
   onkeydown={lockKeysWhileSubmitting}
   {disabled}
   class={classes}

@@ -194,11 +194,15 @@ function fakeCheckboxField(
   );
 
   const field: CheckboxField = {
-    as: (type: "checkbox") => ({
+    as: (type: "checkbox", initialValue?: boolean) => ({
       name,
       type,
       get checked() {
+        if (value === undefined) return initialValue ?? false;
         return value === true || value === "on";
+      },
+      get defaultChecked() {
+        return initialValue;
       },
     }),
     issues: () => issues,

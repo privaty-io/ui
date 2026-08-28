@@ -47,8 +47,12 @@ class FormState {
     for (const field of this.fields.values()) {
       // Both sides pass through the field's normalizer: Kit stores raw DOM
       // strings mid-edit while registrations hold typed seeds, so "5" vs 5
-      // and "on" vs true must compare equal.
-      const value = field.normalize(field.getValue() ?? field.initialValue);
+      // and "on" vs true must compare equal. Only undefined means
+      // "untouched" — null is a real value (Kit's unchecked checkbox).
+      const raw = field.getValue();
+      const value = field.normalize(
+        raw === undefined ? field.initialValue : raw,
+      );
       if (value !== field.normalize(field.initialValue)) return true;
     }
     return false;

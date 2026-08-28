@@ -36,7 +36,7 @@ describe("wiring", () => {
     expect(screen.component.state.isDirty).toBe(false);
   });
 
-  test("seeds a checked initial value through the field", async () => {
+  test("seeds a checked initial value through Kit's as()", async () => {
     const { field } = fakeCheckboxField("inStock");
     const screen = await render(Fixture, {
       form: fakeForm().form,
@@ -47,11 +47,12 @@ describe("wiring", () => {
 
     const box = screen.getByLabelText("In stock");
     await expect.element(box).toBeChecked();
-    expect(field.value()).toBe(true);
     expect(screen.component.state.isDirty).toBe(false);
 
-    // Native reset restores defaultChecked — the seed must live there too,
-    // or an untouched checked box would revert to unchecked.
+    // The seed rides as("checkbox", true): Kit supplies checked AND the
+    // defaultChecked getter, so a native reset restores the seed. (A
+    // separate defaultChecked attribute would crash SSR — Kit's getter is
+    // non-configurable.)
     expect((box.element() as HTMLInputElement).defaultChecked).toBe(true);
   });
 

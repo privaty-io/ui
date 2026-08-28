@@ -127,12 +127,17 @@ type CheckboxFieldAttributes = Omit<HTMLInputAttributes, "type"> & {
 
 /**
  * The slice of a SvelteKit remote form boolean field that CheckboxInput
- * needs. Same structural/method-syntax reasoning as TextField. Only the
- * bare call shape is declared — Kit types the two-argument form's value by
- * the field's value type, and a single boolean checkbox never uses it.
+ * needs. Same structural/method-syntax reasoning as TextField. The seeded
+ * call shape matters: Kit's as("checkbox", seed) provides `checked` AND a
+ * `defaultChecked` getter, which is what makes native reset restore the
+ * seed — never add a separate defaultChecked attribute on top (Kit defines
+ * its getter non-configurably; SSR crashes redefining it).
  */
 interface CheckboxField {
-  as(type: "checkbox"): CheckboxFieldAttributes;
+  // Same tuple-union reasoning as TextField.as.
+  as(
+    ...args: [type: "checkbox"] | [type: "checkbox", initialValue: boolean]
+  ): CheckboxFieldAttributes;
   issues(): readonly StandardSchemaV1.Issue[] | undefined;
   /** Mid-edit, Kit stores the raw DOM value ("on") or null for unchecked —
    * coercion to boolean only happens at submit/reset. */
