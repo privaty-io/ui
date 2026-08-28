@@ -9,7 +9,7 @@ import {
   fakeEditableRemoteForm,
   fakeKeyedRemoteForm,
 } from "./testing/fakes.svelte";
-import "./testing/tailwind.css";
+import "#privaty/ui/testing/tailwind.css";
 
 describe("pinned geometry", () => {
   test("pinned columns stay contiguous with the expander under scroll", async () => {

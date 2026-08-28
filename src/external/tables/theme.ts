@@ -16,7 +16,7 @@ const tableTheme = {
   /** Root scroll wrapper: the outer frame, rounding, and the background
    * that paints the fill region below sparse rows. */
   frame:
-    "rounded border border-stone-300 bg-white dark:border-stone-700 dark:bg-stone-950",
+    "rounded border border-stone-300 bg-stone-50 dark:border-stone-700 dark:bg-stone-950",
 
   /** Type scale on the <table> per density. */
   type: { comfortable: "", compact: "text-sm" },
@@ -33,7 +33,7 @@ const tableTheme = {
   border: "border-stone-300 dark:border-stone-700",
 
   headerBackground: "bg-stone-100 dark:bg-stone-900",
-  rowBackground: "bg-white dark:bg-stone-950",
+  rowBackground: "bg-stone-50 dark:bg-stone-950",
   editorRowBackground: "bg-stone-100 dark:bg-stone-900",
 
   emptyText: "text-stone-500",
