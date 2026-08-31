@@ -322,7 +322,9 @@ describe("column groups", () => {
     });
 
     const cells = [
-      ...screen.container.querySelectorAll("thead tr:first-child th"),
+      ...screen.container.querySelectorAll<HTMLTableCellElement>(
+        "thead tr:first-child th",
+      ),
     ];
     // Pinned price is reordered first and breaks out label-less; name keeps
     // the group with a shrunken span; the date column spans alone.

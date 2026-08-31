@@ -41,6 +41,7 @@
   },
   "publishConfig": {
     "access": "public",
+    "types": "./dist/index.d.ts",
     "exports": {
       "./package.json": "./package.json",
       ".": {
@@ -78,7 +79,5 @@
     "svelte": "catalog:",
     "svelte-check": "catalog:",
     "typescript": "catalog:"
-  },
-  "svelte": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  }
 }
