@@ -94,6 +94,14 @@ surrounding container a height.
      * Defaults to the ambient density context. */
     density?: UiDensity;
 
+    /** Column key the table scrolls to when it first mounts — the column
+     * lands at the left edge of the scrolling region, after any pinned
+     * columns — so a calendar spanning several years starts on the current
+     * one, e.g. initialColumn={currentYear + "-01"}. Applied ONCE; later
+     * remounts restore the user's own scroll position instead. For jumps
+     * after mount, use `controller.scrollToColumn()`. */
+    initialColumn?: string;
+
     /** Veils the whole table with a blurred overlay and a spinner, blocking
      * interaction with the (stale) rows beneath. Wire it to a remote
      * query's `.loading`, which flips true on every refresh — including the
@@ -153,6 +161,8 @@ surrounding container a height.
     actionsWidth,
 
     density,
+
+    initialColumn,
 
     loading = false,
 
@@ -427,6 +437,15 @@ surrounding container a height.
     wrapper.scrollLeft = savedScrollLeft;
     wrapper.scrollTop = savedScrollTop;
 
+    if (!initialScrollApplied) {
+      initialScrollApplied = true;
+      if (initialColumn !== undefined) scrollToColumn(initialColumn);
+    }
+    // A scrollToColumn() fired before this scrollport existed (including
+    // pre-mount calls) applies now — deliberately AFTER initialColumn, so
+    // an explicit request wins over the declarative default.
+    controller.flushScroll();
+
     const measure = () => {
       scrollportWidth = wrapper.clientWidth;
       scrollportHeight = wrapper.clientHeight;
@@ -608,10 +627,45 @@ surrounding container a height.
     return true;
   }
 
+  // The frozen edge (expander + left-pinned columns) occupies the leading
+  // header cells — a scrolled-to column must land just after it, not under
+  // it. Measured from the live cells so declared-width units don't matter.
+  function scrollToColumn(
+    key: string,
+    options?: { behavior?: ScrollBehavior },
+  ): boolean {
+    const wrapper = scrollWrapper;
+    if (!wrapper) return false;
+
+    const target = wrapper.querySelector<HTMLElement>(
+      `thead th[data-column="${CSS.escape(key)}"]`,
+    );
+    if (!target) return true; // unknown column — nothing to honour
+
+    const headerRow = target.parentElement as HTMLTableRowElement;
+    const frozenCount =
+      (expanded ? 1 : 0) +
+      orderedColumns.filter((column) => column.pin === "left").length;
+    let frozen = 0;
+    for (let index = 0; index < frozenCount; index++) {
+      frozen += headerRow.cells[index]?.offsetWidth ?? 0;
+    }
+
+    wrapper.scrollTo({
+      left: target.offsetLeft - frozen,
+      behavior: options?.behavior ?? "auto",
+    });
+    return true;
+  }
+
+  // initialColumn applies exactly once — editor swaps remount the markup,
+  // and those attaches must restore the user's own position instead.
+  let initialScrollApplied = false;
+
   // The controller is stable for the component's lifetime — capturing it for
   // attach/detach is intentional.
   // svelte-ignore state_referenced_locally
-  const detach = controller.attach(prepare, captureScroll);
+  const detach = controller.attach(prepare, captureScroll, scrollToColumn);
   onDestroy(detach);
 
   let sort = $state<{ key: string; direction: "asc" | "desc" } | undefined>(
@@ -1009,6 +1063,7 @@ surrounding container a height.
           {#each orderedColumns as column (column.key)}
             <th
               bind:offsetWidth={measuredWidths[column.key]}
+              data-column={column.key}
               style:top={hasGroups ? `${groupRowHeight ?? 0}px` : undefined}
               class={cn(
                 defaultHeaderCellClasses,

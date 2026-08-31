@@ -60,6 +60,13 @@
     >
       Density: {density}
     </Button>
+    <Button
+      variant="secondary"
+      type="button"
+      onclick={() => controller.scrollToColumn("id", { behavior: "smooth" })}
+    >
+      Jump to Id
+    </Button>
   </div>
 
   <!-- Fixed-height container: the table fills it — data rows first, the
@@ -68,6 +75,7 @@
     <Table
       {rows}
       loading={rowsQuery.loading}
+      initialColumn="vat"
       rowKey={(row) => row.id}
       {controller}
       createForm={createRow}
@@ -178,6 +186,12 @@
       Newest: the table scrolls inside its container; scroll right — Name stays
       pinned left, actions pinned right; add rows until it scrolls vertically —
       the header stays put; the actions column shrinks to its content.
+    </li>
+    <li>
+      Initial scroll: the table mounts scrolled to the VAT column
+      (initialColumn) — Name stays pinned left; "Jump to Id" smooth-scrolls via
+      controller.scrollToColumn. Open an editor after scrolling — the position
+      survives, no re-jump.
     </li>
     <li>
       Column groups: "Pricing" spans Price and VAT in an extra header row;

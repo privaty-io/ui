@@ -26,6 +26,7 @@
     containerClass?: string;
     loading?: boolean;
     withGroups?: boolean;
+    initialColumn?: string;
     density?: "comfortable" | "compact";
     ondelete?: (row: Item) => unknown;
   }
@@ -44,6 +45,7 @@
     containerClass,
     loading = false,
     withGroups = false,
+    initialColumn,
     density,
     ondelete,
   }: Props = $props();
@@ -67,6 +69,7 @@
   expanded={withExpanded ? rowDetails : undefined}
   class={containerClass}
   {loading}
+  {initialColumn}
   {density}
   {ondelete}
 >

@@ -96,6 +96,11 @@ resurrect old drafts otherwise). The edit schema needs a row-id field
   gets pushed out by the next span. Both header rows stay sticky under
   vertical scroll. Pinned columns leave their group (a span can't be
   half-pinned); `groupHeaderCellClass` styles the row.
+- **Initial scroll + jumps**: `initialColumn` mounts the table scrolled so
+  that column sits just after the pinned edge (a multi-year calendar starts
+  on the current year); applied once — later remounts keep the user's own
+  position. `controller.scrollToColumn(key, { behavior: "smooth" })` jumps
+  any time, and is buffered when fired before the table mounts.
 - **Density**: `density="compact"` tightens everything — including editor
   inputs, via the core density context.
 - **Loading**: `loading` veils the visible table (slight blur + spinner,

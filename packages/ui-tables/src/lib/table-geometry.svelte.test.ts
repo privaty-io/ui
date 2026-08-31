@@ -344,3 +344,103 @@ describe("column groups", () => {
       .toBeLessThan(1);
   });
 });
+
+describe("initial scroll position", () => {
+  const rows = [
+    { id: "r1", name: "Comté", price: 89, added: "2026-01-03" },
+    { id: "r2", name: "Rioja", price: 129, added: "2026-02-11" },
+  ];
+
+  function expectedLeft(container: HTMLElement, key: string) {
+    const target = container.querySelector<HTMLElement>(
+      `thead th[data-column="${key}"]`,
+    )!;
+    // Frozen edge = the leading pinned header cell(s).
+    const frozen = container.querySelector<HTMLElement>(
+      'thead th[data-column="price"]',
+    )!.offsetWidth;
+    return target.offsetLeft - frozen;
+  }
+
+  test("initialColumn lands the column after the frozen edge on mount", async () => {
+    const screen = await render(Fixture, {
+      rows,
+      withPinnedPrice: true,
+      withDateColumn: true,
+      initialColumn: "added",
+      containerClass: "w-56",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    await expect
+      .poll(() =>
+        Math.abs(wrapper.scrollLeft - expectedLeft(screen.container, "added")),
+      )
+      .toBeLessThan(1.5);
+  });
+
+  test("a pre-mount controller.scrollToColumn is buffered and applied", async () => {
+    const controller = new TableController();
+    controller.scrollToColumn("added");
+
+    const screen = await render(Fixture, {
+      rows,
+      controller,
+      withPinnedPrice: true,
+      withDateColumn: true,
+      containerClass: "w-56",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    await expect
+      .poll(() =>
+        Math.abs(wrapper.scrollLeft - expectedLeft(screen.container, "added")),
+      )
+      .toBeLessThan(1.5);
+
+    // Post-mount jumps work directly.
+    controller.scrollToColumn("name");
+    await expect
+      .poll(() =>
+        Math.abs(wrapper.scrollLeft - expectedLeft(screen.container, "name")),
+      )
+      .toBeLessThan(1.5);
+  });
+
+  test("an editor swap restores the user's position instead of re-jumping", async () => {
+    const { field: name } = fakeTextField("name");
+    const { field: id } = fakeTextField("id");
+    const keyed = fakeKeyedRemoteForm(() =>
+      fakeEditableRemoteForm({ id: { field: id }, name: { field: name } }),
+    );
+    const editForm = keyed.form as unknown as NonNullable<
+      ComponentProps<typeof Fixture>["editForm"]
+    >;
+    const controller = new TableController();
+
+    const screen = await render(Fixture, {
+      rows,
+      controller,
+      editForm,
+      withPinnedPrice: true,
+      withDateColumn: true,
+      initialColumn: "added",
+      containerClass: "w-56",
+    });
+
+    const wrapper = () => screen.container.querySelector("div") as HTMLElement;
+    await expect.poll(() => wrapper().scrollLeft).toBeGreaterThan(10);
+
+    // The user scrolls back to the start; opening an editor remounts the
+    // markup — the position must survive, not re-jump to initialColumn.
+    wrapper().scrollLeft = 0;
+    await expect.poll(() => wrapper().scrollLeft).toBeLessThan(1);
+
+    controller.startEdit("r1");
+    await expect
+      .poll(() => screen.container.querySelectorAll("form").length)
+      .toBeGreaterThan(0);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(wrapper().scrollLeft).toBeLessThan(1);
+  });
+});

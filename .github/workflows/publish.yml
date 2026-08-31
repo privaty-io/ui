@@ -8,7 +8,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # write: the workflow creates the GitHub Release for the tag.
+      contents: write
       # OIDC for npm trusted publishing (configured on each package at
       # npmjs.com: repo privaty-io/ui, workflow publish.yml). Provenance is
       # generated automatically on trusted publishes.
@@ -57,3 +58,10 @@ jobs:
       # same publishConfig/workspace rewrites and the npm CLI does OIDC.
       - name: Publish to npm
         run: pnpm publish -r --access public --no-git-checks
+
+      # A changelog page per version, generated from the commits since the
+      # previous tag — the lightweight stand-in for changesets.
+      - name: Create GitHub Release
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

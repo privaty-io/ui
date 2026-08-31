@@ -1,15 +1,16 @@
-// Cuts a lockstep release: sets the same version in every packages/*
-// manifest, commits, and tags v<version>. Publishing happens in CI when the
-// tag is pushed (.github/workflows/publish.yml) — after this script, review
-// and `git push --follow-tags`.
+// Cuts a lockstep release: runs the full gate suite, sets the same version
+// in every packages/* manifest, commits, and tags v<version>. Publishing
+// happens in CI when the tag is pushed (.github/workflows/publish.yml) —
+// after this script, review and `git push --follow-tags`.
 //
-// Usage: pnpm release 0.2.0
+// Usage: pnpm release 0.2.0 [--skip-gates]
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 
-const version = process.argv[2];
+const skipGates = process.argv.includes("--skip-gates");
+const version = process.argv.filter((arg) => !arg.startsWith("--"))[2];
 
 // Below 1.0.0 until SvelteKit 3 is stable; prerelease suffixes allowed.
 if (!/^\d+\.\d+\.\d+(-[0-9a-z.-]+)?$/i.test(version ?? "")) {
@@ -33,6 +34,18 @@ if (branch !== "main") {
 if (git("tag", "--list", `v${version}`) !== "") {
   console.error(`Tag v${version} already exists.`);
   process.exit(1);
+}
+
+// The gates run BEFORE anything is written: a tag must never point at a
+// commit CI will reject (v0.1.3 died that way). --skip-gates opts out when
+// the same tree just passed them.
+if (skipGates) {
+  console.log("Skipping gates (--skip-gates).");
+} else {
+  for (const gate of ["check", "lint", "test --run", "build"]) {
+    console.log(`\n> pnpm ${gate}`);
+    execFileSync("pnpm", gate.split(" "), { stdio: "inherit" });
+  }
 }
 
 const manifests = readdirSync("packages").map((name) =>

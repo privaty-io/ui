@@ -69,6 +69,29 @@ class TableController {
     this.#start({ type: "edit", rowId });
   }
 
+  // Registered by the attached Table: scrolls its scrollport so a column
+  // lands at the frozen edge. Returns false while the scrollport is not
+  // ready yet — the request stays buffered until the Table flushes it.
+  #scrollTo:
+    | ((key: string, options?: { behavior?: ScrollBehavior }) => boolean)
+    | undefined;
+
+  #pendingScroll:
+    { key: string; options?: { behavior?: ScrollBehavior } } | undefined;
+
+  /**
+   * Scrolls the attached Table horizontally so the column with `key` lands
+   * at the left edge of the scrolling region — just after the expander and
+   * any left-pinned columns. Fired before the Table has mounted, the
+   * request is buffered and applied once its scrollport is ready (this is
+   * how an initial position works). Unknown keys are ignored. `behavior:
+   * "smooth"` animates — the default jumps instantly.
+   */
+  scrollToColumn(key: string, options?: { behavior?: ScrollBehavior }): void {
+    if (this.#scrollTo?.(key, options)) return;
+    this.#pendingScroll = { key, options };
+  }
+
   /** Returns to idle. Safe to call when already idle. Any open draft is
    * effectively dropped — the next trigger reseeds its editor's fields. */
   close(): void {
@@ -98,10 +121,26 @@ class TableController {
     }
   }
 
+  /**
+   * Internal — called by the Table whenever its scrollport (re)attaches.
+   * Applies a scroll request that was fired before the Table was ready.
+   */
+  flushScroll(): void {
+    if (!this.#pendingScroll || !this.#scrollTo) return;
+
+    if (this.#scrollTo(this.#pendingScroll.key, this.#pendingScroll.options)) {
+      this.#pendingScroll = undefined;
+    }
+  }
+
   /** Internal — called by the Table. Not part of the consumer API. */
   attach(
     prepare: (editor: TableEditor) => boolean,
     onTransition?: () => void,
+    scrollTo?: (
+      key: string,
+      options?: { behavior?: ScrollBehavior },
+    ) => boolean,
   ): () => void {
     if (this.#prepare)
       throw new Error(
@@ -110,10 +149,13 @@ class TableController {
 
     this.#prepare = prepare;
     this.#onTransition = onTransition;
+    this.#scrollTo = scrollTo;
 
     return () => {
       this.#prepare = undefined;
       this.#onTransition = undefined;
+      this.#scrollTo = undefined;
+      this.#pendingScroll = undefined;
       this.#preparedKey = undefined;
     };
   }
