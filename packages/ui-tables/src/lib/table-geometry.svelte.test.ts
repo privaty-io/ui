@@ -300,10 +300,16 @@ describe("column groups", () => {
     // AFTER pinning, then a further scroll must not move it. (Scrolled past
     // the span's slack it rides the span's right edge out, by design: the
     // year gets pushed away as the next span arrives.)
+    // The stuck label keeps the cell's horizontal padding (12px at
+    // comfortable density) as a gap to the frozen edge.
     wrapper.scrollLeft = 16;
+    const frozenEdge =
+      wrapper.getBoundingClientRect().left + wrapper.clientLeft;
     await expect
-      .poll(() => label().getBoundingClientRect().left)
-      .toBeLessThan(wrapper.getBoundingClientRect().left + 2);
+      .poll(() =>
+        Math.abs(label().getBoundingClientRect().left - (frozenEdge + 12)),
+      )
+      .toBeLessThan(2);
     const pinned = label().getBoundingClientRect().left;
 
     wrapper.scrollLeft = 40;
@@ -373,8 +379,12 @@ describe("initial scroll position", () => {
 
     const wrapper = screen.container.querySelector("div") as HTMLElement;
     await expect
-      .poll(() =>
-        Math.abs(wrapper.scrollLeft - expectedLeft(screen.container, "added")),
+      .poll(
+        () =>
+          Math.abs(
+            wrapper.scrollLeft - expectedLeft(screen.container, "added"),
+          ),
+        { timeout: 4000 },
       )
       .toBeLessThan(1.5);
   });
@@ -393,8 +403,12 @@ describe("initial scroll position", () => {
 
     const wrapper = screen.container.querySelector("div") as HTMLElement;
     await expect
-      .poll(() =>
-        Math.abs(wrapper.scrollLeft - expectedLeft(screen.container, "added")),
+      .poll(
+        () =>
+          Math.abs(
+            wrapper.scrollLeft - expectedLeft(screen.container, "added"),
+          ),
+        { timeout: 4000 },
       )
       .toBeLessThan(1.5);
 
@@ -442,5 +456,36 @@ describe("initial scroll position", () => {
       .toBeGreaterThan(0);
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(wrapper().scrollLeft).toBeLessThan(1);
+  });
+});
+
+describe("initial scroll with expander and groups (sandbox shape)", () => {
+  test("frozen edge includes the expander next to the pinned column", async () => {
+    const rows = [
+      { id: "r1", name: "Comté", price: 89, added: "2026-01-03" },
+      { id: "r2", name: "Rioja", price: 129, added: "2026-02-11" },
+    ];
+    const screen = await render(Fixture, {
+      rows,
+      withExpanded: true,
+      withPinnedPrice: true,
+      withGroups: true,
+      withDateColumn: true,
+      initialColumn: "added",
+      containerClass: "w-56",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    await expect
+      .poll(() => {
+        const target = screen.container.querySelector<HTMLElement>(
+          'thead th[data-column="added"]',
+        )!;
+        const headerRow = target.parentElement as HTMLTableRowElement;
+        const frozen =
+          headerRow.cells[0].offsetWidth + headerRow.cells[1].offsetWidth;
+        return Math.abs(wrapper.scrollLeft - (target.offsetLeft - frozen));
+      })
+      .toBeLessThan(1.5);
   });
 });

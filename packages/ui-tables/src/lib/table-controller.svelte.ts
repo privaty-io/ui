@@ -85,7 +85,8 @@ class TableController {
    * any left-pinned columns. Fired before the Table has mounted, the
    * request is buffered and applied once its scrollport is ready (this is
    * how an initial position works). Unknown keys are ignored. `behavior:
-   * "smooth"` animates — the default jumps instantly.
+   * "smooth"` animates (downgraded to instant for users with
+   * prefers-reduced-motion) — the default jumps instantly.
    */
   scrollToColumn(key: string, options?: { behavior?: ScrollBehavior }): void {
     if (this.#scrollTo?.(key, options)) return;

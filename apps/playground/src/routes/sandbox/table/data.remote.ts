@@ -8,7 +8,28 @@ interface Row {
   price: number;
 }
 
-const rows: Row[] = [];
+// A deterministic, decently-sized seed: enough rows for vertical scroll and
+// realistic column widths from the first paint. r1/r2 keep their well-known
+// ids — the sandbox's "edit from outside" button targets r2.
+const names = [
+  "Comté",
+  "Rioja",
+  "Manchego",
+  "Chablis",
+  "Gorgonzola",
+  "Barolo",
+  "Halloumi",
+  "Sancerre",
+  "Taleggio",
+  "Amarone",
+  "Roquefort",
+  "Vermentino",
+];
+const rows: Row[] = Array.from({ length: 24 }, (_, index) => ({
+  id: index < 2 ? `r${index + 1}` : `seed-${index + 1}`,
+  name: `${names[index % names.length]}${index >= names.length ? ` №${Math.floor(index / names.length) + 1}` : ""}`,
+  price: 49 + ((index * 37) % 160),
+}));
 
 const getRows = query(async () => rows);
 

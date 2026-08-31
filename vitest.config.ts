@@ -55,6 +55,9 @@ export default defineConfig({
 
       {
         extends: "./vitest.config.ts",
+        // Server-render specs import .svelte trees; svelte deps from
+        // node_modules must be processed, not externalized to Node.
+        ssr: { noExternal: ["@lucide/svelte"] },
         test: {
           name: "server",
           environment: "node",
@@ -80,6 +83,9 @@ export default defineConfig({
           },
           include: [
             "packages/ui/src/lib/overlays/**/*.svelte.{test,spec}.{js,ts}",
+            // Cross-browser scroll math burned us twice — the sandbox
+            // replica runs in Firefox too.
+            "packages/ui-tables/src/lib/table-sandbox-replica.svelte.test.ts",
           ],
         },
       },

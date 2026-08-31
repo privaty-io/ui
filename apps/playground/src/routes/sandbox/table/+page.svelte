@@ -28,11 +28,27 @@
   // The query object is held separately from the awaited rows: `.loading`
   // flips true on every refresh (single-flight included) and drives the
   // table's loading veil.
+  // The calendar shape: years spanning generated quarter columns. Display
+  // values derive deterministically from the price so edits ripple through.
+  // Declared BEFORE the awaited query on purpose: under async SSR the
+  // Table's children snippet can run before the script lines after the
+  // await settle, and an {#each} over a then-undefined array silently
+  // renders nothing server-side (the columns never register).
+  const years = [2025, 2026, 2027];
+  const quarters = years.flatMap((year) =>
+    [1, 2, 3, 4].map((quarter) => ({
+      key: `${year}-q${quarter}`,
+      year: String(year),
+      label: `Q${quarter}`,
+      factor: (year - 2024) * 4 + quarter,
+    })),
+  );
+
   const rowsQuery = getRows();
   const rows = $derived(await rowsQuery);
 </script>
 
-<main class="mx-auto flex w-full max-w-2xl flex-col gap-4 py-8">
+<main class="mx-auto flex w-full max-w-4xl flex-col gap-4 py-8">
   <h1 class="text-2xl font-medium">Table sandbox</h1>
 
   <p class="text-sm text-stone-600 dark:text-stone-400">
@@ -63,6 +79,14 @@
     <Button
       variant="secondary"
       type="button"
+      onclick={() =>
+        controller.scrollToColumn("2026-q1", { behavior: "smooth" })}
+    >
+      Jump to 2026
+    </Button>
+    <Button
+      variant="secondary"
+      type="button"
       onclick={() => controller.scrollToColumn("id", { behavior: "smooth" })}
     >
       Jump to Id
@@ -71,11 +95,11 @@
 
   <!-- Fixed-height container: the table fills it — data rows first, the
        filler row absorbing the rest. -->
-  <div class="h-96">
+  <div class="h-128">
     <Table
       {rows}
       loading={rowsQuery.loading}
-      initialColumn="vat"
+      initialColumn="2025-q1"
       rowKey={(row) => row.id}
       {controller}
       createForm={createRow}
@@ -114,7 +138,6 @@
            cell formatting (default would be the raw "129"). -->
       <Column
         key="price"
-        group="Pricing"
         label="Price"
         value={(row: Item) => row.price}
         tooltip={(row: Item) => `${row.price} kr`}
@@ -134,15 +157,17 @@
           />
         {/snippet}
       </Column>
-      <!-- Wide display-only columns to force horizontal scroll — Name stays
-           pinned left, the actions column pinned right. -->
-      <Column
-        key="vat"
-        group="Pricing"
-        label="Price incl. VAT"
-        value={(row: Item) => `${(row.price * 1.25).toFixed(2)} kr`}
-        width="14rem"
-      />
+      <!-- The calendar shape: generated columns, each year spanning its
+           quarters in the group header row. -->
+      {#each quarters as quarter (quarter.key)}
+        <Column
+          key={quarter.key}
+          group={quarter.year}
+          label={quarter.label}
+          value={(row: Item) => `${row.price * quarter.factor} kr`}
+          width="6rem"
+        />
+      {/each}
       <!-- Narrow on purpose: overflowing content truncates and shows the
            full text as a tooltip. -->
       <Column
@@ -188,16 +213,17 @@
       the header stays put; the actions column shrinks to its content.
     </li>
     <li>
-      Initial scroll: the table mounts scrolled to the VAT column
-      (initialColumn) — Name stays pinned left; "Jump to Id" smooth-scrolls via
-      controller.scrollToColumn. Open an editor after scrolling — the position
-      survives, no re-jump.
+      Initial scroll: the table mounts with 2026's Q1 right after the pinned
+      Name column (initialColumn="2026-q1") — even as fonts and data settle.
+      "Jump to 2026" / "Jump to Id" smooth-scroll via controller.scrollToColumn.
+      Open an editor after scrolling manually — the position survives, no
+      re-jump.
     </li>
     <li>
-      Column groups: "Pricing" spans Price and VAT in an extra header row;
-      scroll right and its label sticks at the pinned edge while the span
-      scrolls (the calendar-year effect); every save/delete flashes the loading
-      veil over the table.
+      Column groups: each year spans its four quarters in the extra header row;
+      scroll right and the year label sticks just after the pinned edge (keeping
+      its padding gap) until the next year pushes it out; every save/delete
+      flashes the loading veil.
     </li>
   </ol>
 </main>

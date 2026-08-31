@@ -27,6 +27,7 @@
     loading?: boolean;
     withGroups?: boolean;
     initialColumn?: string;
+    withQuarterColumns?: boolean;
     density?: "comfortable" | "compact";
     ondelete?: (row: Item) => unknown;
   }
@@ -46,6 +47,7 @@
     loading = false,
     withGroups = false,
     initialColumn,
+    withQuarterColumns = false,
     density,
     ondelete,
   }: Props = $props();
@@ -113,5 +115,18 @@
       sortable
       value={(row: Item) => (row.added ? new Date(row.added) : null)}
     />
+  {/if}
+  {#if withQuarterColumns}
+    {#each [2025, 2026, 2027] as year (year)}
+      {#each [1, 2, 3, 4] as quarter (quarter)}
+        <Column
+          key={`${year}-q${quarter}`}
+          group={String(year)}
+          label={`Q${quarter}`}
+          value={(row: Item) => row.price * quarter}
+          width="6rem"
+        />
+      {/each}
+    {/each}
   {/if}
 </Table>

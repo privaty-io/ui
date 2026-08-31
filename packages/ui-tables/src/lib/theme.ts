@@ -62,15 +62,23 @@ const tableTheme = {
   expanderButton: { comfortable: "p-2", compact: "p-1" },
 
   /** Custom scrollbars (classic-scrollbar environments only). Tracks and
-   * corner carry NO background utilities on purpose — transparent tracks
-   * don't clip the frame's rounded corners. */
+   * corner carry no background COLOR on purpose — transparent tracks
+   * don't clip the frame's rounded corners. The corner still needs an
+   * EXPLICIT transparent background: unstyled, the UA paints it solid
+   * white regardless of theme (visible whenever both scrollbars show). */
   scrollbar: cn(
     "[scrollbar-color:auto]!",
     "[&::-webkit-scrollbar]:size-2.5",
+    "[&::-webkit-scrollbar-corner]:bg-transparent",
     "[&::-webkit-scrollbar-track]:border-stone-300 dark:[&::-webkit-scrollbar-track]:border-stone-700",
     "[&::-webkit-scrollbar-track:vertical]:border-l",
     "[&::-webkit-scrollbar-track:horizontal]:border-t",
-    "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-padding",
+    "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-padding",
+    // Asymmetric thumb insets on purpose: the track border eats 1px of the
+    // inset on the content side, so the non-bordered sides and the bar ends
+    // drop to 1px too — every VISIBLE gap ends up a uniform 1px.
+    "[&::-webkit-scrollbar-thumb:vertical]:border-y [&::-webkit-scrollbar-thumb:vertical]:border-r [&::-webkit-scrollbar-thumb:vertical]:border-l-2",
+    "[&::-webkit-scrollbar-thumb:horizontal]:border-x [&::-webkit-scrollbar-thumb:horizontal]:border-t-2 [&::-webkit-scrollbar-thumb:horizontal]:border-b",
     "[&::-webkit-scrollbar-thumb]:bg-stone-400 dark:[&::-webkit-scrollbar-thumb]:bg-stone-600",
     "[&::-webkit-scrollbar-thumb:hover]:bg-stone-500 dark:[&::-webkit-scrollbar-thumb:hover]:bg-stone-500",
   ),

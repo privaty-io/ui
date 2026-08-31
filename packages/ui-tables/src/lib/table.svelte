@@ -97,9 +97,10 @@ surrounding container a height.
     /** Column key the table scrolls to when it first mounts — the column
      * lands at the left edge of the scrolling region, after any pinned
      * columns — so a calendar spanning several years starts on the current
-     * one, e.g. initialColumn={currentYear + "-01"}. Applied ONCE; later
-     * remounts restore the user's own scroll position instead. For jumps
-     * after mount, use `controller.scrollToColumn()`. */
+     * one, e.g. initialColumn={currentYear + "-01"}. Glides smoothly into
+     * place (instant under prefers-reduced-motion) and is applied ONCE;
+     * later remounts restore the user's own scroll position instead. For
+     * jumps after mount, use `controller.scrollToColumn()`. */
     initialColumn?: string;
 
     /** Veils the whole table with a blurred overlay and a spinner, blocking
@@ -346,6 +347,14 @@ surrounding container a height.
   // density changes the row height.
   let groupRowHeight = $state<number | undefined>();
 
+  // Group separators are TRAILING (border-r on each run except the last):
+  // a leading border would double up with the pinned column's boundary
+  // border whenever a jump lands a run flush at the frozen edge, and the
+  // last run's seam is drawn by the actions/right-pinned chrome instead.
+  const lastUnpinnedRunIndex = $derived(
+    groupRuns.findLastIndex((run) => !run.pinned),
+  );
+
   // Where the scrolling region starts horizontally (after the expander and
   // left-pinned columns) — a group label sticks here so the group stays
   // identifiable while its span scrolls (the year over its months).
@@ -439,7 +448,42 @@ surrounding container a height.
 
     if (!initialScrollApplied) {
       initialScrollApplied = true;
-      if (initialColumn !== undefined) scrollToColumn(initialColumn);
+      if (initialColumn !== undefined) {
+        const key = initialColumn;
+        // Smooth on purpose: the SSR paint cannot be pre-scrolled (HTML has
+        // no scroll positions), so the anchor GLIDES into place instead of
+        // jerking — and downgrades to instant under reduced motion.
+        scrollToColumn(key, { behavior: "smooth" });
+        initialAnchorApplied = true;
+        initialAnchorOwns = true;
+
+        // Real apps keep laying out after this attachment runs — web fonts
+        // swap in, async-hydrated content lands — which both moves the
+        // target column and grows the scroll range the first scroll was
+        // clamped against. Re-anchor after paint and once fonts resolve,
+        // ONLY while the initial anchor still owns the position: a later
+        // controller jump clears ownership in scrollToColumn, and user
+        // input on the scroller clears it below.
+        const reanchor = () => {
+          if (initialAnchorOwns && wrapper.isConnected) {
+            scrollToColumn(key, { behavior: "smooth" });
+            initialAnchorOwns = true;
+          }
+        };
+        requestAnimationFrame(() => requestAnimationFrame(reanchor));
+        document.fonts?.ready.then(reanchor);
+      }
+    }
+
+    // User input on the scroller releases the initial anchor's ownership —
+    // re-anchors must never fight a person. Scroll events can't serve here:
+    // the anchor's own smooth animation fires them constantly.
+    const releaseOwnership = () => {
+      initialAnchorOwns = false;
+    };
+    const ownershipEvents = ["wheel", "touchstart", "pointerdown", "keydown"];
+    for (const type of ownershipEvents) {
+      wrapper.addEventListener(type, releaseOwnership, { passive: true });
     }
     // A scrollToColumn() fired before this scrollport existed (including
     // pre-mount calls) applies now — deliberately AFTER initialColumn, so
@@ -459,6 +503,9 @@ surrounding container a height.
 
     return () => {
       if (scrollWrapper === wrapper) scrollWrapper = undefined;
+      for (const type of ownershipEvents) {
+        wrapper.removeEventListener(type, releaseOwnership);
+      }
       observer.disconnect();
     };
   }
@@ -627,9 +674,12 @@ surrounding container a height.
     return true;
   }
 
-  // The frozen edge (expander + left-pinned columns) occupies the leading
-  // header cells — a scrolled-to column must land just after it, not under
-  // it. Measured from the live cells so declared-width units don't matter.
+  // A scrolled-to column must land just after the frozen edge (expander +
+  // left-pinned columns), not under it. Everything is measured with
+  // getBoundingClientRect and applied as a RELATIVE scroll: rects are the
+  // on-screen truth in every browser, where offsetLeft/offsetParent
+  // semantics around stuck sticky cells are not — and a stuck frozen
+  // cell's right edge IS the visual frozen edge.
   function scrollToColumn(
     key: string,
     options?: { behavior?: ScrollBehavior },
@@ -646,17 +696,36 @@ surrounding container a height.
     const frozenCount =
       (expanded ? 1 : 0) +
       orderedColumns.filter((column) => column.pin === "left").length;
-    let frozen = 0;
-    for (let index = 0; index < frozenCount; index++) {
-      frozen += headerRow.cells[index]?.offsetWidth ?? 0;
-    }
+    const lastFrozen =
+      frozenCount > 0 ? headerRow.cells[frozenCount - 1] : undefined;
+    const frozenEdge = lastFrozen
+      ? lastFrozen.getBoundingClientRect().right
+      : wrapper.getBoundingClientRect().left + wrapper.clientLeft;
 
-    wrapper.scrollTo({
-      left: target.offsetLeft - frozen,
-      behavior: options?.behavior ?? "auto",
+    // Any jump AFTER the initial anchor ends the initial anchor's
+    // ownership — a late re-anchor (fonts resolving slowly) must never
+    // yank a position a controller jump has since chosen.
+    if (initialAnchorApplied) initialAnchorOwns = false;
+
+    wrapper.scrollBy({
+      left: target.getBoundingClientRect().left - frozenEdge,
+      behavior: resolveScrollBehavior(options?.behavior),
     });
     return true;
   }
+
+  // Programmatic smooth scrolling does NOT honour prefers-reduced-motion on
+  // its own — every smooth request (consumer jumps included) downgrades to
+  // instant for users who asked for less motion.
+  function resolveScrollBehavior(behavior?: ScrollBehavior): ScrollBehavior {
+    if (behavior !== "smooth") return behavior ?? "auto";
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth";
+  }
+
+  let initialAnchorApplied = false;
+  let initialAnchorOwns = false;
 
   // initialColumn applies exactly once — editor swaps remount the markup,
   // and those attaches must restore the user's own position instead.
@@ -747,6 +816,9 @@ surrounding container a height.
   // their content, width-constrained ones truncate. (Expanded content and
   // the empty state opt back into wrapping; whitespace is inherited.)
   const cellPadding = $derived(compact ? "px-2 py-0.5" : "px-3 py-1.5");
+  // The stuck group label keeps the cell's horizontal padding as a gap to
+  // the pinned edge — mirror cellPadding's px-* values.
+  const groupLabelInset = $derived(compact ? "0.5rem" : "0.75rem");
   // Editor cells shed vertical padding so the input's own height (38px)
   // lands editor rows at display-row height instead of stretching them.
   const editorCellPadding = $derived(compact ? "py-0" : "py-0.5");
@@ -1010,9 +1082,7 @@ surrounding container a height.
                   scope="colgroup"
                   class={cn(
                     defaultHeaderCellClasses,
-                    runIndex > 0 &&
-                      !groupRuns[runIndex - 1].pinned &&
-                      "border-l",
+                    runIndex !== lastUnpinnedRunIndex && "border-r",
                     groupHeaderCellClass,
                   )}
                 >
@@ -1025,7 +1095,7 @@ surrounding container a height.
                          cell in Chromium. -->
                     <div
                       class="sticky w-fit max-w-full truncate"
-                      style="left: {frozenLeftEdge}"
+                      style="left: calc({frozenLeftEdge} + {groupLabelInset})"
                       title={run.label}
                     >
                       {run.label}
