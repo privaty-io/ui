@@ -6,6 +6,12 @@ intact); the overlaid calendar button opens the library's DatePicker in
 an anchored Popover, and a pick writes the input exactly the way typing
 does — validation, touch, and dirty tracking behave identically. Values
 are the native input's "YYYY-MM-DD" strings.
+
+Firefox exception: it draws an unhideable calendar icon on date inputs
+(Bugzilla 1830890), so there the native affordance wins — our trigger
+hides and the icon opens Firefox's own date picker (min/max respected;
+week numbers and isDateDisabled are picker-side visuals only there —
+the schema validates regardless, as always).
 -->
 <script lang="ts">
   import DatePicker from "@privaty/ui/calendar/date-picker.svelte";

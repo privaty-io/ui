@@ -54,6 +54,10 @@ everywhere else.
   native mobile pickers stay, and Kit reads live form data as ever. Firefox
   renders month/week carriers as plain text inputs — exactly the gap the
   calendar button fills.
+- **Firefox date exception**: Firefox draws an unhideable calendar icon on
+  `type="date"` (Bugzilla 1830890), so `DatePickerInput` yields there — the
+  native icon opens Firefox's own picker and our trigger hides, keeping one
+  icon in every browser. Month/week use our picker everywhere.
 - The overlaid calendar button opens the picker in an anchored `Popover`
   (top layer, light dismiss, zero-lag scroll tracking). A pick **writes the
   input the way typing does** (DOM value + a bubbling `input` event), so

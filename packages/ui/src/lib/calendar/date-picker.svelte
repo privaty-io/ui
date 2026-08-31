@@ -175,6 +175,7 @@ prop, then `UiConfig.locale`, then the runtime.
   }
 
   let panel = $state<HTMLElement>();
+  let gridElement = $state<HTMLElement>();
 
   function navigate(deltaMonths: number) {
     const next = addMonths(view.year, view.month, deltaMonths);
@@ -227,7 +228,14 @@ prop, then `UiConfig.locale`, then the runtime.
     const handler = handlers[event.key];
     if (!handler) return;
     event.preventDefault();
+    const before = view.year * 12 + view.month;
     handler();
+    // A view flip replaces every cell — the focused one included, so focus
+    // would fall to <body> until the async refocus lands, and a fast next
+    // keystroke would miss this handler entirely (a lost PageUp, caught on
+    // slow CI). Park focus on the grid meanwhile: it hosts this handler
+    // and survives the flip.
+    if (view.year * 12 + view.month !== before) gridElement?.focus();
     focusActive();
   }
 
@@ -298,12 +306,14 @@ prop, then `UiConfig.locale`, then the runtime.
   </div>
 
   <!-- tabindex -1: the composite is programmatically focusable; the tab
-       stop is the roving-tabindex active cell. -->
+       stop is the roving-tabindex active cell. outline-none: the grid only
+       ever holds focus for the moment a view flip replaces the cells. -->
   <div
+    bind:this={gridElement}
     role="grid"
     tabindex={-1}
     aria-label={title}
-    class="mt-1 grid gap-y-0.5"
+    class="mt-1 grid gap-y-0.5 outline-none"
     style="grid-template-columns: {showWeekNumbers
       ? 'auto repeat(7, minmax(0, 1fr))'
       : 'repeat(7, minmax(0, 1fr))'}"

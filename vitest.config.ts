@@ -89,6 +89,9 @@ export default defineConfig({
             // The pickers exist BECAUSE of Firefox's missing month/week
             // inputs — their specs run there natively.
             "packages/ui/src/lib/calendar/**/*.svelte.{test,spec}.{js,ts}",
+            // The forms wrappers carry Firefox-specific behavior too (the
+            // native date affordance wins there) — guarded in-browser.
+            "packages/ui-forms/src/lib/inputs/*-picker-input.svelte.test.ts",
           ],
         },
       },

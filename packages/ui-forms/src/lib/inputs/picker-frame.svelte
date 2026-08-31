@@ -158,6 +158,12 @@ special programmatic branch.
           // Our trigger replaces Chromium's built-in indicator; pr-8 keeps
           // the text clear of the overlaid button.
           "pr-8 [&::-webkit-calendar-picker-indicator]:hidden",
+          // Firefox refuses to hide its own date icon (Bugzilla 1830890) —
+          // there the native affordance wins for dates: our trigger steps
+          // aside (below) and the padding returns to base. The @supports
+          // (-moz-appearance) detect matches Gecko only. Month/week draw
+          // no native icon anywhere, so they keep our trigger everywhere.
+          type === "date" && "supports-[-moz-appearance:none]:pr-2",
           inputClass,
         )}
         aria-describedby={errorsId}
@@ -173,7 +179,12 @@ special programmatic branch.
             type="button"
             bind:this={triggerElement}
             {...props}
-            class={coreTheme.controlTrigger}
+            class={cn(
+              coreTheme.controlTrigger,
+              // See the input's class note: Firefox dates use the native
+              // icon and picker instead of a doubled affordance.
+              type === "date" && "supports-[-moz-appearance:none]:hidden",
+            )}
             disabled={locked}
             title={config.labels.calendar.open}
           >

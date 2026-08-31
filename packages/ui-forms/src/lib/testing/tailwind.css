@@ -1,0 +1,5 @@
+/* Loads Tailwind into browser-mode specs that assert real computed styles —
+   component classes are inert without it (e.g. the picker trigger's
+   Firefox-only display:none never applies). Same recipe as @privaty/ui's
+   testing stylesheet: v4 auto-detects sources from the repo root. */
+@import "tailwindcss";

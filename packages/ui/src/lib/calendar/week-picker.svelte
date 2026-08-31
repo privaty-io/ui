@@ -162,6 +162,7 @@ identity is only well-defined that way.
     (min !== undefined && iso < min) || (max !== undefined && iso > max);
 
   let panel = $state<HTMLElement>();
+  let listbox = $state<HTMLElement>();
 
   // Roving tabindex among the week rows: the active week, as its ISO value.
   let active = $state("");
@@ -238,7 +239,13 @@ identity is only well-defined that way.
     const handler = handlers[event.key];
     if (!handler) return;
     event.preventDefault();
+    const before = view.year * 12 + view.month;
     handler();
+    // A view flip replaces every row — the focused one included, so focus
+    // would fall to <body> until the async refocus lands, and a fast next
+    // keystroke would miss this handler entirely (see DatePicker). Park
+    // focus on the listbox meanwhile: it hosts this handler and survives.
+    if (view.year * 12 + view.month !== before) listbox?.focus();
     // After the state flush — the target button may be a NEW element when
     // the view flipped. tick() beats rAF here: a test (or fast typist) can
     // land the next key before an animation frame ever fires.
@@ -319,12 +326,13 @@ identity is only well-defined that way.
     {/each}
   </div>
 
-  <!-- tabindex -1: see DatePicker's grid. -->
+  <!-- tabindex -1 and outline-none: see DatePicker's grid. -->
   <div
+    bind:this={listbox}
     role="listbox"
     tabindex={-1}
     aria-label={title}
-    class="grid gap-y-0.5"
+    class="grid gap-y-0.5 outline-none"
     {onkeydown}
   >
     {#each grid.weeks as week (week.weekYear * 100 + week.week)}
