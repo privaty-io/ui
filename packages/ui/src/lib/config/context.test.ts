@@ -29,6 +29,7 @@ describe("defaultUiConfig", () => {
         cancel: "Cancel",
         empty: "No rows",
         expand: "Expand row",
+        loading: "Loading",
       },
     });
   });

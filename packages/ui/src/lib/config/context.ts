@@ -28,6 +28,7 @@ const defaultUiConfig: UiConfig = {
 
       empty: "No rows",
       expand: "Expand row",
+      loading: "Loading",
     },
   },
 };

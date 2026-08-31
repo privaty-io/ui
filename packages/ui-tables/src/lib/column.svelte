@@ -15,6 +15,11 @@ column must be destroyed and recreated to change.
     key: string;
     /** Header text (also the header cell's tooltip). */
     label: string;
+    /** Group header text: adjacent columns sharing the same group render a
+     * single spanning cell in an extra header row above the column headers
+     * (e.g. a year over its month columns). Ignored on pinned columns —
+     * they leave their group when reordered to a table edge. */
+    group?: string;
 
     /** One accessor serves display, the default sort, and edit seeding. */
     value: (row: Row) => unknown;
@@ -54,6 +59,7 @@ column must be destroyed and recreated to change.
   const {
     key,
     label,
+    group,
     value,
     width,
     pin,
@@ -73,6 +79,7 @@ column must be destroyed and recreated to change.
   const unregister = getTableContext().register({
     key,
     label,
+    group,
     value,
     width,
     pin,

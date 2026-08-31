@@ -17,6 +17,7 @@ surrounding container a height.
   import Form from "@privaty/ui-forms/form.svelte";
   import { cn } from "@privaty/ui/cn.js";
   import Button from "@privaty/ui/components/button.svelte";
+  import Spinner from "@privaty/ui/components/spinner.svelte";
   import { getUiConfig } from "@privaty/ui/config/context.js";
   import {
     getUiDensity,
@@ -93,12 +94,20 @@ surrounding container a height.
      * Defaults to the ambient density context. */
     density?: UiDensity;
 
+    /** Veils the whole table with a blurred overlay and a spinner, blocking
+     * interaction with the (stale) rows beneath. Wire it to a remote
+     * query's `.loading`, which flips true on every refresh — including the
+     * single-flight refreshes after editor submissions. */
+    loading?: boolean;
+
     /** Styles the root element (the scroll wrapper). */
     class?: string;
     /** Extra classes for the <table> element. */
     tableClass?: string;
     /** Extra classes for every header cell. */
     headerCellClass?: string;
+    /** Extra classes for every cell in the group header row. */
+    groupHeaderCellClass?: string;
     /** Extra classes for every body cell. */
     cellClass?: string;
     /** Extra classes for display rows and the expanded-content rows beneath
@@ -106,6 +115,8 @@ surrounding container a height.
     rowClass?: string;
     /** Extra classes for the create/edit editor rows. */
     editorRowClass?: string;
+    /** Extra classes for the loading overlay. */
+    loadingClass?: string;
 
     /** Attach to show the default Delete action on display rows — the same
      * presence rule as editForm/createForm. A Kit `command` fits naturally
@@ -143,12 +154,16 @@ surrounding container a height.
 
     density,
 
+    loading = false,
+
     class: classes,
     tableClass,
     headerCellClass,
+    groupHeaderCellClass,
     cellClass,
     rowClass,
     editorRowClass,
+    loadingClass,
 
     ondelete,
 
@@ -287,6 +302,57 @@ surrounding container a height.
     return offsets;
   });
 
+  // Column groups render as an extra header row of spanning cells. Spans
+  // are consecutive runs over the ORDERED columns; pinned columns break out
+  // into their own (label-less) cells because they must stay individually
+  // sticky — a span can't be half-pinned.
+  const hasGroups = $derived(
+    orderedColumns.some((column) => column.group !== undefined),
+  );
+
+  const groupRuns = $derived.by(() => {
+    const runs: {
+      label: string | undefined;
+      columns: ColumnRegistration<Row>[];
+      pinned: boolean;
+    }[] = [];
+
+    for (const column of orderedColumns) {
+      const pinned = pinOffsets.has(column.key);
+      const label = pinned ? undefined : column.group;
+      const last = runs.at(-1);
+
+      if (last && !pinned && !last.pinned && last.label === label) {
+        last.columns.push(column);
+      } else {
+        runs.push({ label, columns: [column], pinned });
+      }
+    }
+
+    return runs;
+  });
+
+  // The column header row sticks BELOW the group row — measured, because
+  // density changes the row height.
+  let groupRowHeight = $state<number | undefined>();
+
+  // Where the scrolling region starts horizontally (after the expander and
+  // left-pinned columns) — a group label sticks here so the group stays
+  // identifiable while its span scrolls (the year over its months).
+  const frozenLeftEdge = $derived.by(() => {
+    const parts: string[] = expanded
+      ? [
+          measuredExpanderWidth !== undefined
+            ? `${measuredExpanderWidth}px`
+            : expanderWidth,
+        ]
+      : [];
+    for (const column of orderedColumns) {
+      if (column.pin === "left") parts.push(widthPart(column));
+    }
+    return sumWidths(parts);
+  });
+
   function columnStyle(column: ColumnRegistration<Row>): string | undefined {
     const parts: string[] = [];
 
@@ -333,6 +399,7 @@ surrounding container a height.
   // which outer-box observers never see). 100cqw can't be trusted for this:
   // Chromium doesn't subtract scrollbars from container-query units.
   let scrollportWidth = $state<number>();
+  let scrollportHeight = $state<number>();
   let tableWidth = $state<number>();
 
   // Editor swaps remount the whole markup (the Form wrapper is keyed) —
@@ -362,6 +429,7 @@ surrounding container a height.
 
     const measure = () => {
       scrollportWidth = wrapper.clientWidth;
+      scrollportHeight = wrapper.clientHeight;
       tableWidth = table?.offsetWidth;
     };
 
@@ -831,6 +899,25 @@ surrounding container a height.
       classes,
     )}
   >
+    {#if loading}
+      <!-- Sticky zero-size holder: an absolute overlay would scroll away
+           with the content — sticky pins the veil to the VISIBLE scrollport
+           (same mechanism as the empty state and expanded content). Sized
+           from the measured scrollport; until the first measurement lands
+           it is 0×0 and simply invisible. -->
+      <div class="sticky top-0 left-0 z-40 h-0 w-0 shrink-0">
+        <div
+          role="status"
+          class={cn(tableTheme.loadingOverlay, loadingClass)}
+          style={scrollportWidth !== undefined && scrollportHeight !== undefined
+            ? `width: ${scrollportWidth}px; height: ${scrollportHeight}px`
+            : undefined}
+        >
+          <Spinner class={tableTheme.loadingSpinner} />
+          <span class="sr-only">{config.labels.table.loading}</span>
+        </div>
+      </div>
+    {/if}
     <table
       class={cn(
         "min-w-full shrink-0 border-separate border-spacing-0 text-left",
@@ -839,10 +926,77 @@ surrounding container a height.
       )}
     >
       <thead>
+        {#if hasGroups}
+          <tr bind:offsetHeight={groupRowHeight}>
+            {#if expanded}
+              <th
+                class={cn(
+                  defaultHeaderCellClasses,
+                  "left-0 z-30 w-10 max-w-10 min-w-10 border-r",
+                  groupHeaderCellClass,
+                )}
+              ></th>
+            {/if}
+            {#each groupRuns as run, runIndex (runIndex)}
+              {#if run.pinned}
+                {@const column = run.columns[0]}
+                <th
+                  class={cn(
+                    defaultHeaderCellClasses,
+                    "z-30",
+                    column.key === lastLeftPinnedKey && "border-r",
+                    column.key === firstRightPinnedKey && "border-l",
+                    groupHeaderCellClass,
+                  )}
+                  style={columnStyle(column)}
+                ></th>
+              {:else}
+                <th
+                  colspan={run.columns.length}
+                  scope="colgroup"
+                  class={cn(
+                    defaultHeaderCellClasses,
+                    runIndex > 0 &&
+                      !groupRuns[runIndex - 1].pinned &&
+                      "border-l",
+                    groupHeaderCellClass,
+                  )}
+                >
+                  {#if run.label !== undefined}
+                    <!-- Sticky at the frozen edge: the label stays visible
+                         while its span scrolls, so the group (the year) is
+                         identifiable from any of its columns. -->
+                    <!-- Block-level like the expanded-content sticky: an
+                         inline-block does not engage sticky inside a table
+                         cell in Chromium. -->
+                    <div
+                      class="sticky w-fit max-w-full truncate"
+                      style="left: {frozenLeftEdge}"
+                      title={run.label}
+                    >
+                      {run.label}
+                    </div>
+                  {/if}
+                </th>
+              {/if}
+            {/each}
+            {#if hasActionsColumn}
+              <th
+                class={cn(
+                  defaultHeaderCellClasses,
+                  "right-0 z-30 w-px border-l whitespace-nowrap",
+                  groupHeaderCellClass,
+                )}
+                style={actionsStyle}
+              ></th>
+            {/if}
+          </tr>
+        {/if}
         <tr>
           {#if expanded}
             <th
               bind:offsetWidth={measuredExpanderWidth}
+              style:top={hasGroups ? `${groupRowHeight ?? 0}px` : undefined}
               class={cn(
                 defaultHeaderCellClasses,
                 "left-0 z-30 w-10 max-w-10 min-w-10 border-r",
@@ -855,6 +1009,7 @@ surrounding container a height.
           {#each orderedColumns as column (column.key)}
             <th
               bind:offsetWidth={measuredWidths[column.key]}
+              style:top={hasGroups ? `${groupRowHeight ?? 0}px` : undefined}
               class={cn(
                 defaultHeaderCellClasses,
                 pinOffsets.has(column.key) && "z-30",
@@ -891,6 +1046,7 @@ surrounding container a height.
           {#if hasActionsColumn}
             <th
               bind:offsetWidth={measuredActionsWidth}
+              style:top={hasGroups ? `${groupRowHeight ?? 0}px` : undefined}
               class={cn(
                 defaultHeaderCellClasses,
                 "right-0 z-30 w-px border-l whitespace-nowrap",

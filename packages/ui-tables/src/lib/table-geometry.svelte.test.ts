@@ -148,3 +148,197 @@ describe("empty state", () => {
       .toBeLessThan(1);
   });
 });
+
+describe("loading veil", () => {
+  test("covers the visible scrollport, header included, and pins under scroll", async () => {
+    const screen = await render(Fixture, {
+      rows: [
+        { id: "r1", name: "Comté", price: 89 },
+        { id: "r2", name: "Rioja", price: 129 },
+      ],
+      withPinnedPrice: true,
+      loading: true,
+      // Narrow + short: forces scrolling on both axes.
+      containerClass: "w-64 h-40",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    const veil = () =>
+      screen.container.querySelector('[role="status"]') as HTMLElement;
+
+    // Sized to the measured scrollport (clientWidth/Height exclude any
+    // classic scrollbars) and aligned with the wrapper's padding box — the
+    // header row sits underneath it.
+    await expect
+      .poll(() =>
+        Math.abs(veil().getBoundingClientRect().width - wrapper.clientWidth),
+      )
+      .toBeLessThan(1.5);
+    expect(
+      Math.abs(veil().getBoundingClientRect().height - wrapper.clientHeight),
+    ).toBeLessThan(1.5);
+
+    const wrapperTop = wrapper.getBoundingClientRect().top + wrapper.clientTop;
+    expect(
+      Math.abs(veil().getBoundingClientRect().top - wrapperTop),
+    ).toBeLessThan(1.5);
+
+    // The veil blocks interaction with the stale rows and announces itself.
+    expect(getComputedStyle(veil()).pointerEvents).not.toBe("none");
+    expect(veil().textContent).toContain("Loading");
+
+    // Pinned to the visible scrollport under scroll on both axes.
+    const before = veil().getBoundingClientRect();
+    wrapper.scrollLeft = 40;
+    wrapper.scrollTop = 20;
+    await expect
+      .poll(() => {
+        const after = veil().getBoundingClientRect();
+        return (
+          Math.abs(after.left - before.left) + Math.abs(after.top - before.top)
+        );
+      })
+      .toBeLessThan(1);
+  });
+
+  test("absent while not loading", async () => {
+    const screen = await render(Fixture, {
+      rows: [{ id: "r1", name: "Comté", price: 89 }],
+    });
+
+    expect(screen.container.querySelector('[role="status"]')).toBeNull();
+  });
+});
+
+describe("column groups", () => {
+  const rows = [
+    { id: "r1", name: "Comté", price: 89, added: "2026-01-03" },
+    { id: "r2", name: "Rioja", price: 129, added: "2026-02-11" },
+  ];
+
+  test("adjacent columns share one spanning cell; ungrouped ones get an empty span", async () => {
+    const screen = await render(Fixture, {
+      rows,
+      withGroups: true,
+      withDateColumn: true,
+    });
+
+    const headerRows = screen.container.querySelectorAll("thead tr");
+    expect(headerRows.length).toBe(2);
+
+    const cells = [...headerRows[0].querySelectorAll("th")];
+    // "Product" spans name+price; the ungrouped date column gets an empty
+    // spanning cell of its own.
+    expect(cells.map((cell) => cell.colSpan)).toEqual([2, 1]);
+    expect(cells[0].textContent?.trim()).toBe("Product");
+    expect(cells[0].getAttribute("scope")).toBe("colgroup");
+    expect(cells[1].textContent?.trim()).toBe("");
+  });
+
+  test("no group on any column → no group row", async () => {
+    const screen = await render(Fixture, { rows });
+
+    expect(screen.container.querySelectorAll("thead tr").length).toBe(1);
+  });
+
+  test("the column header row sticks below the group row", async () => {
+    const screen = await render(Fixture, {
+      rows: [...rows, ...rows, ...rows, ...rows].map((row, index) => ({
+        ...row,
+        id: `${row.id}-${index}`,
+      })),
+      withGroups: true,
+      containerClass: "h-40",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    const groupRow = () =>
+      screen.container.querySelector("thead tr:first-child th") as HTMLElement;
+    const headerCell = () =>
+      screen.container.querySelector("thead tr:nth-child(2) th") as HTMLElement;
+
+    await expect
+      .poll(() => wrapper.scrollHeight > wrapper.clientHeight)
+      .toBe(true);
+
+    const groupBottomBefore = groupRow().getBoundingClientRect().bottom;
+    wrapper.scrollTop = 60;
+
+    // Both rows pin: the group row at the top, the column headers directly
+    // beneath it (measured offset), with no gap for rows to peek through.
+    await expect
+      .poll(() => {
+        const group = groupRow().getBoundingClientRect();
+        const header = headerCell().getBoundingClientRect();
+        return (
+          Math.abs(group.bottom - groupBottomBefore) < 1 &&
+          Math.abs(header.top - group.bottom) < 1
+        );
+      })
+      .toBe(true);
+  });
+
+  test("the group label sticks to the frozen edge under horizontal scroll", async () => {
+    const screen = await render(Fixture, {
+      rows,
+      withGroups: true,
+      withDateColumn: true,
+      // Narrow: the Product span scrolls, its label must not.
+      containerClass: "w-56",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    await expect
+      .poll(() => wrapper.scrollWidth > wrapper.clientWidth)
+      .toBe(true);
+
+    const label = () =>
+      screen.container.querySelector("thead th div[title]") as HTMLElement;
+
+    // The unscrolled label sits at the cell's padding offset and pins to
+    // the frozen edge once scrolling starts — so the baseline is measured
+    // AFTER pinning, then a further scroll must not move it. (Scrolled past
+    // the span's slack it rides the span's right edge out, by design: the
+    // year gets pushed away as the next span arrives.)
+    wrapper.scrollLeft = 16;
+    await expect
+      .poll(() => label().getBoundingClientRect().left)
+      .toBeLessThan(wrapper.getBoundingClientRect().left + 2);
+    const pinned = label().getBoundingClientRect().left;
+
+    wrapper.scrollLeft = 40;
+    await expect
+      .poll(() => Math.abs(label().getBoundingClientRect().left - pinned))
+      .toBeLessThan(1);
+  });
+
+  test("a pinned column leaves its group and keeps its own sticky cell", async () => {
+    const screen = await render(Fixture, {
+      rows,
+      withGroups: true,
+      withPinnedPrice: true,
+      withDateColumn: true,
+      containerClass: "w-56",
+    });
+
+    const cells = [
+      ...screen.container.querySelectorAll("thead tr:first-child th"),
+    ];
+    // Pinned price is reordered first and breaks out label-less; name keeps
+    // the group with a shrunken span; the date column spans alone.
+    expect(cells.map((cell) => cell.colSpan)).toEqual([1, 1, 1]);
+    expect(cells.map((cell) => cell.textContent?.trim())).toEqual([
+      "",
+      "Product",
+      "",
+    ]);
+
+    // The pinned group cell is horizontally sticky like its column.
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    const before = cells[0].getBoundingClientRect().left;
+    wrapper.scrollLeft = 40;
+    await expect
+      .poll(() => Math.abs(cells[0].getBoundingClientRect().left - before))
+      .toBeLessThan(1);
+  });
+});

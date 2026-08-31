@@ -89,8 +89,20 @@ resurrect old drafts otherwise). The edit schema needs a row-id field
 - **Fill + empty**: in a height-constrained container the table fills it;
   with zero rows the `empty` snippet (or `labels.table.empty`) shows,
   centered in the visible viewport.
+- **Column groups**: `group="2026"` on adjacent columns renders one
+  spanning cell in an extra header row (`scope="colgroup"`) — a year over
+  its month columns. The group label sticks to the frozen edge while its
+  span scrolls, so the year stays identifiable from any of its months, and
+  gets pushed out by the next span. Both header rows stay sticky under
+  vertical scroll. Pinned columns leave their group (a span can't be
+  half-pinned); `groupHeaderCellClass` styles the row.
 - **Density**: `density="compact"` tightens everything — including editor
   inputs, via the core density context.
+- **Loading**: `loading` veils the visible table (slight blur + spinner,
+  interaction blocked, `role="status"` with `labels.table.loading` for
+  screen readers). Wire it to a remote query's `.loading` — it flips true
+  on every refresh, single-flight refreshes after edits included:
+  `<Table rows={await rowsQuery} loading={rowsQuery.loading} …>`.
 
 ## Theming
 

@@ -39,7 +39,11 @@ describe("tooltip", () => {
   });
 
   test("keyboard focus shows immediately and blur hides", async () => {
-    const screen = await render(Fixture, { openDelay: 300 });
+    // The huge openDelay is the proof: any open within the wait window can
+    // only be the focus path, which bypasses the hover delay. (An earlier
+    // version asserted a tight 200ms wall-clock window instead — flaky
+    // under full-suite CPU contention.)
+    const screen = await render(Fixture, { openDelay: 60_000 });
 
     // Park the pointer away from the trigger: it rests wherever an earlier
     // spec left it, and a trigger mounting under a stationary cursor makes
@@ -50,8 +54,7 @@ describe("tooltip", () => {
     document.querySelector<HTMLElement>('[data-testid="outside"]')!.focus();
     await userEvent.keyboard("{Tab}");
 
-    // No 300ms wait for keyboard users — visible as soon as events settle.
-    await vi.waitFor(() => expect(isOpen()).toBe(true), { timeout: 200 });
+    await vi.waitFor(() => expect(isOpen()).toBe(true));
 
     await userEvent.keyboard("{Tab}");
     await vi.waitFor(() => expect(isOpen()).toBe(false));

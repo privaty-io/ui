@@ -70,6 +70,9 @@ interface ColumnRegistration<Row> {
   key: string;
   /** Header text (also the header cell's tooltip). */
   label: string;
+  /** Group header text — adjacent columns with the same group share one
+   * spanning cell in the group header row. */
+  group?: string;
 
   /** One accessor serves display, the default sort, and edit seeding. */
   value: (row: Row) => unknown;

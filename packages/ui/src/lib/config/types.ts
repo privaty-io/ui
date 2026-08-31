@@ -42,6 +42,8 @@ interface UiTableLabels {
   empty: string;
   /** The row expander toggle. */
   expand: string;
+  /** Screen-reader text on the loading veil (`role="status"`). */
+  loading: string;
 }
 
 /** All label groups, one per component family. */

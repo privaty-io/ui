@@ -42,6 +42,18 @@ const tableTheme = {
   /** Empty-state message color. */
   emptyText: "text-stone-500",
 
+  /** The loading veil pinned over the visible scrollport: translucent tint
+   * plus a slight blur behind the centered spinner. It intentionally keeps
+   * pointer events, blocking interaction with the stale rows beneath while
+   * a refresh is in flight. */
+  loadingOverlay: cn(
+    "flex items-center justify-center",
+    "bg-stone-50/40 backdrop-blur-[2px]",
+    "dark:bg-stone-950/40",
+  ),
+  /** The spinner centered in the loading veil. */
+  loadingSpinner: "size-6",
+
   /** Icon sizing for every action/expander icon. */
   icon: "size-4",
   /** Padding for the square icon action buttons per density. */

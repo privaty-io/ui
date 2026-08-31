@@ -24,6 +24,8 @@
     withDateColumn?: boolean;
     withCustomCompare?: boolean;
     containerClass?: string;
+    loading?: boolean;
+    withGroups?: boolean;
     density?: "comfortable" | "compact";
     ondelete?: (row: Item) => unknown;
   }
@@ -40,6 +42,8 @@
     withDateColumn = false,
     withCustomCompare = false,
     containerClass,
+    loading = false,
+    withGroups = false,
     density,
     ondelete,
   }: Props = $props();
@@ -62,12 +66,14 @@
   actions={withCustomActions ? zapActions : undefined}
   expanded={withExpanded ? rowDetails : undefined}
   class={containerClass}
+  {loading}
   {density}
   {ondelete}
 >
   <Column
     key="name"
     label="Name"
+    group={withGroups ? "Product" : undefined}
     value={(row: Item) => row.name}
     sortable
     compare={withCustomCompare
@@ -86,6 +92,7 @@
   </Column>
   <Column
     key="price"
+    group={withGroups ? "Product" : undefined}
     label="Price"
     value={(row: Item) => row.price}
     sortable

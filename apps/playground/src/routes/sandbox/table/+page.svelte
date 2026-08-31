@@ -25,7 +25,11 @@
   // server render the snippet INSTEAD of the children — deferring the whole
   // subtree to the client. Kit's root supplies the error boundary and its
   // navigation handles the in-flight state.
-  const rows = $derived(await getRows());
+  // The query object is held separately from the awaited rows: `.loading`
+  // flips true on every refresh (single-flight included) and drives the
+  // table's loading veil.
+  const rowsQuery = getRows();
+  const rows = $derived(await rowsQuery);
 </script>
 
 <main class="mx-auto flex w-full max-w-2xl flex-col gap-4 py-8">
@@ -63,6 +67,7 @@
   <div class="h-96">
     <Table
       {rows}
+      loading={rowsQuery.loading}
       rowKey={(row) => row.id}
       {controller}
       createForm={createRow}
@@ -101,6 +106,7 @@
            cell formatting (default would be the raw "129"). -->
       <Column
         key="price"
+        group="Pricing"
         label="Price"
         value={(row: Item) => row.price}
         tooltip={(row: Item) => `${row.price} kr`}
@@ -124,6 +130,7 @@
            pinned left, the actions column pinned right. -->
       <Column
         key="vat"
+        group="Pricing"
         label="Price incl. VAT"
         value={(row: Item) => `${(row.price * 1.25).toFixed(2)} kr`}
         width="14rem"
@@ -171,6 +178,12 @@
       Newest: the table scrolls inside its container; scroll right — Name stays
       pinned left, actions pinned right; add rows until it scrolls vertically —
       the header stays put; the actions column shrinks to its content.
+    </li>
+    <li>
+      Column groups: "Pricing" spans Price and VAT in an extra header row;
+      scroll right and its label sticks at the pinned edge while the span
+      scrolls (the calendar-year effect); every save/delete flashes the loading
+      veil over the table.
     </li>
   </ol>
 </main>
