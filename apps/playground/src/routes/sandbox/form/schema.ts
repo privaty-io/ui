@@ -21,6 +21,12 @@ const createItemSchema = v.object({
     v.nonEmpty("required"),
     v.regex(/^\d{4}-\d{2}$/, "invalid-month"),
   ),
+  // Date inputs submit "YYYY-MM-DD" strings — same empty-string recipe.
+  bakedOn: v.pipe(
+    v.string(),
+    v.nonEmpty("required"),
+    v.regex(/^\d{4}-\d{2}-\d{2}$/, "invalid-date"),
+  ),
   // Unchecked checkboxes are absent from the submitted data entirely, so the
   // schema must supply the false. (The canonical checkbox recipe.)
   inStock: v.optional(v.boolean(), false),

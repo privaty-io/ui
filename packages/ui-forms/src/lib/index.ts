@@ -10,10 +10,13 @@ export { default as Submit } from "./components/submit.svelte";
 export { default as Form } from "./form.svelte";
 export { default as CheckboxInput } from "./inputs/checkbox-input.svelte";
 export { default as DateInput } from "./inputs/date-input.svelte";
+export { default as DatePickerInput } from "./inputs/date-picker-input.svelte";
+export { default as MonthPickerInput } from "./inputs/month-picker-input.svelte";
 export { default as NumberInput } from "./inputs/number-input.svelte";
 export { default as SelectInput } from "./inputs/select-input.svelte";
 export { default as TextareaInput } from "./inputs/textarea-input.svelte";
 export { default as TextInput } from "./inputs/text-input.svelte";
+export { default as WeekPickerInput } from "./inputs/week-picker-input.svelte";
 
 // The extension point for custom inputs.
 export { wireField } from "./inputs/wire-field";

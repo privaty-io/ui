@@ -3,8 +3,9 @@
   import Reset from "@privaty/ui-forms/components/reset.svelte";
   import Submit from "@privaty/ui-forms/components/submit.svelte";
   import CheckboxInput from "@privaty/ui-forms/inputs/checkbox-input.svelte";
-  import DateInput from "@privaty/ui-forms/inputs/date-input.svelte";
+  import DatePickerInput from "@privaty/ui-forms/inputs/date-picker-input.svelte";
   import Form from "@privaty/ui-forms/form.svelte";
+  import MonthPickerInput from "@privaty/ui-forms/inputs/month-picker-input.svelte";
   import NumberInput from "@privaty/ui-forms/inputs/number-input.svelte";
   import SelectInput from "@privaty/ui-forms/inputs/select-input.svelte";
   import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
@@ -31,10 +32,17 @@
       placeholder="Choose a category"
       required
     />
-    <DateInput
+    <!-- The M5 picker inputs: the native input stays the FormData carrier
+         (typeable as ever), the calendar button opens the library picker. -->
+    <MonthPickerInput
       field={createItem.fields.availableFrom}
       label="Available from"
-      type="month"
+      required
+    />
+    <DatePickerInput
+      field={createItem.fields.bakedOn}
+      label="Baked on"
+      showWeekNumbers
       required
     />
     <CheckboxInput field={createItem.fields.inStock} label="In stock" />
@@ -54,7 +62,7 @@
     {#each await getItems() as item (item.id)}
       <li>
         {item.name} ({item.category}{item.inStock ? ", in stock" : ""}, from
-        {item.availableFrom})
+        {item.availableFrom}, baked {item.bakedOn})
         {item.description ? ` — ${item.description}` : ""}
         {item.price ? ` — ${item.price}` : ""}
       </li>

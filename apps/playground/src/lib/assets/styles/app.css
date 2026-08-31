@@ -16,6 +16,11 @@
 
 @layer base {
   html {
+    /* Without an explicit data-theme (system mode), native widgets still
+       need a scheme — otherwise select popups render light under dark
+       text. The data-theme blocks below override this. */
+    color-scheme: light dark;
+
     &[data-theme="light"] {
       scrollbar-color: var(--color-stone-400) var(--color-stone-50);
       color-scheme: only light;

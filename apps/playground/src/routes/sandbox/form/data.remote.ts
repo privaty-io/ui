@@ -8,6 +8,7 @@ interface Item {
   price?: number;
   category: string;
   availableFrom: string;
+  bakedOn: string;
   inStock: boolean;
 }
 
@@ -23,6 +24,7 @@ const createItem = form(createItemSchema, async (data) => {
     price: data.price,
     category: data.category,
     availableFrom: data.availableFrom,
+    bakedOn: data.bakedOn,
     inStock: data.inStock,
   });
 

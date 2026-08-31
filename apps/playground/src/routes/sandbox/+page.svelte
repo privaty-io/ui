@@ -12,6 +12,11 @@
       <a href={resolve("sandbox/table")}>Table (the real library)</a>
     </li>
     <li>
+      <a href={resolve("sandbox/calendar")}>
+        Calendar pickers (date, month, week + popover)
+      </a>
+    </li>
+    <li>
       <a href={resolve("sandbox/table-spike")}>
         Table spike (wrapping form, single editor)
       </a>

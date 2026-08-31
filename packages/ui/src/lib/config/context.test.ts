@@ -39,6 +39,7 @@ describe("defaultUiConfig", () => {
         week: "Wk",
         month: "Month",
         year: "Year",
+        open: "Open calendar",
       },
     });
   });

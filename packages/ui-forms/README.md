@@ -43,6 +43,29 @@ component, all string-valued), `SelectInput`, `CheckboxInput`. Plus
 `Submit`, `Reset`, `FormError`. Icon-style Submit/Reset: pass children; the
 label stays as the accessible name.
 
+## Picker inputs
+
+`DatePickerInput`, `MonthPickerInput`, and `WeekPickerInput` pair the
+native input with the core library's cross-browser calendar pickers — the
+custom month/week UIs Firefox never got, and one consistent picker
+everywhere else.
+
+- The **native input stays visible as the FormData carrier**: typing works,
+  native mobile pickers stay, and Kit reads live form data as ever. Firefox
+  renders month/week carriers as plain text inputs — exactly the gap the
+  calendar button fills.
+- The overlaid calendar button opens the picker in an anchored `Popover`
+  (top layer, light dismiss, zero-lag scroll tracking). A pick **writes the
+  input the way typing does** (DOM value + a bubbling `input` event), so
+  validation cadence, touch marking, and dirty tracking are identical to
+  manual entry — one write path, no programmatic special case.
+- `min`/`max` flow to both the native input and the picker;
+  `DatePickerInput` adds `isDateDisabled`, `showWeekNumbers`,
+  `firstDayOfWeek`, and `locale` (all picker-side — constraints still
+  belong in the schema, typing can produce anything).
+- The trigger's accessible name comes from `labels.calendar.open`; while
+  the form submits, the input turns readonly and the trigger disables.
+
 ## The validation model
 
 - **With `schema`** (a Standard Schema, e.g. valibot): validation runs

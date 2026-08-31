@@ -66,6 +66,7 @@
     "svelte": "^5.0.0"
   },
   "dependencies": {
+    "@lucide/svelte": "catalog:",
     "@standard-schema/spec": "catalog:"
   },
   "devDependencies": {
