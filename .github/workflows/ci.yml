@@ -20,8 +20,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # vitest browser mode runs the component specs in real Chromium.
-      - run: pnpm exec playwright install chromium --with-deps
+      # vitest browser mode runs the component specs in real Chromium, and
+      # the overlay specs additionally in Firefox (the browser that
+      # motivated that layer).
+      - run: pnpm exec playwright install chromium firefox --with-deps
 
       - run: pnpm check
       - run: pnpm lint

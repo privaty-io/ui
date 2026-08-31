@@ -41,7 +41,7 @@ jobs:
           done
 
       # vitest browser mode runs the component specs in real Chromium.
-      - run: pnpm exec playwright install chromium --with-deps
+      - run: pnpm exec playwright install chromium firefox --with-deps
 
       - run: pnpm check
       - run: pnpm lint

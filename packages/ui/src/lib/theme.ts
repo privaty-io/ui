@@ -48,6 +48,21 @@ const coreTheme = {
     label: "cursor-pointer text-stone-600 dark:text-stone-400",
   },
 
+  /** Popover panel: an opaque bordered surface floating on the top layer. */
+  popover: cn(
+    "rounded border p-3 shadow-lg",
+    "border-stone-400 bg-stone-50 text-stone-800",
+    "dark:border-stone-600 dark:bg-stone-950 dark:text-stone-200",
+  ),
+  /** Tooltip bubble: compact inverse surface. pointer-events-none is part
+   * of the contract — tooltips are never interactive, and a hoverable
+   * bubble would flicker against its own trigger. */
+  tooltip: cn(
+    "pointer-events-none rounded px-2 py-1 text-xs shadow-md",
+    "bg-stone-800 text-stone-50",
+    "dark:bg-stone-200 dark:text-stone-900",
+  ),
+
   button: {
     /** Chrome shared by both variants — sizing, radius, cursor. */
     base: "cursor-pointer rounded px-3 py-1.5 disabled:cursor-not-allowed",

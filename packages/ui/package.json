@@ -10,18 +10,30 @@
   "type": "module",
   "scripts": {
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "build": "svelte-package && find dist \\( -name '*.test.*' -o -name '*.fixture.*' \\) -delete",
-    "lint": "eslint ."
+    "build": "svelte-package && publint",
+    "lint": "eslint .",
+    "prepack": "pnpm build"
   },
   "files": [
     "dist",
-    "NOTICE"
+    "NOTICE",
+    "!dist/**/*.test.*",
+    "!dist/**/*.spec.*",
+    "!dist/**/*.fixture.*"
   ],
   "sideEffects": [
     "**/*.css"
   ],
   "exports": {
     "./package.json": "./package.json",
+    ".": {
+      "svelte": "./src/lib/index.js",
+      "default": "./src/lib/index.js"
+    },
+    "./*.svelte": {
+      "svelte": "./src/lib/*.svelte",
+      "default": "./src/lib/*.svelte"
+    },
     "./*": {
       "svelte": "./src/lib/*",
       "default": "./src/lib/*"
@@ -31,6 +43,16 @@
     "access": "public",
     "exports": {
       "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.ts",
+        "svelte": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./*.svelte": {
+        "types": "./dist/*.svelte.d.ts",
+        "svelte": "./dist/*.svelte",
+        "default": "./dist/*.svelte"
+      },
       "./*": {
         "svelte": "./dist/*",
         "default": "./dist/*"
@@ -52,9 +74,12 @@
     "@config/typescript": "workspace:*",
     "@sveltejs/package": "catalog:",
     "eslint": "catalog:",
+    "publint": "catalog:",
     "svelte": "catalog:",
     "svelte-check": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:"
-  }
+  },
+  "svelte": "./dist/index.js",
+  "types": "./dist/index.d.ts"
 }

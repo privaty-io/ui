@@ -66,6 +66,24 @@ export default defineConfig({
         },
       },
 
+      // The overlay layer exists BECAUSE of Firefox (no native month/week
+      // pickers; the positioning engine covers for missing CSS anchor
+      // positioning) — its specs run there too, scoped to keep CI lean.
+      {
+        extends: "./vitest.config.ts",
+        test: {
+          name: "overlays-firefox",
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            instances: [{ browser: "firefox", headless: true }],
+          },
+          include: [
+            "packages/ui/src/lib/overlays/**/*.svelte.{test,spec}.{js,ts}",
+          ],
+        },
+      },
+
       // The playground is a real SvelteKit app — its code may use $app
       // modules at runtime (the packages may not), so its browser specs run
       // on the app's own Kit-enabled Vite config.

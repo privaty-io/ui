@@ -14,6 +14,10 @@ pnpm add @privaty/ui @privaty/ui-forms
 > `experimental.remoteFunctions` + `compilerOptions.experimental.async`, and
 > Tailwind v4 (`@source` the package, see the core README).
 
+Every export is also available from the package root — `import { Form,
+TextInput, Submit } from "@privaty/ui-forms"` — alongside the deep
+subpaths shown below; both tree-shake.
+
 ## Quickstart
 
 ```svelte

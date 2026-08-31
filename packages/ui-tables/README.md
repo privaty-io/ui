@@ -13,6 +13,10 @@ pnpm add @privaty/ui @privaty/ui-forms @privaty/ui-tables
 > the same lockstep version (single instances — Symbol-keyed contexts), plus
 > the Kit/Tailwind setup from their READMEs.
 
+Every export is also available from the package root — `import { Table,
+Column } from "@privaty/ui-tables"` — alongside the deep subpaths shown
+below; both tree-shake.
+
 ## Quickstart
 
 ```svelte
