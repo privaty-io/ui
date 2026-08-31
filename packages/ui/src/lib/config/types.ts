@@ -46,12 +46,31 @@ interface UiTableLabels {
   loading: string;
 }
 
+/** User-facing strings the calendar pickers render. */
+interface UiCalendarLabels {
+  /** Previous/next month navigation (DatePicker, WeekPicker). */
+  previousMonth: string;
+  nextMonth: string;
+  /** Previous/next year navigation (MonthPicker). */
+  previousYear: string;
+  nextYear: string;
+  /** Header of the ISO week-number column (kept short). */
+  week: string;
+  /** Accessible names of the header month/year dropdowns. */
+  month: string;
+  year: string;
+  /** Accessible name of the picker inputs' calendar trigger button. */
+  open: string;
+}
+
 /** All label groups, one per component family. */
 interface UiLabels {
   /** Strings the form components render. */
   form: UiFormLabels;
   /** Strings the table components render. */
   table: UiTableLabels;
+  /** Strings the calendar pickers render. */
+  calendar: UiCalendarLabels;
 }
 
 /**
@@ -59,6 +78,11 @@ interface UiLabels {
  * setUiConfig/getUiConfig in ./context.
  */
 interface UiConfig {
+  /** BCP 47 locale for anything language-shaped beyond the label strings —
+   * calendar month/weekday names, first day of week (see the calendar
+   * engine). Undefined = the runtime's default locale. */
+  locale?: string;
+
   /** Turns a validation issue into the message shown to the user. */
   resolveMessage: MessageResolver;
   /** All user-facing strings the components render. */
@@ -74,12 +98,14 @@ type PartialUiConfig = Partial<Omit<UiConfig, "labels">> & {
   labels?: {
     form?: Partial<UiFormLabels>;
     table?: Partial<UiTableLabels>;
+    calendar?: Partial<UiCalendarLabels>;
   };
 };
 
 export type {
   MessageResolver,
   PartialUiConfig,
+  UiCalendarLabels,
   UiConfig,
   UiFormLabels,
   UiLabels,

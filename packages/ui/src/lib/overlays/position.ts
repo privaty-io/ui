@@ -13,8 +13,9 @@ import type { Attachment } from "svelte/attachments";
  *   scroll/resize automatically.
  *
  * Hand-rolled on purpose: the library positions its own overlays and stays
- * dependency-free. Internals can move to CSS anchor positioning once it is
- * baseline across browsers (Firefox lacked it when this was built).
+ * dependency-free. {@link anchorTo} is dual-engine — native CSS anchor
+ * positioning (Baseline 2026) where the browser supports it, the JS engine
+ * above as the fallback everywhere else.
  */
 
 /** The anchor side the floating element is placed against. */
@@ -198,13 +199,55 @@ function computeAnchorPosition(
   };
 }
 
+// CSS anchor positioning ships in every engine now (Baseline 2026 —
+// Chrome 125+, Firefox 147+, Safari 18.2+): the compositor tracks the
+// anchor, so the floating element never lags a frame behind scrolling the
+// way JS repositioning inherently does (scrolling paints before the main
+// thread hears the event). Detected once; the JS engine stays as the
+// fallback for anything older.
+const supportsAnchorPositioning =
+  typeof CSS !== "undefined" &&
+  CSS.supports("anchor-name", "--a") &&
+  CSS.supports("position-area", "bottom");
+
+// One anchor-name per attachment — names must not collide across
+// simultaneously mounted overlays.
+let anchorSequence = 0;
+
+/** Our placement vocabulary mapped onto physical position-area keywords:
+ * "span-right" grows rightward from the anchor's left edge — the physical
+ * reading of our start alignment (and so on around the compass). */
+const positionAreas: Record<Placement, string> = {
+  top: "top",
+  "top-start": "top span-right",
+  "top-end": "top span-left",
+  bottom: "bottom",
+  "bottom-start": "bottom span-right",
+  "bottom-end": "bottom span-left",
+  left: "left",
+  "left-start": "left span-bottom",
+  "left-end": "left span-top",
+  right: "right",
+  "right-start": "right span-bottom",
+  "right-end": "right span-top",
+};
+
+/** The margin side that pushes the element `offset` px away from the
+ * anchor for each side of placement. */
+const offsetMargins: Record<Side, string> = {
+  top: "margin-bottom",
+  bottom: "margin-top",
+  left: "margin-right",
+  right: "margin-left",
+};
+
 /**
  * Svelte attachment that keeps the attached element positioned next to
- * `anchor`. Applies `position: fixed` viewport coordinates (which also work
- * for top-layer elements like `[popover]`) and re-positions on any ancestor
- * scroll, on window resize, and whenever the anchor or the element itself
- * changes size. The applied placement is exposed as `data-placement` for
- * styling (arrows, transform-origin).
+ * `anchor` — via native CSS anchor positioning where the browser has it
+ * (compositor-tracked: zero scroll lag), and `position: fixed` viewport
+ * coordinates updated from JS everywhere else. Both work for top-layer
+ * elements like `[popover]`. The requested placement is exposed as
+ * `data-placement` for styling (arrows, transform-origin).
  *
  * ```svelte
  * <button bind:this={anchor}>Open</button>
@@ -214,12 +257,16 @@ function computeAnchorPosition(
  * ```
  *
  * Used inline like that, the attachment re-creates itself whenever `anchor`
- * or the options change — no manual update wiring. A hidden element
- * (`display: none`, a closed popover) measures 0×0 and is re-positioned
- * automatically the moment it becomes visible, via the resize observer.
+ * or the options change — no manual update wiring. A hidden element (a
+ * closed popover) positions itself the moment it becomes visible in both
+ * engines.
  *
- * Size is measured with `getBoundingClientRect`, so CSS transforms on the
- * element skew the math — animate a transform on an inner wrapper instead.
+ * Engine differences kept small on purpose: `flip` maps to
+ * `position-try-fallbacks` natively (so `data-placement` always reports
+ * the REQUESTED placement there), and `shift`/`padding` apply only in the
+ * JS engine — the native one trades edge-shifting for lag-free tracking.
+ * In the JS engine size is measured with `getBoundingClientRect`, so CSS
+ * transforms skew the math — animate a transform on an inner wrapper.
  */
 function anchorTo(
   anchor: Element | null | undefined,
@@ -227,6 +274,41 @@ function anchorTo(
 ): Attachment<HTMLElement> {
   return (floating) => {
     if (!anchor) return;
+
+    if (supportsAnchorPositioning && anchor instanceof HTMLElement) {
+      const placement = options.placement ?? "bottom";
+      const side = placement.split("-")[0] as Side;
+
+      anchorSequence += 1;
+      const name = `--privaty-anchor-${anchorSequence}`;
+      // Restored on cleanup: an anchor hosting several overlays keeps the
+      // name of whichever attachment is currently active.
+      const previousName = anchor.style.getPropertyValue("anchor-name");
+      anchor.style.setProperty("anchor-name", name);
+
+      // [popover] UA styles (`inset: 0; margin: auto`) must be overridden
+      // here too, or the area resolution stretches the element.
+      floating.style.position = "fixed";
+      floating.style.inset = "auto";
+      floating.style.margin = "0";
+      floating.style.setProperty("position-anchor", name);
+      floating.style.setProperty("position-area", positionAreas[placement]);
+      floating.style.setProperty(
+        offsetMargins[side],
+        `${options.offset ?? 0}px`,
+      );
+      if (options.flip !== false) {
+        floating.style.setProperty(
+          "position-try-fallbacks",
+          side === "top" || side === "bottom" ? "flip-block" : "flip-inline",
+        );
+      }
+      floating.dataset.placement = placement;
+
+      return () => {
+        anchor.style.setProperty("anchor-name", previousName);
+      };
+    }
 
     const update = () => {
       const rect = floating.getBoundingClientRect();

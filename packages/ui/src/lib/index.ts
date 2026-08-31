@@ -4,6 +4,29 @@
  * whichever import style reads better; bundlers tree-shake both.
  */
 
+// Calendar engine
+export {
+  addMonths,
+  calendarMonth,
+  daysInMonth,
+  firstDayOfWeek,
+  formatIsoDate,
+  formatIsoWeek,
+  isoWeek,
+  monthNames,
+  parseIsoDate,
+  weekdayNames,
+} from "./calendar/calendar";
+export type {
+  CalendarDay,
+  CalendarMonth,
+  CalendarMonthOptions,
+  CalendarWeek,
+} from "./calendar/calendar";
+export { default as DatePicker } from "./calendar/date-picker.svelte";
+export { default as MonthPicker } from "./calendar/month-picker.svelte";
+export { default as WeekPicker } from "./calendar/week-picker.svelte";
+
 // Components
 export { default as Button } from "./components/button.svelte";
 export { default as Checkbox } from "./components/checkbox.svelte";

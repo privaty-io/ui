@@ -63,6 +63,55 @@ with a getter so changes propagate.
   colors, padding, chrome — separated from structural mechanics in the
   components. Note: Tailwind's scanner only sees literal class strings;
   never build class names at runtime.
+- Focus is a custom `:focus-visible` outline on every control — the native
+  ring differs per engine (near-invisible in Chromium/Edge against this
+  palette). `coreTheme.focusRing` is public: put it on your own focusable
+  elements (a Popover trigger, a link) to match.
+
+## Calendar pickers
+
+Cross-browser `DatePicker`, `MonthPicker`, and `WeekPicker` — the custom
+replacements for the native inputs Firefox never got (`type="month"`,
+`type="week"`), valued in exactly the strings those inputs submit
+("YYYY-MM-DD", "YYYY-MM", "YYYY-Www").
+
+- Presentational and Kit-free: bind `value` (or `onselect` — close a
+  hosting Popover there); the forms wrappers come separately.
+- Header month/year dropdowns jump anywhere in two picks (range follows
+  min/max, otherwise a century each way); the chevrons step singly.
+- Keyboard-first ARIA composites with roving tabindex: arrows move by
+  day/week/month, PageUp/PageDown by month or year (Shift for years in
+  DatePicker), Home/End, Enter/Space. Date/Month are `role="grid"`
+  (buttons ARE the gridcells), Week is a `role="listbox"` of whole-week
+  rows.
+- `min`/`max` (inclusive, ISO strings), `isDateDisabled` hook
+  (DatePicker), `showWeekNumbers` (DatePicker), `aria-current="date"` for
+  today.
+- Locale: the `locale` prop, else `UiConfig.locale`, else the runtime —
+  names AND first day of week follow it (WeekPicker is always
+  Monday-first: ISO weeks are only well-defined that way). Labels come
+  from `labels.calendar`.
+- Specs run in Chromium AND Firefox — the browser these exist for.
+
+## Calendar engine
+
+`calendar/calendar.js` is the headless layer the pickers
+build on — pure math + Intl, no DOM, no state, values in the same ISO
+strings the native inputs submit.
+
+- `calendarMonth(year, month, options)` lays a month out as weeks of
+  `CalendarDay`s (outside/today/disabled flagged; min/max as inclusive ISO
+  bounds — lexicographic comparison, no Date churn; `isDateDisabled` hook;
+  `fixedWeeks` for stable 6-row pickers). Every row carries its ISO-8601
+  week identity (`week`, `weekYear`) — the Danish and `type="week"`
+  convention, Thursday rule included.
+- `monthNames` / `weekdayNames` (rotated to any week start) /
+  `firstDayOfWeek` come from Intl — Denmark says Monday, en-US says
+  Sunday. `UiConfig.locale` is the intended source of the locale tag;
+  undefined uses the runtime's default.
+- `parseIsoDate` (strict — rejects 2026-02-30), `formatIsoDate`,
+  `isoWeek`/`formatIsoWeek` ("2026-W05"), `addMonths`, `daysInMonth`.
+- Months are 1-based everywhere; weekdays are ISO (Mon=1 … Sun=7).
 
 ## Overlays
 
@@ -101,14 +150,21 @@ overlays are built on — public, so consumer content can use it too:
 - 12 placements (`side` × optional `start`/`end` alignment), `offset`,
   viewport-aware `flip` and `shift` with `padding` — the applied placement
   lands on the element as `data-placement` (arrows, transform-origin).
-- Repositions on ancestor scroll, window resize, and anchor/element size
-  changes; a hidden element (closed popover) positions itself the moment it
-  becomes visible. Works with top-layer `[popover]` elements.
-- `computeAnchorPosition` is the pure geometry underneath, exported for
-  custom update strategies. Hand-rolled, dependency-free; internals may move
-  to CSS anchor positioning once it's baseline (Firefox lacks it today).
-- Measurement uses `getBoundingClientRect` — animate transforms on an inner
-  wrapper, not the positioned element itself.
+- Dual-engine: where the browser has CSS anchor positioning (Baseline
+  2026 — Chrome 125+, Firefox 147+, Safari 18.2+) the compositor tracks the
+  anchor, so the element follows scrolling with zero lag and no JS listeners;
+  everywhere else a JS engine repositions on ancestor scroll, window resize,
+  and anchor/element size changes. Either way a hidden element (closed
+  popover) positions itself the moment it becomes visible, and top-layer
+  `[popover]` elements work.
+- Engine differences, kept small: `shift`/`padding` apply only in the JS
+  engine (the native one trades edge-shifting for lag-free tracking), and
+  natively `flip` maps to `position-try-fallbacks` so `data-placement`
+  reports the _requested_ placement there.
+- `computeAnchorPosition` is the pure geometry underneath the JS engine,
+  exported for custom update strategies. Hand-rolled, dependency-free.
+- The JS engine measures with `getBoundingClientRect` — animate transforms
+  on an inner wrapper, not the positioned element itself.
 
 ## Component notes
 

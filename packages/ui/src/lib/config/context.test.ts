@@ -31,6 +31,15 @@ describe("defaultUiConfig", () => {
         expand: "Expand row",
         loading: "Loading",
       },
+      calendar: {
+        previousMonth: "Previous month",
+        nextMonth: "Next month",
+        previousYear: "Previous year",
+        nextYear: "Next year",
+        week: "Wk",
+        month: "Month",
+        year: "Year",
+      },
     });
   });
 });
@@ -97,6 +106,7 @@ describe("mergeUiConfig", () => {
         reset: "Reset",
       },
       table: defaultUiConfig.labels.table,
+      calendar: defaultUiConfig.labels.calendar,
     });
   });
 

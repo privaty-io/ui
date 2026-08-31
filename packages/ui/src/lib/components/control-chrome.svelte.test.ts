@@ -19,6 +19,26 @@ describe("plugin-free control chrome", () => {
     expect(style.borderTopWidth).toBe("1px");
     expect(style.borderTopStyle).toBe("solid");
     expect(style.appearance).toBe("none");
+    // Controls declare their own color-scheme: the browser paints native
+    // widget parts (select popups, spinners) from it — a host app that
+    // never sets one would otherwise get light popups under dark text.
+    expect(style.colorScheme).toBe("light");
+  });
+
+  test("focus shows the library ring, not the UA lottery", async () => {
+    const screen = await render(Input, { label: "Name" });
+
+    const input = screen.getByLabelText("Name").element() as HTMLElement;
+    // Inputs match :focus-visible whenever focused (they take keyboard
+    // input), so programmatic focus deterministically shows the ring.
+    input.focus();
+    const style = getComputedStyle(input);
+
+    // The custom outline replaces the native ring — which is near-invisible
+    // in Chromium/Edge against this palette and different in every engine.
+    expect(style.outlineStyle).toBe("solid");
+    expect(style.outlineWidth).toBe("2px");
+    expect(style.outlineOffset).toBe("1px");
   });
 
   test("selects carry their own chevron", async () => {

@@ -30,6 +30,16 @@ const defaultUiConfig: UiConfig = {
       expand: "Expand row",
       loading: "Loading",
     },
+    calendar: {
+      previousMonth: "Previous month",
+      nextMonth: "Next month",
+      previousYear: "Previous year",
+      nextYear: "Next year",
+      week: "Wk",
+      month: "Month",
+      year: "Year",
+      open: "Open calendar",
+    },
   },
 };
 
@@ -47,6 +57,7 @@ function mergeUiConfig(base: UiConfig, overrides: PartialUiConfig): UiConfig {
     labels: {
       form: { ...base.labels.form, ...overrides.labels?.form },
       table: { ...base.labels.table, ...overrides.labels?.table },
+      calendar: { ...base.labels.calendar, ...overrides.labels?.calendar },
     },
   };
 }
