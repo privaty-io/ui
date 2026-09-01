@@ -4,6 +4,7 @@
   import Column from "./column.svelte";
   import Table from "./table.svelte";
   import type { TableController } from "./table-controller.svelte";
+  import type { RowsSource } from "./types";
 
   interface Item {
     id: string;
@@ -13,7 +14,7 @@
   }
 
   interface Props {
-    rows: Item[];
+    rows: Item[] | RowsSource<Item>;
     controller?: TableController;
     createForm?: Omit<RemoteForm<RemoteFormInput, unknown>, "for">;
     editForm?: RemoteForm<RemoteFormInput, unknown>;

@@ -51,6 +51,68 @@ below; both tree-shake.
 </div>
 ```
 
+## Data loading
+
+`rows` accepts a plain array or a **rows source** — the structural
+`{ current, loading }` slice of a SvelteKit remote query, so the query
+object itself satisfies it. Two recipes, one per rendering goal:
+
+```svelte
+<script>
+  // 1. Fully server-rendered rows: await BARE (`.current` never
+  //    server-renders); keep the query handle so refreshes show the veil.
+  const rowsQuery = getRows();
+  const rows = $derived(await rowsQuery);
+</script>
+
+<Table {rows} loading={rowsQuery.loading} ... />
+
+<!-- 2. SSR the LOADING state, fill on the client: pass the query itself.
+     `current` is always undefined on the server, so the page ships the
+     veiled table and the client loads the rows in — hydration-safe,
+     because server and client agree the table is loading. -->
+<Table rows={getRows()} ... />
+```
+
+A source veils the table automatically (and suppresses the empty state —
+rows that are merely still loading are not "no rows"); the `loading` prop
+remains for the awaited-array pattern's refreshes. Do NOT build loading
+UI by wrapping the Table in `{#if}`/`{#await}`/a pending boundary: a
+`<svelte:boundary>` `pending` snippet server-renders INSTEAD of the table
+(see the forms README), and unmounting the table during loads is exactly
+what makes its own veil unreachable.
+
+### Editor options from another query
+
+An editor select often needs remote options (categories, employees).
+Awaiting that query in the component script trips Svelte's
+`await_waterfall` warning: the async derived resolves at mount but is
+first READ when an editor opens. Hold the un-awaited handle instead and
+read it where it is used:
+
+```svelte
+<script>
+  // No await — just the handle. The fetch starts on the first read.
+  const categoriesQuery = getCategories();
+</script>
+
+{#snippet editor({ field, row })}
+  <SelectInput
+    {field}
+    label="Category"
+    labelStyle="hidden"
+    options={categoriesQuery.current ?? []}
+    initialValue={row?.category ?? ""}
+  />
+{/snippet}
+```
+
+`.current` is reactive: the options render empty the instant the first
+editor opens and fill in when the fetch lands — no waterfall, no warning,
+and tables that are never edited never fetch the options. To pre-warm the
+options at mount instead, read `categoriesQuery.current` once in an
+`$effect`.
+
 ## The editing architecture
 
 One editor at a time (create row OR one edit row); the whole `<table>` wraps

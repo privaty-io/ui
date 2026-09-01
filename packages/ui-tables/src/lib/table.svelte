@@ -45,6 +45,7 @@ surrounding container a height.
     EditorField,
     HiddenField,
     HiddenFieldAttributes,
+    RowsSource,
     TableEditor,
   } from "./types";
 
@@ -53,8 +54,16 @@ surrounding container a height.
   type EditRowKey = Parameters<RemoteForm<EditInput, EditOutput>["for"]>[0];
 
   type Props = {
-    /** The data to display. Sorting copies — the array is never mutated. */
-    rows: readonly Row[];
+    /** The data to display: a plain array, or a reactive rows SOURCE —
+     * the `{ current, loading }` slice of a Kit remote query, so
+     * `rows={getRows()}` works directly. With a source the table renders
+     * immediately and veils itself while the query loads: an un-awaited
+     * query SSRs the loading state (`current` is always undefined on the
+     * server) and the client fills the rows in when the fetch lands. For
+     * fully server-rendered rows, keep awaiting the query and pass the
+     * array (see the README's data recipes). Sorting copies — the array
+     * is never mutated. */
+    rows: readonly Row[] | RowsSource<Row>;
     /** Stable identity for a row — keys rendering, expansion, in-flight
      * delete tracking, and edit targeting. For editing it must return the
      * value the edit schema's id field carries: it is passed to
@@ -104,9 +113,10 @@ surrounding container a height.
     initialColumn?: string;
 
     /** Veils the whole table with a blurred overlay and a spinner, blocking
-     * interaction with the (stale) rows beneath. Wire it to a remote
-     * query's `.loading`, which flips true on every refresh — including the
-     * single-flight refreshes after editor submissions. */
+     * interaction with the (stale) rows beneath. A rows SOURCE veils
+     * automatically; this prop exists for the awaited-array pattern — wire
+     * it to the query's `.loading`, which flips true on every refresh,
+     * the single-flight refreshes after editor submissions included. */
     loading?: boolean;
 
     /** Styles the root element (the scroll wrapper). */
@@ -147,7 +157,7 @@ surrounding container a height.
   };
 
   const {
-    rows,
+    rows: rowsProp,
     rowKey,
 
     controller = new TableController(),
@@ -183,6 +193,19 @@ surrounding container a height.
     expanded,
     empty,
   }: Props = $props();
+
+  // A rows source resolves to [] while its first load is in flight —
+  // every consumer below (sorting, lookups, the empty state) reads this.
+  const rows = $derived(
+    Array.isArray(rowsProp)
+      ? (rowsProp as readonly Row[])
+      : ((rowsProp as RowsSource<Row>).current ?? []),
+  );
+  // The veil covers the explicit prop OR a source's own load state.
+  const veiled = $derived(
+    loading ||
+      (!Array.isArray(rowsProp) && (rowsProp as RowsSource<Row>).loading),
+  );
 
   const config = getUiConfig();
 
@@ -797,10 +820,11 @@ surrounding container a height.
     return value == null ? "" : String(value);
   }
 
-  // The empty state yields to the create editor — "No rows" next to the row
-  // being created would be a lie in progress.
+  // The empty state yields to the create editor — "No rows" next to the
+  // row being created would be a lie in progress — and to the veil: rows
+  // that are merely still loading are not "no rows".
   const showEmpty = $derived(
-    rows.length === 0 && !(showEditor && session?.mode === "create"),
+    rows.length === 0 && !veiled && !(showEditor && session?.mode === "create"),
   );
 
   // Every data cell gets a tooltip: the column's accessor when given (so
@@ -1039,7 +1063,7 @@ surrounding container a height.
          by screen readers — only the veil and the text toggle. -->
     <div class="sticky top-0 left-0 z-40 h-0 w-0 shrink-0">
       <div role="status">
-        {#if loading}
+        {#if veiled}
           <div
             class={cn(tableTheme.loadingOverlay, loadingClass)}
             style={scrollportWidth !== undefined &&
@@ -1056,7 +1080,7 @@ surrounding container a height.
     <!-- inert while loading: the veil blocks pointer hits, inert blocks
          keyboard and assistive tech from the stale rows beneath. -->
     <table
-      inert={loading}
+      inert={veiled}
       class={cn(
         "min-w-full shrink-0 border-separate border-spacing-0 text-left",
         compact ? tableTheme.type.compact : tableTheme.type.comfortable,

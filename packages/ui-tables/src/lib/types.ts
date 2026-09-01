@@ -16,6 +16,19 @@ import type { HTMLInputAttributes } from "svelte/elements";
 type RowKey = string | number;
 
 /**
+ * A reactive rows source the Table can consume directly — the structural
+ * slice of a SvelteKit remote query (`getRows()` itself satisfies it):
+ * `current` is undefined while the first load is in flight (and always on
+ * the server for un-awaited queries), `loading` covers first loads and
+ * refreshes. Structural on purpose, like the forms field slices — fakes
+ * and client-only adapters work too.
+ */
+interface RowsSource<Row> {
+  current: readonly Row[] | undefined;
+  loading: boolean;
+}
+
+/**
  * A table's editor state: idle, the create row open, or one row open for
  * editing. Exactly one editor is active at a time.
  */
@@ -113,5 +126,6 @@ export type {
   HiddenField,
   HiddenFieldAttributes,
   RowKey,
+  RowsSource,
   TableEditor,
 };

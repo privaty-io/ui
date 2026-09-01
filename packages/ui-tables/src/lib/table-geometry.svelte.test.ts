@@ -208,6 +208,40 @@ describe("loading veil", () => {
       .toBeLessThan(1);
   });
 
+  test("a rows source veils until its first load lands", async () => {
+    // The structural slice of a Kit remote query: current undefined +
+    // loading true is exactly what an un-awaited query looks like on the
+    // server AND on the client before the fetch resolves.
+    const source = $state<{
+      current: { id: string; name: string; price: number }[] | undefined;
+      loading: boolean;
+    }>({ current: undefined, loading: true });
+
+    const screen = await render(Fixture, { rows: source });
+
+    // Veiled and inert — and "No rows" must NOT show for rows that are
+    // merely still loading.
+    expect(screen.container.querySelector("table")!.hasAttribute("inert")).toBe(
+      true,
+    );
+    expect(
+      screen.container.querySelector('[role="status"] > div'),
+    ).not.toBeNull();
+    expect(screen.container.textContent).not.toContain("No rows");
+
+    // The fetch lands: rows fill in, the veil lifts.
+    source.current = [{ id: "r1", name: "Comté", price: 89 }];
+    source.loading = false;
+
+    await expect.element(screen.getByText("Comté")).toBeInTheDocument();
+    expect(screen.container.querySelector("table")!.hasAttribute("inert")).toBe(
+      false,
+    );
+    expect(screen.container.querySelector('[role="status"]')!.textContent).toBe(
+      "",
+    );
+  });
+
   test("idle: the veil is gone but the live region persists", async () => {
     const screen = await render(Fixture, {
       rows: [{ id: "r1", name: "Comté", price: 89 }],

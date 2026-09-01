@@ -6,6 +6,22 @@ import { describe, expect, test } from "vitest";
 import Fixture from "./table.fixture.svelte";
 
 describe("server rendering", () => {
+  test("a loading rows source SSRs the veil, not an empty table", () => {
+    // The un-awaited-query recipe: `current` is always undefined on the
+    // server, so the page server-renders its loading state and the client
+    // fills the rows in after hydration.
+    const { body } = render(Fixture, {
+      props: {
+        rows: { current: undefined, loading: true },
+      },
+    });
+
+    expect(body).toContain("inert");
+    expect(body).toContain('role="status"');
+    expect(body).toContain("Loading");
+    expect(body).not.toContain("No rows");
+  });
+
   test("the group header row and its labels are in the SSR output", () => {
     const { body } = render(Fixture, {
       props: {

@@ -15,5 +15,6 @@ export type {
   HiddenField,
   HiddenFieldAttributes,
   RowKey,
+  RowsSource,
   TableEditor,
 } from "./types";
