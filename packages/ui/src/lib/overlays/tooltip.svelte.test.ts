@@ -49,14 +49,14 @@ describe("tooltip", () => {
     // spec left it, and a trigger mounting under a stationary cursor makes
     // Firefox synthesize boundary events that race the show/hide timers.
     await screen.getByTestId("outside").hover();
-    // Programmatic focus: Firefox does not focus buttons on click, so a
-    // click-then-Tab would start tabbing from <body> there.
-    document.querySelector<HTMLElement>('[data-testid="outside"]')!.focus();
-    await userEvent.keyboard("{Tab}");
-
+    // Programmatic focus/blur, not Tab keystrokes: the component's contract
+    // is the focus EVENT (which fires identically either way), while real
+    // Tab routing through the driver drops keystrokes in loaded headless
+    // Firefox runs — it has failed a release on exactly this line.
+    document.querySelector<HTMLElement>('[data-testid="trigger"]')!.focus();
     await vi.waitFor(() => expect(isOpen()).toBe(true));
 
-    await userEvent.keyboard("{Tab}");
+    document.querySelector<HTMLElement>('[data-testid="outside"]')!.focus();
     await vi.waitFor(() => expect(isOpen()).toBe(false));
   });
 
@@ -69,8 +69,7 @@ describe("tooltip", () => {
     // Pointer parked + programmatic focus — same Firefox reasoning as the
     // keyboard-focus spec above.
     await screen.getByTestId("outside").hover();
-    document.querySelector<HTMLElement>('[data-testid="outside"]')!.focus();
-    await userEvent.keyboard("{Tab}");
+    document.querySelector<HTMLElement>('[data-testid="trigger"]')!.focus();
     await vi.waitFor(() => expect(isOpen()).toBe(true));
 
     await userEvent.keyboard("{Escape}");
