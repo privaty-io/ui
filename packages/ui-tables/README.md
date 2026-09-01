@@ -76,7 +76,9 @@ object itself satisfies it. Two recipes, one per rendering goal:
 
 A source veils the table automatically (and suppresses the empty state —
 rows that are merely still loading are not "no rows"); the `loading` prop
-remains for the awaited-array pattern's refreshes. Do NOT build loading
+remains for the awaited-array pattern's refreshes. `RowOf<typeof
+rowsQuery>` extracts the row type once per page for column `value`
+annotations — no re-deriving the query's awaited type per column. Do NOT build loading
 UI by wrapping the Table in `{#if}`/`{#await}`/a pending boundary: a
 `<svelte:boundary>` `pending` snippet server-renders INSTEAD of the table
 (see the forms README), and unmounting the table during loads is exactly
@@ -101,11 +103,17 @@ read it where it is used:
     {field}
     label="Category"
     labelStyle="hidden"
-    options={categoriesQuery.current ?? []}
+    options={toSelectOptions(categoriesQuery.current, {
+      value: (category) => category.id,
+      label: (category) => category.name,
+    })}
     initialValue={row?.category ?? ""}
   />
 {/snippet}
 ```
+
+(`toSelectOptions` is @privaty/ui's array-to-options glue — it tolerates
+the query's undefined pre-fetch `current` and yields `[]`.)
 
 `.current` is reactive: the options render empty the instant the first
 editor opens and fill in when the fetch lands — no waterfall, no warning,

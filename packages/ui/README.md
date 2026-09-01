@@ -175,6 +175,9 @@ overlays are built on — public, so consumer content can use it too:
 - `FieldFrame` implements the label layouts (`top`, `left`, `floating`,
   `hidden`) and the error list (`aria-live="polite"`). Floating labels are
   input-only (they rely on `:placeholder-shown`).
+- `toSelectOptions(items, { value, label?, disabled? })` builds a
+  `SelectOption[]` from an array of anything — tolerates undefined/null
+  (a remote query's pre-fetch `current`) and yields `[]`.
 - `Select` renders a lucide chevron overlaid on an `appearance-none` select;
   `defaultValue` marks the matching option `selected` so a native form reset
   returns to it.

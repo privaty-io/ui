@@ -24,9 +24,25 @@ type RowKey = string | number;
  * and client-only adapters work too.
  */
 interface RowsSource<Row> {
-  current: readonly Row[] | undefined;
+  current: readonly Row[] | null | undefined;
   loading: boolean;
 }
+
+/**
+ * The row type of whatever `rows` accepts — extract it once per page
+ * instead of re-deriving the query's awaited type per column:
+ *
+ * ```ts
+ * const rowsQuery = getRows();
+ * type Row = RowOf<typeof rowsQuery>;
+ * ```
+ */
+type RowOf<Source> =
+  Source extends RowsSource<infer Row>
+    ? Row
+    : Source extends readonly (infer Row)[]
+      ? Row
+      : never;
 
 /**
  * A table's editor state: idle, the create row open, or one row open for
@@ -126,6 +142,7 @@ export type {
   HiddenField,
   HiddenFieldAttributes,
   RowKey,
+  RowOf,
   RowsSource,
   TableEditor,
 };

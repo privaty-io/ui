@@ -33,6 +33,7 @@ export { default as Checkbox } from "./components/checkbox.svelte";
 export { default as FieldFrame } from "./components/field-frame.svelte";
 export { default as Input } from "./components/input.svelte";
 export { default as Select } from "./components/select.svelte";
+export { toSelectOptions } from "./components/select-options";
 export { default as Spinner } from "./components/spinner.svelte";
 export { default as Textarea } from "./components/textarea.svelte";
 export type {

@@ -21,5 +21,15 @@
         Table spike (wrapping form, single editor)
       </a>
     </li>
+    <li>
+      <a href={resolve("sandbox/table-async")}>
+        Async table (slow-query bench, rows source)
+      </a>
+    </li>
+    <li>
+      <a href={resolve("sandbox/table-static")}>
+        Static table (hydration bench — see scripts/hydration-check.mjs)
+      </a>
+    </li>
   </ul>
 </main>
