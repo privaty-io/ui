@@ -40,9 +40,9 @@ describe("tooltip", () => {
 
   test("keyboard focus shows immediately and blur hides", async () => {
     // The huge openDelay is the proof: any open within the wait window can
-    // only be the focus path, which bypasses the hover delay. (An earlier
-    // version asserted a tight 200ms wall-clock window instead — flaky
-    // under full-suite CPU contention.)
+    // only be the focus path, which bypasses the hover delay. (A tight
+    // wall-clock window cannot be asserted here — full-suite CPU
+    // contention makes it flaky.)
     const screen = await render(Fixture, { openDelay: 60_000 });
 
     // Park the pointer away from the trigger: it rests wherever an earlier

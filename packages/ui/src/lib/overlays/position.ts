@@ -75,6 +75,20 @@ interface AnchorPositionOptions {
   padding?: number;
 }
 
+/** Options for {@link anchorTo}: the shared geometry options plus the
+ * engine override. */
+interface AnchorToOptions extends AnchorPositionOptions {
+  /**
+   * Forces one positioning engine instead of the automatic pick (native
+   * CSS anchor positioning where the browser supports it, the JS engine
+   * elsewhere). Primarily a test/debug seam: where anchor positioning is
+   * supported, the JS engine is otherwise unreachable — and it is the only
+   * engine older browsers get, so it must stay testable. Forcing
+   * `"native"` in a browser without support leaves the element unanchored.
+   */
+  engine?: "native" | "js";
+}
+
 /** Input to {@link computeAnchorPosition}: measurements plus options. */
 interface ComputeAnchorPositionInput extends AnchorPositionOptions {
   /** The anchor's viewport-relative rectangle. */
@@ -246,8 +260,9 @@ const offsetMargins: Record<Side, string> = {
  * `anchor` — via native CSS anchor positioning where the browser has it
  * (compositor-tracked: zero scroll lag), and `position: fixed` viewport
  * coordinates updated from JS everywhere else. Both work for top-layer
- * elements like `[popover]`. The requested placement is exposed as
- * `data-placement` for styling (arrows, transform-origin).
+ * elements like `[popover]`. The applied placement is exposed as
+ * `data-placement` for styling (arrows, transform-origin) — see the
+ * engine-differences note below for the native-mode nuance.
  *
  * ```svelte
  * <button bind:this={anchor}>Open</button>
@@ -262,29 +277,39 @@ const offsetMargins: Record<Side, string> = {
  * engines.
  *
  * Engine differences kept small on purpose: `flip` maps to
- * `position-try-fallbacks` natively (so `data-placement` always reports
- * the REQUESTED placement there), and `shift`/`padding` apply only in the
- * JS engine — the native one trades edge-shifting for lag-free tracking.
- * In the JS engine size is measured with `getBoundingClientRect`, so CSS
- * transforms skew the math — animate a transform on an inner wrapper.
+ * `position-try-fallbacks` natively (so `data-placement` reports the
+ * REQUESTED placement there, not the applied one the JS engine reports),
+ * and `shift`/`padding` apply only in the JS engine — the native one
+ * trades edge-shifting for lag-free tracking. In the JS engine size is
+ * measured with `getBoundingClientRect`, so CSS transforms skew the math —
+ * animate a transform on an inner wrapper.
  */
 function anchorTo(
   anchor: Element | null | undefined,
-  options: AnchorPositionOptions = {},
+  options: AnchorToOptions = {},
 ): Attachment<HTMLElement> {
   return (floating) => {
     if (!anchor) return;
 
-    if (supportsAnchorPositioning && anchor instanceof HTMLElement) {
+    const native = options.engine
+      ? options.engine === "native"
+      : supportsAnchorPositioning;
+    if (native && anchor instanceof HTMLElement) {
       const placement = options.placement ?? "bottom";
       const side = placement.split("-")[0] as Side;
 
       anchorSequence += 1;
       const name = `--privaty-anchor-${anchorSequence}`;
-      // Restored on cleanup: an anchor hosting several overlays keeps the
-      // name of whichever attachment is currently active.
-      const previousName = anchor.style.getPropertyValue("anchor-name");
-      anchor.style.setProperty("anchor-name", name);
+      // anchor-name takes a comma-separated LIST: append rather than
+      // overwrite, and remove only this attachment's own name on cleanup —
+      // an anchor hosting several overlays (a menu and a tooltip on one
+      // button) must keep every still-mounted attachment anchored, in any
+      // mount/unmount order.
+      const previousNames = anchor.style.getPropertyValue("anchor-name");
+      anchor.style.setProperty(
+        "anchor-name",
+        previousNames ? `${previousNames}, ${name}` : name,
+      );
 
       // [popover] UA styles (`inset: 0; margin: auto`) must be overridden
       // here too, or the area resolution stretches the element.
@@ -302,11 +327,24 @@ function anchorTo(
           "position-try-fallbacks",
           side === "top" || side === "bottom" ? "flip-block" : "flip-inline",
         );
+      } else {
+        // The attachment re-creates itself on the SAME element when options
+        // change — a flip turned off must clear the previous run's value.
+        floating.style.removeProperty("position-try-fallbacks");
       }
       floating.dataset.placement = placement;
 
       return () => {
-        anchor.style.setProperty("anchor-name", previousName);
+        const remaining = anchor.style
+          .getPropertyValue("anchor-name")
+          .split(",")
+          .map((entry) => entry.trim())
+          .filter((entry) => entry && entry !== name);
+        if (remaining.length) {
+          anchor.style.setProperty("anchor-name", remaining.join(", "));
+        } else {
+          anchor.style.removeProperty("anchor-name");
+        }
       };
     }
 
@@ -315,7 +353,14 @@ function anchorTo(
       const position = computeAnchorPosition({
         anchor: anchor.getBoundingClientRect(),
         floating: { width: rect.width, height: rect.height },
-        viewport: { width: window.innerWidth, height: window.innerHeight },
+        // documentElement.clientWidth/Height, NOT window.inner*: the inner
+        // sizes include classic scrollbars, and this engine's audience
+        // (browsers without anchor positioning) is exactly where those
+        // exist — shift/flip must not tuck content under a scrollbar.
+        viewport: {
+          width: document.documentElement.clientWidth,
+          height: document.documentElement.clientHeight,
+        },
         ...options,
       });
 
@@ -356,6 +401,7 @@ export type {
   AnchorPositionOptions,
   AnchorRect,
   AnchorSize,
+  AnchorToOptions,
   ComputeAnchorPositionInput,
   Placement,
   Side,

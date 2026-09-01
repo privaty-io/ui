@@ -477,7 +477,11 @@ surrounding container a height.
 
     // User input on the scroller releases the initial anchor's ownership —
     // re-anchors must never fight a person. Scroll events can't serve here:
-    // the anchor's own smooth animation fires them constantly.
+    // the anchor's own smooth animation fires them constantly. KNOWN GAP:
+    // Firefox dispatches no pointer/wheel events for native-scrollbar drags
+    // (Gecko bug 279330), so a drag inside the brief re-anchor window
+    // (double-rAF + fonts.ready) is not released and the last re-anchor
+    // wins once — accepted until it bites in practice.
     const releaseOwnership = () => {
       initialAnchorOwns = false;
     };
@@ -1025,26 +1029,34 @@ surrounding container a height.
       classes,
     )}
   >
-    {#if loading}
-      <!-- Sticky zero-size holder: an absolute overlay would scroll away
-           with the content — sticky pins the veil to the VISIBLE scrollport
-           (same mechanism as the empty state and expanded content). Sized
-           from the measured scrollport; until the first measurement lands
-           it is 0×0 and simply invisible. -->
-      <div class="sticky top-0 left-0 z-40 h-0 w-0 shrink-0">
-        <div
-          role="status"
-          class={cn(tableTheme.loadingOverlay, loadingClass)}
-          style={scrollportWidth !== undefined && scrollportHeight !== undefined
-            ? `width: ${scrollportWidth}px; height: ${scrollportHeight}px`
-            : undefined}
-        >
-          <Spinner class={tableTheme.loadingSpinner} />
+    <!-- Sticky zero-size holder: an absolute overlay would scroll away
+         with the content — sticky pins the veil to the VISIBLE scrollport
+         (same mechanism as the empty state and expanded content). Sized
+         from the measured scrollport; until the first measurement lands
+         it is 0×0 and simply invisible. The holder and its role=status
+         region stay MOUNTED while idle: live regions announce content
+         CHANGES, and one inserted together with its text is often skipped
+         by screen readers — only the veil and the text toggle. -->
+    <div class="sticky top-0 left-0 z-40 h-0 w-0 shrink-0">
+      <div role="status">
+        {#if loading}
+          <div
+            class={cn(tableTheme.loadingOverlay, loadingClass)}
+            style={scrollportWidth !== undefined &&
+            scrollportHeight !== undefined
+              ? `width: ${scrollportWidth}px; height: ${scrollportHeight}px`
+              : undefined}
+          >
+            <Spinner class={tableTheme.loadingSpinner} />
+          </div>
           <span class="sr-only">{config.labels.table.loading}</span>
-        </div>
+        {/if}
       </div>
-    {/if}
+    </div>
+    <!-- inert while loading: the veil blocks pointer hits, inert blocks
+         keyboard and assistive tech from the stale rows beneath. -->
     <table
+      inert={loading}
       class={cn(
         "min-w-full shrink-0 border-separate border-spacing-0 text-left",
         compact ? tableTheme.type.compact : tableTheme.type.comfortable,

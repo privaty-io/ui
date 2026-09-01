@@ -63,10 +63,10 @@ everywhere else.
   input the way typing does** (DOM value + a bubbling `input` event), so
   validation cadence, touch marking, and dirty tracking are identical to
   manual entry — one write path, no programmatic special case.
-- `min`/`max` flow to both the native input and the picker;
-  `DatePickerInput` adds `isDateDisabled`, `showWeekNumbers`,
-  `firstDayOfWeek`, and `locale` (all picker-side — constraints still
-  belong in the schema, typing can produce anything).
+- `min`/`max` flow to both the native input and the picker, and `locale`
+  is on all three; `DatePickerInput` adds `isDateDisabled`,
+  `showWeekNumbers`, and `firstDayOfWeek` (all picker-side — constraints
+  still belong in the schema, typing can produce anything).
 - The trigger's accessible name comes from `labels.calendar.open`; while
   the form submits, the input turns readonly and the trigger disables.
 
@@ -126,8 +126,7 @@ availableFrom: v.pipe(v.string(), v.nonEmpty("required"), v.regex(/^\d{4}-\d{2}$
 - No-JS submissions are out of scope for v1 (Submit renders its gate state
   into SSR HTML).
 - Browser support: Firefox has no `type="month"`/`"week"` pickers (falls
-  back to a text input) — a library-owned cross-browser date picker is
-  planned post-v1.
+  back to a text input) — the picker inputs above fill exactly that gap.
 
 ## Testing
 

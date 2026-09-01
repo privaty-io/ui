@@ -50,6 +50,7 @@ export type {
   AnchorPositionOptions,
   AnchorRect,
   AnchorSize,
+  AnchorToOptions,
   ComputeAnchorPositionInput,
   Placement,
   Side,
@@ -70,6 +71,7 @@ export type { UiDensity, UiDensityContext } from "./config/density";
 export type {
   MessageResolver,
   PartialUiConfig,
+  UiCalendarLabels,
   UiConfig,
   UiFormLabels,
   UiLabels,

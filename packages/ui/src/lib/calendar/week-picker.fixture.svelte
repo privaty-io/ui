@@ -13,6 +13,11 @@
   // Deliberate: the fixture seeds once from the initial prop.
   // svelte-ignore state_referenced_locally
   let value = $state(initial);
+
+  /** Simulates a parent writing the bound value after mount. */
+  export function setValue(next: string) {
+    value = next;
+  }
 </script>
 
 <WeekPicker bind:value locale="da" {min} {max} {onselect} />

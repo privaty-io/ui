@@ -91,7 +91,7 @@
       picker.
     </li>
     <li>Danish grids: Monday first, ISO week numbers, danish names.</li>
-    <li>DatePicker: days outside Jan 5 – Dec 24 2026 are disabled.</li>
+    <li>DatePicker: days outside Jun 5 2025 – Dec 24 2026 are disabled.</li>
     <li>
       The Popover one: opens on click, closes on pick (onselect), light dismiss
       + Escape work, glides along on scroll.

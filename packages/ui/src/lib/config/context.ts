@@ -47,8 +47,8 @@ const uiConfigContextKey = Symbol("privaty-ui-config");
 
 /**
  * Merges partial overrides over a full base config. Top-level keys are
- * shallow-merged; the form and table label groups are each merged per key, so
- * an override can replace single labels without repeating the rest.
+ * shallow-merged; each label group is merged per key, so an override can
+ * replace single labels without repeating the rest.
  */
 function mergeUiConfig(base: UiConfig, overrides: PartialUiConfig): UiConfig {
   return {

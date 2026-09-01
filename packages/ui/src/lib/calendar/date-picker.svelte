@@ -35,7 +35,11 @@ prop, then `UiConfig.locale`, then the runtime.
     /** Inclusive ISO bounds; days outside become disabled. */
     min?: string;
     max?: string;
-    /** Marks additional days disabled (booked dates, weekends, …). */
+    /** Marks additional days disabled (booked dates, weekends, …). These
+     * render as FOCUSABLE `aria-disabled` cells (the APG pattern): roving
+     * can land on them and screen readers can discover them, but
+     * selection is refused. Days outside min/max stay natively disabled —
+     * the clamps keep roving off those entirely. */
     isDateDisabled?: (iso: string) => boolean;
 
     /** BCP 47 tag for names and the default week start — overrides
@@ -55,8 +59,8 @@ prop, then `UiConfig.locale`, then the runtime.
     value = $bindable(""),
     onselect,
 
-    min,
-    max,
+    min: minProp,
+    max: maxProp,
     isDateDisabled,
 
     locale,
@@ -72,6 +76,16 @@ prop, then `UiConfig.locale`, then the runtime.
     firstDayOfWeek ?? localeFirstDayOfWeek(resolvedLocale),
   );
 
+  // Malformed bounds (consumer typos) are ignored wholesale: every
+  // comparison below is lexicographic, so a garbage bound would not just
+  // fail — it would poison the clamps. Better a missing constraint.
+  const min = $derived(
+    minProp !== undefined && parseIsoDate(minProp) ? minProp : undefined,
+  );
+  const max = $derived(
+    maxProp !== undefined && parseIsoDate(maxProp) ? maxProp : undefined,
+  );
+
   // Local-timezone today, computed once — the user's calendar day, not the
   // server's (renders again on the client either way).
   const now = new Date();
@@ -85,8 +99,11 @@ prop, then `UiConfig.locale`, then the runtime.
   // grid. A WRITABLE derived: it follows `value` (an external bind change
   // re-derives it), while keyboard roving assigns local overrides. A plain
   // effect syncing value→active cannot tell those apart and would snap
-  // every arrow-key move straight back to the selection.
-  let active = $derived(parseIsoDate(value) ? value : todayIso);
+  // every arrow-key move straight back to the selection. Clamped: an
+  // out-of-bounds fallback (min = tomorrow, nothing selected) would put
+  // the grid's only tab stop on a disabled — unfocusable — cell, making
+  // the whole grid keyboard-unreachable.
+  let active = $derived(clampIso(parseIsoDate(value) ? value : todayIso));
 
   // The displayed month follows the active day.
   const activeParts = $derived(parseIsoDate(active) ?? parseIsoDate(todayIso)!);
@@ -126,8 +143,10 @@ prop, then `UiConfig.locale`, then the runtime.
   // otherwise — recentered on the active year, so picking an edge year
   // extends the range further.
   const years = $derived.by(() => {
-    const from = min ? parseIsoDate(min)!.year : view.year - 100;
-    const to = max ? parseIsoDate(max)!.year : view.year + 100;
+    // Optional chaining, not assertion: a malformed bound (a consumer
+    // typo) degrades to the default range instead of crashing the render.
+    const from = (min ? parseIsoDate(min)?.year : undefined) ?? view.year - 100;
+    const to = (max ? parseIsoDate(max)?.year : undefined) ?? view.year + 100;
     return Array.from({ length: to - from + 1 }, (_, index) => from + index);
   });
 
@@ -347,13 +366,21 @@ prop, then `UiConfig.locale`, then the runtime.
         {/if}
         {#each week.days as day (day.iso)}
           <!-- The button IS the gridcell: aria-selected belongs on the
-               cell role, and the cell is the focusable widget (APG). -->
+               cell role, and the cell is the focusable widget (APG).
+               Out-of-bounds days are natively disabled (the clamps keep
+               roving off them); isDateDisabled days are aria-disabled and
+               FOCUSABLE — a natively disabled roving target would drop
+               the grid from the tab order. -->
+          {@const outOfBounds =
+            (min !== undefined && day.iso < min) ||
+            (max !== undefined && day.iso > max)}
           <button
             type="button"
             role="gridcell"
             data-iso={day.iso}
             tabindex={day.iso === active ? 0 : -1}
-            disabled={day.disabled}
+            disabled={outOfBounds}
+            aria-disabled={day.disabled && !outOfBounds ? true : undefined}
             aria-selected={day.iso === value}
             aria-current={day.today ? "date" : undefined}
             aria-label={dayLabelFormat.format(new Date(day.iso + "T00:00:00Z"))}

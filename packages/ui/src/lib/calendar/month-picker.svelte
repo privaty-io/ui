@@ -36,8 +36,8 @@ Home/End to January/December, Enter/Space select. Locale follows the
     value = $bindable(""),
     onselect,
 
-    min,
-    max,
+    min: minProp,
+    max: maxProp,
 
     locale,
 
@@ -59,12 +59,30 @@ Home/End to January/December, Enter/Space select. Locale follows the
       : undefined;
   };
 
+  // Malformed bounds are ignored wholesale — see DatePicker: the
+  // lexicographic clamps below would otherwise clamp INTO the garbage.
+  const min = $derived(
+    minProp !== undefined && parse(minProp) ? minProp : undefined,
+  );
+  const max = $derived(
+    maxProp !== undefined && parse(maxProp) ? maxProp : undefined,
+  );
+
   const now = new Date();
   const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
 
+  // Navigation and the initial fallback never leave [min, max] — an
+  // out-of-bounds active month would put the grid's only tab stop on a
+  // disabled, unfocusable cell (see DatePicker's clampIso).
+  function clampIso(iso: string): string {
+    if (min !== undefined && iso < min) return min;
+    if (max !== undefined && iso > max) return max;
+    return iso;
+  }
+
   // Roving-tabindex active month; the displayed year follows it. Writable
   // derived — see DatePicker's `active` for why an effect cannot do this.
-  let active = $derived(parse(value) ? value : todayIso);
+  let active = $derived(clampIso(parse(value) ? value : todayIso));
 
   const activeParts = $derived(parse(active) ?? parse(todayIso)!);
   const year = $derived(activeParts.year);
@@ -75,6 +93,7 @@ Home/End to January/December, Enter/Space select. Locale follows the
     (min !== undefined && iso < min) || (max !== undefined && iso > max);
 
   let panel = $state<HTMLElement>();
+  let gridElement = $state<HTMLElement>();
 
   // Dropdown year range — same policy as DatePicker's.
   const years = $derived.by(() => {
@@ -85,14 +104,10 @@ Home/End to January/December, Enter/Space select. Locale follows the
 
   function move(deltaMonths: number) {
     const index = year * 12 + (activeParts.month - 1) + deltaMonths;
-    const next = `${String(Math.floor(index / 12)).padStart(4, "0")}-${pad((((index % 12) + 12) % 12) + 1)}`;
-    // Navigation never leaves [min, max] — moves past a bound land ON it.
-    active =
-      min !== undefined && next < min
-        ? min
-        : max !== undefined && next > max
-          ? max
-          : next;
+    // Moves past a bound land ON the bound.
+    active = clampIso(
+      `${String(Math.floor(index / 12)).padStart(4, "0")}-${pad((((index % 12) + 12) % 12) + 1)}`,
+    );
   }
 
   const previousYearDisabled = $derived(
@@ -124,9 +139,21 @@ Home/End to January/December, Enter/Space select. Locale follows the
     const handler = handlers[event.key];
     if (!handler) return;
     event.preventDefault();
+    const beforeYear = year;
+    const focusedMonth = activeParts.month;
     handler();
-    // After the state flush — the target button may be a NEW element when
-    // the view flipped. tick() beats rAF here: a test (or fast typist) can
+    // The position-keyed buttons survive a year flip, but the focused one
+    // can flip to DISABLED (its month lies outside min/max in the new
+    // year) — the browser then drops focus to <body>, and a fast next
+    // keystroke would miss this handler. Park on the grid for that gap
+    // (see DatePicker's parking).
+    if (year !== beforeYear && isDisabled(isoOf(focusedMonth))) {
+      gridElement?.focus();
+    }
+    // After the state flush — the cells are keyed by POSITION, so a year
+    // flip reuses the buttons (parking above is only needed when the
+    // focused one flips to disabled), but their data-iso only updates once
+    // the flush lands. tick() beats rAF here: a test (or fast typist) can
     // land the next key before an animation frame ever fires.
     void tick().then(() => {
       panel
@@ -171,12 +198,13 @@ Home/End to January/December, Enter/Space select. Locale follows the
     </button>
   </div>
 
-  <!-- tabindex -1: see DatePicker's grid. -->
+  <!-- tabindex -1 and outline-none: see DatePicker's grid. -->
   <div
+    bind:this={gridElement}
     role="grid"
     tabindex={-1}
     aria-label={String(year)}
-    class="mt-1 grid grid-cols-3 gap-0.5"
+    class="mt-1 grid grid-cols-3 gap-0.5 outline-none"
     {onkeydown}
   >
     {#each [0, 1, 2, 3] as row (row)}

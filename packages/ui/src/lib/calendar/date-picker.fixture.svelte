@@ -8,15 +8,31 @@
     min?: string;
     max?: string;
     showWeekNumbers?: boolean;
+    isDateDisabled?: (iso: string) => boolean;
     onselect?: (iso: string) => void;
   }
 
-  const { initial = "", min, max, showWeekNumbers, onselect }: Props = $props();
+  const {
+    initial = "",
+    min,
+    max,
+    showWeekNumbers,
+    isDateDisabled,
+    onselect,
+  }: Props = $props();
 
   // Deliberate: the fixture seeds once from the initial prop.
   // svelte-ignore state_referenced_locally
   let value = $state(initial);
 </script>
 
-<DatePicker bind:value locale="da" {min} {max} {showWeekNumbers} {onselect} />
+<DatePicker
+  bind:value
+  locale="da"
+  {min}
+  {max}
+  {showWeekNumbers}
+  {isDateDisabled}
+  {onselect}
+/>
 <p data-testid="value">{value}</p>

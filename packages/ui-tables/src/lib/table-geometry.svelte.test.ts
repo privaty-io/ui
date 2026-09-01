@@ -163,8 +163,9 @@ describe("loading veil", () => {
     });
 
     const wrapper = screen.container.querySelector("div") as HTMLElement;
+    // The sized veil sits INSIDE the persistent role=status region.
     const veil = () =>
-      screen.container.querySelector('[role="status"]') as HTMLElement;
+      screen.container.querySelector('[role="status"] > div') as HTMLElement;
 
     // Sized to the measured scrollport (clientWidth/Height exclude any
     // classic scrollbars) and aligned with the wrapper's padding box — the
@@ -183,9 +184,15 @@ describe("loading veil", () => {
       Math.abs(veil().getBoundingClientRect().top - wrapperTop),
     ).toBeLessThan(1.5);
 
-    // The veil blocks interaction with the stale rows and announces itself.
+    // The veil blocks pointer hits, the table turns inert (keyboard/AT),
+    // and the persistent status region carries the announcement text.
     expect(getComputedStyle(veil()).pointerEvents).not.toBe("none");
-    expect(veil().textContent).toContain("Loading");
+    expect(screen.container.querySelector("table")!.hasAttribute("inert")).toBe(
+      true,
+    );
+    expect(
+      screen.container.querySelector('[role="status"]')!.textContent,
+    ).toContain("Loading");
 
     // Pinned to the visible scrollport under scroll on both axes.
     const before = veil().getBoundingClientRect();
@@ -201,12 +208,19 @@ describe("loading veil", () => {
       .toBeLessThan(1);
   });
 
-  test("absent while not loading", async () => {
+  test("idle: the veil is gone but the live region persists", async () => {
     const screen = await render(Fixture, {
       rows: [{ id: "r1", name: "Comté", price: 89 }],
     });
 
-    expect(screen.container.querySelector('[role="status"]')).toBeNull();
+    // The status region must exist BEFORE loading flips true — live
+    // regions announce content changes, not their own insertion.
+    const status = screen.container.querySelector('[role="status"]');
+    expect(status).not.toBeNull();
+    expect(status!.textContent).toBe("");
+    expect(screen.container.querySelector("table")!.hasAttribute("inert")).toBe(
+      false,
+    );
   });
 });
 
@@ -387,6 +401,34 @@ describe("initial scroll position", () => {
         { timeout: 4000 },
       )
       .toBeLessThan(1.5);
+  });
+
+  test("user input releases the initial anchor — re-anchors never fight a person", async () => {
+    const screen = await render(Fixture, {
+      rows,
+      withPinnedPrice: true,
+      withDateColumn: true,
+      initialColumn: "added",
+      containerClass: "w-56",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+
+    // A wheel gesture right after mount ends the anchor's ownership; the
+    // user then scrolls home (the assignment also cancels the in-flight
+    // smooth glide).
+    wrapper.dispatchEvent(new Event("wheel", { bubbles: true }));
+    wrapper.scrollLeft = 0;
+
+    // Let every deferred re-anchor trigger fire (double-rAF, fonts.ready)
+    // plus a grace window a wrong re-anchor glide would visibly move in.
+    await new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve)),
+    );
+    await document.fonts.ready;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(wrapper.scrollLeft).toBeLessThan(1);
   });
 
   test("a pre-mount controller.scrollToColumn is buffered and applied", async () => {

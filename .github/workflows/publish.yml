@@ -16,6 +16,15 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: the tag-on-main guard below needs ancestry.
+          fetch-depth: 0
+
+      # The release script enforces cutting from main locally; enforce it
+      # server-side too — a hand-pushed tag on a branch commit must not
+      # publish.
+      - name: Verify the tagged commit is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
 
       - uses: pnpm/action-setup@v4
 
@@ -41,7 +50,9 @@ jobs:
             fi
           done
 
-      # vitest browser mode runs the component specs in real Chromium.
+      # vitest browser mode runs the component specs in real Chromium, and
+      # the overlay specs additionally in Firefox (the browser that
+      # motivated that layer).
       - run: pnpm exec playwright install chromium firefox --with-deps
 
       - run: pnpm check

@@ -192,7 +192,15 @@ special programmatic branch.
             <span class="sr-only">{config.labels.calendar.open}</span>
           </button>
         {/snippet}
-        {@render picker({ value: currentValue, select })}
+        <!-- The panel renders inside the consumer's <form>, and the
+             pickers' unnamed header dropdowns fire bubbling input events —
+             which Kit's form-level listener and the Form's validate-on-
+             input would otherwise treat as edits (validation round-trips
+             from pure calendar navigation). The carrier input's own
+             synthetic pick event fires OUTSIDE this wrapper. -->
+        <div oninput={(event) => event.stopPropagation()}>
+          {@render picker({ value: currentValue, select })}
+        </div>
       </Popover>
     </span>
   {/snippet}

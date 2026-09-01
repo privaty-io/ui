@@ -37,7 +37,12 @@
   state.settled = settled;
 
   function oninput(event: Event) {
-    syncField?.((event.target as HTMLInputElement).value);
+    // Like Kit's real form-level listener, sync only NAMED controls — the
+    // picker's unnamed header dropdowns must not write into the field.
+    const target = event.target;
+    if (target instanceof HTMLInputElement && target.name) {
+      syncField?.(target.value);
+    }
   }
 </script>
 

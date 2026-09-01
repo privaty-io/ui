@@ -94,8 +94,6 @@ const coreTheme = {
     /** The picker panel itself — chrome-free so it can sit inside a
      * Popover (which brings its own) or stand alone. */
     panel: "select-none",
-    /** The month/year (or year) heading. */
-    title: "text-sm font-medium",
     /** The header's month/year dropdowns — compact, native arrow kept.
      * scheme-*: see controlBase — the option popup follows the theme. */
     headerSelect: cn(
@@ -107,7 +105,7 @@ const coreTheme = {
       "[&>option]:bg-stone-50 [&>option]:text-stone-800",
       "dark:[&>option]:bg-stone-950 dark:[&>option]:text-stone-200",
     ),
-    /** The prev/next navigation buttons framing the heading. */
+    /** The prev/next navigation buttons framing the header dropdowns. */
     navButton: cn(
       "cursor-pointer rounded p-1",
       "enabled:hover:bg-stone-200 dark:enabled:hover:bg-stone-800",
@@ -118,11 +116,15 @@ const coreTheme = {
     weekdayLabel: "text-center text-xs text-stone-500",
     /** The ISO week-number column (showWeekNumbers). */
     weekNumberLabel: "pr-1 text-right text-xs text-stone-500",
-    /** Every selectable cell: days, months, and week rows share this. */
+    /** Every selectable cell: days, months, and week rows share this.
+     * aria-disabled styling mirrors disabled: isDateDisabled days stay
+     * FOCUSABLE (the APG pattern — discoverable, selection refused) but
+     * must read as blocked. */
     cell: cn(
       "cursor-pointer rounded text-center text-sm",
-      "enabled:hover:bg-stone-200 dark:enabled:hover:bg-stone-800",
+      "enabled:not-aria-disabled:hover:bg-stone-200 dark:enabled:not-aria-disabled:hover:bg-stone-800",
       "disabled:cursor-not-allowed disabled:opacity-40",
+      "aria-disabled:cursor-not-allowed aria-disabled:opacity-40",
       focusRing,
     ),
     /** Days rendered from a neighbouring month. */

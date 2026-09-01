@@ -3,9 +3,10 @@ Cross-browser week picker — the replacement for `type="week"` where the
 browser has none (Firefox). Renders a month of ISO weeks as a listbox of
 selectable rows, valued as the native input's "YYYY-Www" strings (ISO-8601
 weeks, the Danish convention). Presentational and Kit-free: bind `value`
-or use `onselect`. Keyboard: Up/Down move between weeks, PageUp/PageDown
-by month, Enter/Space select. Weeks always run Monday-first — ISO week
-identity is only well-defined that way.
+or use `onselect`. Keyboard: Up/Down move between weeks, Home/End to the
+month's first/last week, PageUp/PageDown by month, Enter/Space select.
+Weeks always run Monday-first — ISO week identity is only well-defined
+that way.
 -->
 <script lang="ts">
   import { tick } from "svelte";
@@ -46,8 +47,8 @@ identity is only well-defined that way.
     value = $bindable(""),
     onselect,
 
-    min,
-    max,
+    min: minProp,
+    max: maxProp,
 
     locale,
 
@@ -58,6 +59,15 @@ identity is only well-defined that way.
   const resolvedLocale = $derived(locale ?? config.locale);
   const weekdays = $derived(weekdayNames(resolvedLocale, "narrow", 1));
 
+  // Malformed bounds are ignored wholesale — see DatePicker: the
+  // lexicographic clamps below would otherwise clamp INTO the garbage.
+  const min = $derived(
+    minProp !== undefined && weekViewOf(minProp) ? minProp : undefined,
+  );
+  const max = $derived(
+    maxProp !== undefined && weekViewOf(maxProp) ? maxProp : undefined,
+  );
+
   const now = new Date();
   const todayIso = formatIsoDate(
     now.getFullYear(),
@@ -65,32 +75,37 @@ identity is only well-defined that way.
     now.getDate(),
   );
 
-  // The displayed month. A week value doesn't name a month directly — the
-  // view starts at today (or the month containing the bound week's
-  // Thursday, resolved lazily on external changes).
-  let view = $state({ year: 0, month: 0 });
-  view = initialView();
-
-  function initialView(): { year: number; month: number } {
+  // Today's ISO week — the roving fallback while nothing is selected.
+  const todayWeek = (() => {
     const today = parseIsoDate(todayIso)!;
-    const match = /^(\d{4})-W(\d{2})$/.exec(value);
-    if (!match) return { year: today.year, month: today.month };
+    const identity = isoWeek(today.year, today.month, today.day);
+    return formatIsoWeek(identity.weekYear, identity.week);
+  })();
 
-    // The Thursday of week N of year Y: Jan 4 is always in week 1. Two
-    // immutable Dates — Date.UTC normalizes the day overflow.
-    const jan4 = new Date(Date.UTC(Number(match[1]), 0, 4));
-    const thursday = new Date(
-      Date.UTC(
-        Number(match[1]),
-        0,
-        4 - ((jan4.getUTCDay() + 6) % 7) + 3 + (Number(match[2]) - 1) * 7,
-      ),
-    );
-    return {
-      year: thursday.getUTCFullYear(),
-      month: thursday.getUTCMonth() + 1,
-    };
-  }
+  // The displayed month — a WRITABLE derived: it follows the bound
+  // `value`'s week (an external bind change re-resolves the view, like the
+  // other pickers), while the chevrons and header dropdowns assign local
+  // overrides. A week names its month via its Thursday; nothing selected
+  // shows today's month. Clamped into the min/max boundary months.
+  let view = $derived.by(() => {
+    const resolved = (() => {
+      const fromValue = weekViewOf(value);
+      if (fromValue) return fromValue;
+      const today = parseIsoDate(todayIso)!;
+      return {
+        year: today.year,
+        month: today.month,
+        key: today.year * 12 + today.month,
+      };
+    })();
+    if (minView !== undefined && resolved.key < minView.key) {
+      return { year: minView.year, month: minView.month };
+    }
+    if (maxView !== undefined && resolved.key > maxView.key) {
+      return { year: maxView.year, month: maxView.month };
+    }
+    return { year: resolved.year, month: resolved.month };
+  });
 
   const grid = $derived(
     calendarMonth(view.year, view.month, {
@@ -161,31 +176,51 @@ identity is only well-defined that way.
   const isDisabled = (iso: string) =>
     (min !== undefined && iso < min) || (max !== undefined && iso > max);
 
+  // Roving and parking never leave [min, max] — a move past a bound lands
+  // ON the bound; an unclamped target would put the listbox's only tab
+  // stop on a disabled, unfocusable row.
+  function clampIsoWeek(iso: string): string {
+    if (min !== undefined && iso < min) return min;
+    if (max !== undefined && iso > max) return max;
+    return iso;
+  }
+
   let panel = $state<HTMLElement>();
   let listbox = $state<HTMLElement>();
 
-  // Roving tabindex among the week rows: the active week, as its ISO value.
-  let active = $state("");
-  active = value || "";
+  // Roving tabindex among the week rows — a WRITABLE derived following
+  // `value` (see DatePicker's `active` for why an effect cannot do this),
+  // clamped so the tab stop never starts on a disabled row.
+  let active = $derived(
+    clampIsoWeek(/^\d{4}-W\d{2}$/.test(value) ? value : todayWeek),
+  );
 
-  // Keep the active row inside the displayed month's grid.
+  // Keep the active row inside the displayed month's grid — clamped: at a
+  // boundary month the grid's first row can lie before min.
   $effect(() => {
     if (!grid.weeks.some((week) => isoOf(week) === active)) {
-      active = isoOf(grid.weeks[0]);
+      active = clampIsoWeek(isoOf(grid.weeks[0]));
     }
   });
 
-  function navigate(deltaMonths: number) {
-    const next = addMonths(view.year, view.month, deltaMonths);
-    // Navigation never leaves the months containing min/max.
-    const key = next.year * 12 + next.month;
+  // EVERY view write goes through here: navigation never leaves the months
+  // containing min/max (the boundary views) — the header dropdowns
+  // included, which would otherwise jump past the window the chevrons and
+  // month options enforce.
+  function jumpTo(year: number, month: number) {
+    const key = year * 12 + month;
     if (minView !== undefined && key < minView.key) {
       view = { year: minView.year, month: minView.month };
     } else if (maxView !== undefined && key > maxView.key) {
       view = { year: maxView.year, month: maxView.month };
     } else {
-      view = next;
+      view = { year, month };
     }
+  }
+
+  function navigate(deltaMonths: number) {
+    const next = addMonths(view.year, view.month, deltaMonths);
+    jumpTo(next.year, next.month);
   }
 
   function select(iso: string) {
@@ -219,10 +254,7 @@ identity is only well-defined that way.
       thursday.getUTCMonth() + 1,
       thursday.getUTCDate(),
     );
-    let next = formatIsoWeek(identity.weekYear, identity.week);
-    // Roving never leaves [min, max] — a step past a bound lands ON it.
-    if (min !== undefined && next < min) next = min;
-    if (max !== undefined && next > max) next = max;
+    const next = clampIsoWeek(formatIsoWeek(identity.weekYear, identity.week));
     const nextView = weekViewOf(next);
     if (nextView) view = { year: nextView.year, month: nextView.month };
     active = next;
@@ -232,6 +264,14 @@ identity is only well-defined that way.
     const handlers: Record<string, () => void> = {
       ArrowUp: () => moveWeek(-1),
       ArrowDown: () => moveWeek(1),
+      // First/last row of the displayed month — the listbox pattern's
+      // Home/End, clamped like every other move.
+      Home: () => {
+        active = clampIsoWeek(isoOf(grid.weeks[0]));
+      },
+      End: () => {
+        active = clampIsoWeek(isoOf(grid.weeks[grid.weeks.length - 1]));
+      },
       PageUp: () => navigate(-1),
       PageDown: () => navigate(1),
     };
@@ -275,10 +315,7 @@ identity is only well-defined that way.
         aria-label={config.labels.calendar.month}
         value={view.month}
         onchange={(event) =>
-          (view = {
-            year: view.year,
-            month: Number(event.currentTarget.value),
-          })}
+          jumpTo(view.year, Number(event.currentTarget.value))}
       >
         {#each months as name, index (index)}
           <option value={index + 1} disabled={monthOptionDisabled(index + 1)}>
@@ -291,10 +328,7 @@ identity is only well-defined that way.
         aria-label={config.labels.calendar.year}
         value={view.year}
         onchange={(event) =>
-          (view = {
-            year: Number(event.currentTarget.value),
-            month: view.month,
-          })}
+          jumpTo(Number(event.currentTarget.value), view.month)}
       >
         {#each years as option (option)}
           <option value={option}>{option}</option>

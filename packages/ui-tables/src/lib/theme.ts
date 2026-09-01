@@ -44,8 +44,9 @@ const tableTheme = {
 
   /** The loading veil pinned over the visible scrollport: translucent tint
    * plus a slight blur behind the centered spinner. It intentionally keeps
-   * pointer events, blocking interaction with the stale rows beneath while
-   * a refresh is in flight. */
+   * pointer events, blocking pointer interaction with the stale rows while
+   * a refresh is in flight — the table itself turns `inert` meanwhile,
+   * which covers keyboard and assistive tech. */
   loadingOverlay: cn(
     "flex items-center justify-center",
     "bg-stone-50/40 backdrop-blur-[2px]",

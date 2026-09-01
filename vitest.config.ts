@@ -69,9 +69,10 @@ export default defineConfig({
         },
       },
 
-      // The overlay layer exists BECAUSE of Firefox (no native month/week
-      // pickers; the positioning engine covers for missing CSS anchor
-      // positioning) — its specs run there too, scoped to keep CI lean.
+      // Gecko is the second engine every overlay behavior must hold in:
+      // native CSS anchor positioning takes the same code path as Chromium
+      // (Firefox 147+ ships it), but popover=hint degrades and focus/event
+      // semantics differ. Scoped includes keep CI lean.
       {
         extends: "./vitest.config.ts",
         test: {

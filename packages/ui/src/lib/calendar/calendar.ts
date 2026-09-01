@@ -7,6 +7,12 @@
  * Months are 1-based everywhere in this API (January = 1, matching the ISO
  * strings); JavaScript's 0-based Date months stay an internal detail.
  * Weekdays are ISO-numbered: Monday = 1 … Sunday = 7.
+ *
+ * Supported year range: 0100–9999. Below it, Date.UTC's two-digit-year
+ * quirk remaps years onto 19xx; above it, five-digit ISO strings break the
+ * lexicographic min/max comparisons. `parseIsoDate` rejects values outside
+ * the range (its round-trip check), so picker input never leaves it —
+ * direct engine calls must respect it themselves.
  */
 
 /** One cell of a month grid. */

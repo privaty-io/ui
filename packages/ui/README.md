@@ -86,7 +86,7 @@ replacements for the native inputs Firefox never got (`type="month"`,
   rows.
 - `min`/`max` (inclusive, ISO strings), `isDateDisabled` hook
   (DatePicker), `showWeekNumbers` (DatePicker), `aria-current="date"` for
-  today.
+  today (DatePicker, MonthPicker).
 - Locale: the `locale` prop, else `UiConfig.locale`, else the runtime —
   names AND first day of week follow it (WeekPicker is always
   Monday-first: ISO weeks are only well-defined that way). Labels come
@@ -111,7 +111,8 @@ strings the native inputs submit.
   undefined uses the runtime's default.
 - `parseIsoDate` (strict — rejects 2026-02-30), `formatIsoDate`,
   `isoWeek`/`formatIsoWeek` ("2026-W05"), `addMonths`, `daysInMonth`.
-- Months are 1-based everywhere; weekdays are ISO (Mon=1 … Sun=7).
+- Months are 1-based everywhere; weekdays are ISO (Mon=1 … Sun=7);
+  supported years are 0100–9999 (see the engine's module note).
 
 ## Overlays
 
@@ -163,6 +164,9 @@ overlays are built on — public, so consumer content can use it too:
   reports the _requested_ placement there.
 - `computeAnchorPosition` is the pure geometry underneath the JS engine,
   exported for custom update strategies. Hand-rolled, dependency-free.
+- `engine: "native" | "js"` forces one engine instead of the automatic
+  pick — a test/debug seam (the JS engine is unreachable any other way in
+  browsers that support anchor positioning).
 - The JS engine measures with `getBoundingClientRect` — animate transforms
   on an inner wrapper, not the positioned element itself.
 

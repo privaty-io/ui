@@ -10,10 +10,16 @@ searchable selects, and rich selects come cheap later.
   shift, offset — no dependency. Designed as an exported primitive so
   consumers can position their own content with it, not an internal util.
   CSS anchor positioning can replace internals once baseline (Firefox
-  lacked it at planning time — verify at build).
+  lacked it at planning time — verify at build). Build outcome: it IS
+  baseline (Firefox 147+); `anchorTo` shipped dual-engine — native where
+  a CSS.supports detect passes, the JS engine as the fallback.
 - **Always the custom picker.** Native pickers are suppressed everywhere,
   even where good (Chrome) — one Privaty-branded experience in every
   browser is the point (visual identity). Typed entry stays available.
+  Build outcome, two exceptions: Firefox draws an unhideable calendar
+  icon on `type="date"` (Bugzilla 1830890), so there the native
+  affordance wins for dates; and the native-input carriers keep native
+  MOBILE pickers on purpose.
 - **Native-first for everything else**: the `popover` attribute provides
   top layer + light dismiss (no z-index/overflow fights — matters inside
   the table's sticky/scrollport world). `popover="hint"` for tooltips where

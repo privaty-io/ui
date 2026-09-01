@@ -63,7 +63,7 @@
   "peerDependencies": {
     "@privaty/ui": "workspace:^",
     "@sveltejs/kit": "^3.0.0-next.0",
-    "svelte": "^5.0.0"
+    "svelte": "^5.29.0"
   },
   "dependencies": {
     "@lucide/svelte": "catalog:",

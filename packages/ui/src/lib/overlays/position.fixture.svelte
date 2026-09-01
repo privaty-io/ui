@@ -2,10 +2,10 @@
   // Test-only host for the anchorTo attachment: an anchor inside a
   // scrollable container plus a floating element, all sizes fixed so specs
   // can assert exact geometry.
-  import { anchorTo, type AnchorPositionOptions } from "./position";
+  import { anchorTo, type AnchorToOptions } from "./position";
 
   interface Props {
-    options?: AnchorPositionOptions;
+    options?: AnchorToOptions;
     /** Renders the floating element with the popover attribute (shown via
      * showPopover() by the spec) instead of a plain block. */
     asPopover?: boolean;

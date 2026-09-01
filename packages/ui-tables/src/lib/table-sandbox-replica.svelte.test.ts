@@ -74,8 +74,8 @@ describe("sandbox replica", () => {
       )
       .toBeLessThan(3);
 
-    // The smooth jump the sandbox buttons use (the animation runs headless
-    // too — an earlier apparent no-op was the since-fixed re-anchor yank).
+    // The smooth jump the sandbox buttons use — the animation runs
+    // headless too.
     controller.scrollToColumn("2027-q1", { behavior: "smooth" });
     await expect
       .poll(

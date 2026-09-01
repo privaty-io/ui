@@ -213,8 +213,8 @@
       the header stays put; the actions column shrinks to its content.
     </li>
     <li>
-      Initial scroll: the table mounts with 2026's Q1 right after the pinned
-      Name column (initialColumn="2026-q1") — even as fonts and data settle.
+      Initial scroll: the table mounts with 2025's Q1 right after the pinned
+      Name column (initialColumn="2025-q1") — even as fonts and data settle.
       "Jump to 2026" / "Jump to Id" smooth-scroll via controller.scrollToColumn.
       Open an editor after scrolling manually — the position survives, no
       re-jump.
