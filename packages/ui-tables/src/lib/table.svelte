@@ -37,7 +37,12 @@ surrounding container a height.
   import type { StandardSchemaV1 } from "@standard-schema/spec";
   import { onDestroy, onMount, type Snippet } from "svelte";
   import { SvelteMap, SvelteSet } from "svelte/reactivity";
-  import { setTableContext } from "./context";
+  import {
+    getTableTree,
+    setTableContext,
+    setTableTree,
+    type TableTreeNode,
+  } from "./context";
   import { tableTheme } from "./theme";
   import { TableController } from "./table-controller.svelte";
   import type {
@@ -119,6 +124,15 @@ surrounding container a height.
      * the single-flight refreshes after editor submissions included. */
     loading?: boolean;
 
+    /** Extra hidden inputs submitted with every editor save — for values
+     * that come from OUTSIDE the columns, e.g. the parent row's id when
+     * this table lives inside another table's expanded row. Each entry
+     * renders an `<input type="hidden">` from the matching form field
+     * (like the row id already does); entries whose key the current
+     * form's schema lacks are skipped, so create and edit schemas may
+     * declare different subsets. */
+    hiddenFields?: { key: string; value: string | number }[];
+
     /** Styles the root element (the scroll wrapper). */
     class?: string;
     /** Extra classes for the <table> element. */
@@ -159,6 +173,7 @@ surrounding container a height.
   const {
     rows: rowsProp,
     rowKey,
+    hiddenFields,
 
     controller = new TableController(),
 
@@ -222,6 +237,30 @@ surrounding container a height.
   });
 
   const registrations = new SvelteMap<string, ColumnRegistration<never>>();
+
+  // The nesting tree: read the ancestor BEFORE installing our own node.
+  // Only one editor may be open per tree — every editing table wraps its
+  // markup in a <form>, and nested form elements corrupt each other's
+  // submits.
+  const parentTree = getTableTree();
+  const treeNode: TableTreeNode = {
+    parent: parentTree,
+    descendants: new Set(),
+    editing: () => controller.editor.type !== "idle",
+    closeEditor: () => controller.close(),
+  };
+  setTableTree(treeNode);
+  if (parentTree) {
+    parentTree.descendants.add(treeNode);
+    onDestroy(() => parentTree.descendants.delete(treeNode));
+  }
+
+  function closeDescendantEditors(node: TableTreeNode) {
+    for (const child of node.descendants) {
+      child.closeEditor();
+      closeDescendantEditors(child);
+    }
+  }
 
   setTableContext({
     register: (registration) => {
@@ -586,12 +625,36 @@ surrounding container a height.
 
   // The remote form's typed fields proxy is indexed by runtime column keys,
   // which its compile-time shape cannot express — the single cast site.
+  // Missing fields throw HERE with the column named: the raw undefined
+  // would surface later as an opaque `.set is undefined` inside prepare.
   function fieldOf(fields: unknown, key: string): EditorField {
-    return (fields as Record<string, EditorField>)[key];
+    const field = (fields as Record<string, EditorField | undefined>)[key];
+    if (!field)
+      throw new Error(
+        `Table: the editor form has no field named "${key}" — every ` +
+          "Column with an editor needs a matching field in the form schema",
+      );
+    return field;
   }
 
   function idFieldOf(fields: unknown): HiddenField {
-    return (fields as Record<string, HiddenField>)[idKey];
+    const field = (fields as Record<string, HiddenField | undefined>)[idKey];
+    if (!field)
+      throw new Error(
+        `Table: the edit form has no "${idKey}" field — the edit schema ` +
+          "must carry the row id (see the editing README)",
+      );
+    return field;
+  }
+
+  // The consumer's extra hidden inputs (hiddenFields): resolved against
+  // the CURRENT session's form, skipping keys its schema lacks — create
+  // and edit schemas may declare different subsets.
+  function collectHiddenAttributes(fields: unknown): HiddenFieldAttributes[] {
+    return (hiddenFields ?? []).flatMap(({ key, value }) => {
+      const field = (fields as Record<string, HiddenField | undefined>)[key];
+      return field ? [field.as("hidden", value)] : [];
+    });
   }
 
   // Everything an open editor renders from. Written by prepare() BEFORE the
@@ -607,6 +670,7 @@ surrounding container a height.
     key: string;
     instance: Omit<RemoteForm<CreateInput, CreateOutput>, "for">;
     fields: Record<string, EditorField>;
+    hiddenAttributes: HiddenFieldAttributes[];
   }
 
   interface EditSession {
@@ -616,6 +680,7 @@ surrounding container a height.
     fields: Record<string, EditorField>;
     rowId: EditRowKey;
     idAttributes: HiddenFieldAttributes;
+    hiddenAttributes: HiddenFieldAttributes[];
   }
 
   let session = $state.raw<CreateSession | EditSession | undefined>(undefined);
@@ -655,6 +720,23 @@ surrounding container a height.
   // has no mounted form element, so set() only writes the tracked value
   // without marking anything touched or dirty.
   function prepare(editor: TableEditor): boolean {
+    // An editing ANCESTOR refuses descendant editors — its <form> wraps
+    // this whole table, and a second form element inside it would corrupt
+    // both submits. Finish or cancel the outer editor first. Opening here
+    // closes any DESCENDANT editors for the same reason (mirroring how a
+    // second editor in the SAME table closes the first).
+    for (let node = treeNode.parent; node; node = node.parent) {
+      if (node.editing()) {
+        console.warn(
+          "[privaty/ui-tables] Refused to open an editor: an ancestor " +
+            "table is editing, and nested <form> elements corrupt both " +
+            "submits. Save or cancel the outer editor first.",
+        );
+        return false;
+      }
+    }
+    closeDescendantEditors(treeNode);
+
     if (editor.type === "create") {
       if (!createForm) return false;
 
@@ -666,6 +748,7 @@ surrounding container a height.
           createForm.fields,
           (column) => column.createSeed,
         ),
+        hiddenAttributes: collectHiddenAttributes(createForm.fields),
       };
       return true;
     }
@@ -694,6 +777,7 @@ surrounding container a height.
         ),
         rowId,
         idAttributes: idField.as("hidden", rowId),
+        hiddenAttributes: collectHiddenAttributes(instance.fields),
       };
       return true;
     }
@@ -1253,6 +1337,9 @@ surrounding container a height.
               class={cn(defaultCellClasses, actionsCellClasses, cellClass)}
               style={actionsStyle}
             >
+              {#each session.hiddenAttributes as attributes, index (index)}
+                <input {...attributes} />
+              {/each}
               {@render editorActions(config.labels.table.add)}
             </td>
           </tr>
@@ -1272,6 +1359,9 @@ surrounding container a height.
                 <!-- The row id rides along as a hidden input in the actions
                    cell — it needs no column. -->
                 <input {...session.idAttributes} />
+                {#each session.hiddenAttributes as attributes, index (index)}
+                  <input {...attributes} />
+                {/each}
                 {@render editorActions(config.labels.table.save)}
               </td>
             </tr>

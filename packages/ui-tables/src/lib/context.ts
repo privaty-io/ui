@@ -33,5 +33,35 @@ function getTableContext(): TableContext {
   return context;
 }
 
-export { getTableContext, setTableContext };
+const tableTreeKey = Symbol("privaty-ui-table-tree");
+
+/**
+ * A table's node in the NESTING tree — tables inside expanded rows
+ * coordinate editors through it. Every editing table wraps its whole
+ * markup in a <form>, and nested form elements corrupt each other's
+ * submits (the browser associates fields with the nearest form), so only
+ * one editor may be open per tree.
+ */
+interface TableTreeNode {
+  parent: TableTreeNode | undefined;
+  descendants: Set<TableTreeNode>;
+  /** Whether this table currently has an editor open (or opening). */
+  editing: () => boolean;
+  /** Closes this table's editor (a no-op while idle). */
+  closeEditor: () => void;
+}
+
+/** Installs a table's tree node — called by <Table> during its init. */
+function setTableTree(node: TableTreeNode) {
+  setContext<TableTreeNode>(tableTreeKey, node);
+}
+
+/** The nearest ANCESTOR table's tree node, or undefined at the root.
+ * Must be called before {@link setTableTree} to see past this table. */
+function getTableTree(): TableTreeNode | undefined {
+  return getContext<TableTreeNode | undefined>(tableTreeKey);
+}
+
+export { getTableContext, getTableTree, setTableContext, setTableTree };
+export type { TableTreeNode };
 export type { TableContext };

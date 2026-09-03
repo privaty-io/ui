@@ -144,6 +144,48 @@ resurrect old drafts otherwise). The edit schema needs a row-id field
   serves display, default sorting, and edit seeding. Editor snippets pass
   their own `initialValue` from `row`.
 
+### External ids: `hiddenFields`
+
+A schema field with no column — typically the PARENT row's id when the
+table lives inside another table's expanded row — rides along as a hidden
+input, exactly like the row id already does:
+
+```svelte
+{#snippet rowDetails({ row })}
+  <Table
+    rows={row.children}
+    rowKey={(child) => child.id}
+    createForm={createChild}
+    createSchema={createChildSchema}
+    hiddenFields={[{ key: "parentId", value: row.id }]}
+  >
+    ...
+  </Table>
+{/snippet}
+```
+
+```ts
+// The linkage is part of the schema; the handler reads it like any field.
+const createChildSchema = v.object({
+  parentId: v.pipe(v.string(), v.nonEmpty("required")),
+  label: ...,
+});
+```
+
+Entries whose key the current form's schema lacks are skipped, so create
+and edit schemas may declare different subsets. The playground's
+`sandbox/table-nested` route is the full worked example.
+
+### Nested tables
+
+A table inside an `expanded` row works — with one rule, enforced: **one
+open editor per table tree**. Every editing table wraps its whole markup
+in a `<form>`, and nested form elements corrupt each other's submits (the
+browser associates fields with the nearest form). Opening an editor
+therefore closes any descendant table's editor, and opening a descendant
+editor while an ancestor is editing is refused with a console warning —
+save or cancel the outer editor first.
+
 ## Layout features
 
 - **Pinning**: `pin="left" | "right"` on a Column — pinned columns are

@@ -22,6 +22,11 @@
       </a>
     </li>
     <li>
+      <a href={resolve("sandbox/table-nested")}>
+        Nested tables (editing in expanded rows)
+      </a>
+    </li>
+    <li>
       <a href={resolve("sandbox/table-async")}>
         Async table (slow-query bench, rows source)
       </a>
