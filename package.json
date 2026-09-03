@@ -12,6 +12,7 @@
     "lint": "prettier --check . && eslint . && turbo run lint",
     "format": "prettier --write .",
     "test": "vitest",
+    "e2e": "pnpm --filter playground e2e",
     "release": "node scripts/release.mjs"
   },
   "devDependencies": {

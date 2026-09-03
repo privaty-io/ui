@@ -28,4 +28,10 @@ jobs:
       - run: pnpm check
       - run: pnpm lint
       - run: pnpm test --run
+
+      # The e2e suite drives the playground like a user — SSR, hydration,
+      # and real state flows, with a console guard failing on any page
+      # error or hydration warning. CI=1 makes playwright manage the dev
+      # server itself.
+      - run: pnpm e2e
       - run: pnpm build

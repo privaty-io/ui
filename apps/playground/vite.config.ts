@@ -4,6 +4,15 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  // Crawl every route at startup so dependency discovery happens BEFORE
+  // any browser connects: a mid-session re-optimization invalidates
+  // in-flight module URLs, which Firefox surfaces as dynamic-import page
+  // errors — flakiness the e2e console guard would (rightly) fail on.
+  server: {
+    warmup: {
+      clientFiles: ["./src/routes/**/*.svelte", "./src/lib/**/*.ts"],
+    },
+  },
   plugins: [
     tailwindcss(),
     sveltekit({
