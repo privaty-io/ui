@@ -1027,7 +1027,19 @@ surrounding container a height.
            prepared (dynamic columns): they stay blank until the next
            session. -->
       {#if column.editor && fields[column.key]}
-        {@render column.editor({ field: fields[column.key], row })}
+        <!-- The boundary CONTAINS suspension: an editor snippet may await
+             (remote select options, say) — without it the await suspends
+             the whole freshly-created editor branch, and Svelte's async
+             batching then re-evaluates that branch's expressions against
+             the pre-open world (session still undefined: a crash). Editor
+             rows never server-render, so the boundary's SSR caveat (the
+             forms README) does not apply here. -->
+        <svelte:boundary>
+          {@render column.editor({ field: fields[column.key], row })}
+          {#snippet pending()}
+            <Spinner class="mx-auto size-4" />
+          {/snippet}
+        </svelte:boundary>
       {:else if row !== undefined}
         <!-- Non-editable columns keep their display rendering while the row
              is being edited. -->
@@ -1130,7 +1142,9 @@ surrounding container a height.
   <div
     {@attach observeScrollport}
     class={cn(
-      "@container flex h-full flex-col",
+      // relative: the containing block for the loading veil's
+      // pre-measurement absolute cover (below).
+      "@container relative flex h-full flex-col",
       tableTheme.frame,
       settled ? "overflow-auto" : "overflow-hidden",
       styledScrollbars && scrollbarClasses,
@@ -1148,8 +1162,18 @@ surrounding container a height.
     <div class="sticky top-0 left-0 z-40 h-0 w-0 shrink-0">
       <div role="status">
         {#if veiled}
+          <!-- Until the first client measurement lands (SSR included) the
+               px sizing is unknown — cover the wrapper with an absolute
+               inset-0 veil instead, which coincides with the scrollport at
+               the unscrolled fresh-load state. Without it the SSR'd veil
+               is 0×0: the page paints an "empty" table and the veil pops
+               in only after hydration measures. -->
           <div
-            class={cn(tableTheme.loadingOverlay, loadingClass)}
+            class={cn(
+              tableTheme.loadingOverlay,
+              scrollportWidth === undefined && "absolute inset-0",
+              loadingClass,
+            )}
             style={scrollportWidth !== undefined &&
             scrollportHeight !== undefined
               ? `width: ${scrollportWidth}px; height: ${scrollportHeight}px`
@@ -1332,12 +1356,12 @@ surrounding container a height.
                 )}
               ></td>
             {/if}
-            {@render editorCells(session.fields, undefined)}
+            {@render editorCells(session?.fields ?? {}, undefined)}
             <td
               class={cn(defaultCellClasses, actionsCellClasses, cellClass)}
               style={actionsStyle}
             >
-              {#each session.hiddenAttributes as attributes, index (index)}
+              {#each session?.hiddenAttributes ?? [] as attributes, index (index)}
                 <input {...attributes} />
               {/each}
               {@render editorActions(config.labels.table.add)}
@@ -1351,15 +1375,17 @@ surrounding container a height.
               {#if expanded}
                 {@render expanderCell(row)}
               {/if}
-              {@render editorCells(session.fields, row)}
+              {@render editorCells(session?.fields ?? {}, row)}
               <td
                 class={cn(defaultCellClasses, actionsCellClasses, cellClass)}
                 style={actionsStyle}
               >
                 <!-- The row id rides along as a hidden input in the actions
                    cell — it needs no column. -->
-                <input {...session.idAttributes} />
-                {#each session.hiddenAttributes as attributes, index (index)}
+                <input
+                  {...session?.mode === "edit" ? session.idAttributes : {}}
+                />
+                {#each session?.hiddenAttributes ?? [] as attributes, index (index)}
                   <input {...attributes} />
                 {/each}
                 {@render editorActions(config.labels.table.save)}

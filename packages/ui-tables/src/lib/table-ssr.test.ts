@@ -20,6 +20,9 @@ describe("server rendering", () => {
     expect(body).toContain('role="status"');
     expect(body).toContain("Loading");
     expect(body).not.toContain("No rows");
+    // The SSR veil must be VISIBLE before any client measurement: an
+    // absolute cover, not the 0-sized px variant.
+    expect(body).toContain("absolute inset-0");
   });
 
   test("the group header row and its labels are in the SSR output", () => {

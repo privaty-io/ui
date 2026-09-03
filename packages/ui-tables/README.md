@@ -117,7 +117,12 @@ the query's undefined pre-fetch `current` and yields `[]`.)
 
 `.current` is reactive: the options render empty the instant the first
 editor opens and fill in when the fetch lands — no waterfall, no warning,
-and tables that are never edited never fetch the options. To pre-warm the
+and tables that are never edited never fetch the options. AWAITING the
+query inside the snippet works too: editor snippets render inside a
+boundary, so the cell shows a small pending spinner until the options
+resolve. Optional select fields are clearable by
+default — the placeholder labels a selectable "none" row, and clearing
+submits "" (see the core Select's `clearable`). To pre-warm the
 options at mount instead, read `categoriesQuery.current` once in an
 `$effect`.
 
