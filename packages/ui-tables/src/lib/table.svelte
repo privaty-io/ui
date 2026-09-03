@@ -1162,29 +1162,37 @@ surrounding container a height.
     <div class="sticky top-0 left-0 z-40 h-0 w-0 shrink-0">
       <div role="status">
         {#if veiled}
-          <!-- Until the first client measurement lands (SSR included) the
-               px sizing is unknown — cover the wrapper with an absolute
-               inset-0 veil instead, which coincides with the scrollport at
-               the unscrolled fresh-load state. Without it the SSR'd veil
-               is 0×0: the page paints an "empty" table and the veil pops
-               in only after hydration measures. -->
-          <div
-            class={cn(
-              tableTheme.loadingOverlay,
-              scrollportWidth === undefined && "absolute inset-0",
-              loadingClass,
-            )}
-            style={scrollportWidth !== undefined &&
-            scrollportHeight !== undefined
-              ? `width: ${scrollportWidth}px; height: ${scrollportHeight}px`
-              : undefined}
-          >
-            <Spinner class={tableTheme.loadingSpinner} />
-          </div>
+          {#if scrollportWidth !== undefined && scrollportHeight !== undefined}
+            <div
+              class={cn(tableTheme.loadingOverlay, loadingClass)}
+              style={`width: ${scrollportWidth}px; height: ${scrollportHeight}px`}
+            >
+              <Spinner class={tableTheme.loadingSpinner} />
+            </div>
+          {/if}
           <span class="sr-only">{config.labels.table.loading}</span>
         {/if}
       </div>
     </div>
+    {#if veiled && scrollportWidth === undefined}
+      <!-- Pre-measurement cover (SSR included): the px sizing above needs
+           a client measurement, and an absolute veil INSIDE the sticky
+           holder would resolve against the holder's 0×0 positioned box —
+           so this visual twin lives directly under the relative wrapper
+           and covers it edge to edge until the measurement lands (the
+           fresh-load state is unscrolled, where wrapper = scrollport).
+           Purely visual: the live region above owns the announcement. -->
+      <div
+        aria-hidden="true"
+        class={cn(
+          tableTheme.loadingOverlay,
+          "absolute inset-0 z-40",
+          loadingClass,
+        )}
+      >
+        <Spinner class={tableTheme.loadingSpinner} />
+      </div>
+    {/if}
     <!-- inert while loading: the veil blocks pointer hits, inert blocks
          keyboard and assistive tech from the stale rows beneath. -->
     <table
