@@ -32,6 +32,11 @@
       </a>
     </li>
     <li>
+      <a href={resolve("sandbox/table-await-editor")}>
+        Awaited editor options (crash bench)
+      </a>
+    </li>
+    <li>
       <a href={resolve("sandbox/table-static")}>
         Static table (hydration bench — see scripts/hydration-check.mjs)
       </a>
