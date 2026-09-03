@@ -178,6 +178,11 @@ overlays are built on — public, so consumer content can use it too:
 - `toSelectOptions(items, { value, label?, disabled? })` builds a
   `SelectOption[]` from an array of anything — tolerates undefined/null
   (a remote query's pre-fetch `current`) and yields `[]`.
+- `Select` derives clearability from `required`: an optional select always
+  renders a SELECTABLE empty option (blank, or labeled by `placeholder`)
+  so users can unselect — clearing submits "". Required selects show the
+  placeholder as a disabled prompt instead. `clearable` overrides the
+  default either way.
 - `Select` renders a lucide chevron overlaid on an `appearance-none` select;
   `defaultValue` marks the matching option `selected` so a native form reset
   returns to it.

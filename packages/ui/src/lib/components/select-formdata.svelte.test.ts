@@ -12,18 +12,33 @@ function formData(container: HTMLElement) {
 }
 
 describe("what the browser submits for the select", () => {
-  test("a seeded placeholder select submits nothing (disabled option)", async () => {
+  test("a seeded REQUIRED placeholder select submits nothing (disabled option)", async () => {
     const screen = await render(Fixture, {
       label: "Category",
       name: "category",
       options,
       placeholder: "Choose one",
+      required: true,
       value: "",
     });
 
     // The disabled placeholder is selected but excluded from form data — the
     // documented reason the schema recipe must default the missing key.
     expect(formData(screen.container).get("category")).toBeNull();
+  });
+
+  test("a CLEARED optional select submits an empty string", async () => {
+    // The enabled "none" row is a real option — unlike the disabled
+    // prompt, it reaches FormData. Optional schemas receive "".
+    const screen = await render(Fixture, {
+      label: "Category",
+      name: "category",
+      options,
+      placeholder: "No category",
+      value: "",
+    });
+
+    expect(formData(screen.container).get("category")).toBe("");
   });
 
   test("a chosen option reaches the form data", async () => {

@@ -23,6 +23,39 @@ describe("label association", () => {
 });
 
 describe("options", () => {
+  test("an optional select is clearable: blank enabled empty option", async () => {
+    // No placeholder needed — an optional select the user cannot empty
+    // again would be a trap, so the blank "none" row always renders.
+    const screen = await render(Select, {
+      label: "Category",
+      options: ["cheese", "wine"],
+    });
+
+    const select = screen
+      .getByLabelText("Category")
+      .element() as HTMLSelectElement;
+    const first = select.options[0];
+    expect(first.value).toBe("");
+    expect(first.disabled).toBe(false);
+    expect(first.textContent?.trim()).toBe("");
+
+    select.value = "";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(select.value).toBe("");
+  });
+
+  test("a placeholder labels the clearable empty option when optional", async () => {
+    const screen = await render(Select, {
+      label: "Category",
+      options: ["cheese", "wine"],
+      placeholder: "No category",
+    });
+
+    const empty = screen.getByRole("option", { name: "No category" });
+    await expect.element(empty).toHaveValue("");
+    await expect.element(empty).not.toBeDisabled();
+  });
+
   test("normalizes plain strings into value/label options", async () => {
     const screen = await render(Select, { label: "Category", options });
 
@@ -47,16 +80,30 @@ describe("options", () => {
       .toBeDisabled();
   });
 
-  test("renders the placeholder as a disabled empty option", async () => {
+  test("required renders the placeholder as a disabled prompt", async () => {
     const screen = await render(Select, {
       label: "Category",
       options,
       placeholder: "Choose one",
+      required: true,
     });
 
     const placeholder = screen.getByRole("option", { name: "Choose one" });
     await expect.element(placeholder).toHaveValue("");
     await expect.element(placeholder).toBeDisabled();
+  });
+
+  test("required without a placeholder renders no empty option", async () => {
+    const screen = await render(Select, {
+      label: "Category",
+      options,
+      required: true,
+    });
+
+    const select = screen
+      .getByLabelText("Category")
+      .element() as HTMLSelectElement;
+    expect(select.options[0].value).not.toBe("");
   });
 });
 

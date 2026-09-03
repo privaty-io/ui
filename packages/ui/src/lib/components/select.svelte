@@ -29,8 +29,16 @@ Sizes itself from the ambient UI density context. Single-select only —
      * `{ value: s, label: s }`. Values must be unique — they key the
      * rendered list. */
     options: readonly (string | SelectOption)[];
-    /** Rendered as a disabled empty option, shown until a value is chosen. */
+    /** The empty option's label. On a non-clearable select it is a
+     * disabled prompt shown until a value is chosen; on a clearable one
+     * it labels the selectable "none" row (which otherwise stays blank). */
     placeholder?: string;
+    /** Whether the empty option is a real choice (value "") so users can
+     * UNSELECT. Defaults to `!required`: optional selects are clearable
+     * (an empty option renders even without a placeholder), required ones
+     * show the placeholder as a disabled prompt. Clearing submits "" —
+     * pair with an optional schema. */
+    clearable?: boolean;
     /** Marks the matching option `selected`, so a native form reset returns
      * to it instead of the browser's first-option fallback. */
     defaultValue?: string;
@@ -60,7 +68,9 @@ Sizes itself from the ambient UI density context. Single-select only —
 
     options,
     placeholder,
+    clearable,
     defaultValue,
+    required,
 
     errors = [],
     marker,
@@ -79,6 +89,10 @@ Sizes itself from the ambient UI density context. Single-select only —
 
   const uid = $props.id();
   const selectId = $derived(providedId ?? uid);
+
+  // Clearability follows requiredness unless overridden: an optional
+  // select the user cannot empty again is a trap.
+  const isClearable = $derived(clearable ?? !required);
 
   const normalizedOptions = $derived(
     options.map((option) =>
@@ -114,6 +128,7 @@ Sizes itself from the ambient UI density context. Single-select only —
     <div class="relative w-full">
       <select
         {...rest}
+        {required}
         bind:value
         {id}
         class={cn(
@@ -125,9 +140,13 @@ Sizes itself from the ambient UI density context. Single-select only —
         )}
         aria-describedby={errorsId}
       >
-        {#if placeholder}
-          <option value="" disabled selected={defaultValue === ""}>
-            {placeholder}
+        {#if isClearable || placeholder !== undefined}
+          <option
+            value=""
+            disabled={!isClearable}
+            selected={defaultValue === ""}
+          >
+            {placeholder ?? ""}
           </option>
         {/if}
         {#each normalizedOptions as option (option.value)}

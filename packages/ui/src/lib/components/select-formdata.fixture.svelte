@@ -13,6 +13,7 @@
     name: string;
     options: readonly (string | SelectOption)[];
     placeholder?: string;
+    required?: boolean;
     value?: string;
   }
 
