@@ -13,7 +13,10 @@
 
   // Declared BEFORE any await-adjacent reactivity: under async SSR the
   // Table's children snippet can run before later script lines settle.
-  const years = [2025, 2026, 2027];
+  // Five years of quarters: the schedule must OVERFLOW the shell at any
+  // reasonable viewport, or initialColumn and the jump buttons are no-ops
+  // (the e2e suite caught exactly that with three years).
+  const years = [2024, 2025, 2026, 2027, 2028];
   const quarters = years.flatMap((year) =>
     [1, 2, 3, 4].map((quarter) => ({
       key: `${year}-q${quarter}`,

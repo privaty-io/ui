@@ -113,8 +113,14 @@ category: v.pipe(v.optional(v.string(), ""), v.picklist(categories, "required"))
 // the schema boundary — the designed seam for exactly this.
 categoryId: v.optional(v.pipe(v.string(), v.transform((value) => value || undefined))),
 
-// Month inputs submit "YYYY-MM"; empty submits "".
-availableFrom: v.pipe(v.string(), v.nonEmpty("required"), v.regex(/^\d{4}-\d{2}$/, "invalid-month")),
+// Month inputs submit "YYYY-MM"; empty submits "". Two v.check actions,
+// not nonEmpty+regex: valibot pipes run every action even after a failure,
+// so an empty value would show BOTH messages stacked.
+availableFrom: v.pipe(
+  v.string(),
+  v.check((value) => value.length > 0, "required"),
+  v.check((value) => value === "" || /^\d{4}-\d{2}$/.test(value), "invalid-month"),
+),
 ```
 
 ## Rules learned the hard way

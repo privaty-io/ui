@@ -16,7 +16,7 @@ const suppliers = [
   "Molkerei Alpen",
 ];
 
-const years = [2025, 2026, 2027];
+const years = [2024, 2025, 2026, 2027, 2028];
 
 // Deterministic volumes: stable across reloads, unique per cell.
 const schedule: SupplierSchedule[] = suppliers.map((supplier, row) => ({
@@ -26,7 +26,7 @@ const schedule: SupplierSchedule[] = suppliers.map((supplier, row) => ({
     years.flatMap((year) =>
       [1, 2, 3, 4].map((quarter) => [
         `${year}-q${quarter}`,
-        40 + (((row * 7 + (year - 2025) * 4 + quarter) * 13) % 160),
+        40 + (((row * 7 + (year - 2024) * 4 + quarter) * 13) % 160),
       ]),
     ),
   ),

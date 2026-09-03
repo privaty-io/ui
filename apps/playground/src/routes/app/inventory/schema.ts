@@ -12,10 +12,15 @@ const productFields = {
   ),
   price: v.pipe(v.number("required"), v.minValue(0, "too-small")),
   stock: v.pipe(v.number("required"), v.minValue(0, "too-small")),
+  // Two checks, not nonEmpty+regex: pipes run every action even after a
+  // failure — an empty value would stack both messages.
   restocked: v.pipe(
     v.string(),
-    v.nonEmpty("required"),
-    v.regex(/^\d{4}-\d{2}-\d{2}$/, "invalid-date"),
+    v.check((value) => value.length > 0, "required"),
+    v.check(
+      (value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value),
+      "invalid-date",
+    ),
   ),
 };
 

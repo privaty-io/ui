@@ -534,6 +534,18 @@ surrounding container a height.
         };
         requestAnimationFrame(() => requestAnimationFrame(reanchor));
         document.fonts?.ready.then(reanchor);
+
+        // A rows SOURCE lands its rows AFTER mount: the table widens when
+        // they render, and the paint-time re-anchors above have long
+        // fired against the header-only layout. Watch the veil lift and
+        // re-anchor once the new layout has painted — same ownership
+        // rules, so a user who scrolled meanwhile is never fought.
+        // (Nested $effect: the attachment body runs inside an effect.)
+        $effect(() => {
+          if (!veiled) {
+            requestAnimationFrame(() => requestAnimationFrame(reanchor));
+          }
+        });
       }
     }
 

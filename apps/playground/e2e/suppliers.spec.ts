@@ -91,30 +91,17 @@ test("premature submit reveals the resolved validation messages", async ({
   // schema's own code is "required") — name, email, and the three dates.
   await expect(requiredMessages(page)).toHaveCount(5);
   await expect(errorsOf(page, "Name")).toHaveText(["This field is required"]);
-  // OBSERVED (suspected app-schema bug): the empty email carries BOTH
-  // messages — the valibot pipe runs every action even after nonEmpty
-  // fails, so email("") fails too. The intended UX (format message only
-  // once non-empty-but-invalid) would need abortPipeEarly or a check
-  // guard in the schema.
-  await expect(errorsOf(page, "Email")).toHaveText([
-    "This field is required",
-    "That is not an email address",
-  ]);
-  // The three date-ish fields show the same double pattern (nonEmpty and
-  // the format regex both fail on ""). Pinned per field so the resolver's
-  // invalid-date/month/week codes are actually exercised — a resolver
-  // regression leaking raw codes would slip past a bare count.
+  await expect(errorsOf(page, "Email")).toHaveText(["This field is required"]);
+  // One message at a time (the schema's check-guard recipe): empty shows
+  // only the required code, never stacked with the format code.
   await expect(errorsOf(page, "Contract start")).toHaveText([
     "This field is required",
-    "Use the date picker or YYYY-MM-DD",
   ]);
   await expect(errorsOf(page, "First billing month")).toHaveText([
     "This field is required",
-    "Use the month picker or YYYY-MM",
   ]);
   await expect(errorsOf(page, "Delivery week")).toHaveText([
     "This field is required",
-    "Use the week picker or YYYY-Www",
   ]);
   // The optional fields stay quiet.
   await expect(errorsOf(page, "Region")).toHaveCount(0);

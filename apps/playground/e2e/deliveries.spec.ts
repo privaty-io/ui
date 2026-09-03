@@ -114,18 +114,13 @@ test("year group headers are server-rendered and the schedule mounts scrolled to
   );
   expect(overflow).toBeGreaterThan(300);
 
-  // …and mounted scrolled toward the 2026-q1 anchor. The INTENDED rest
-  // is 2026-q1 flush at the frozen edge (offset 0), but today the
-  // initial anchor measures the header-only layout and never re-anchors
-  // after the rows source lands and widens the columns, so it rests
-  // ~20px short (worse — over 100px — at wider scrollports, where the
-  // header-layout scroll range clamps the jump). Asserted here is the
-  // invariant that holds for both the current and the fixed behavior:
-  // scrolled well past 2025, resting at or just short of the anchor.
+  // …and mounted scrolled to the 2026-q1 anchor. The table re-anchors
+  // once the rows source lands (the header-only layout the mount-time
+  // anchor measured is narrower), so the settled rest is flush at the
+  // frozen edge.
   expect(rest).toBeGreaterThan(100);
   const offset = await anchorOffset(page, "2026-q1");
-  expect(offset).toBeGreaterThan(-3);
-  expect(offset).toBeLessThan(60);
+  expect(Math.abs(offset)).toBeLessThanOrEqual(3);
 });
 
 test("the 2025 and 2027 buttons jump the schedule across the years", async ({
@@ -139,27 +134,19 @@ test("the 2025 and 2027 buttons jump the schedule across the years", async ({
   expect(await anchorOffset(page, "2027-q1")).toBeGreaterThan(150);
 
   await page.getByRole("button", { name: "2027", exact: true }).click();
-  // The scroll range runs out ~30px before 2027-q1 reaches the frozen
-  // edge (the three quarters right of it are narrower than the region
-  // right of the pinned column, at every possible scrollport width), so
-  // the smooth jump comes to rest clamped at the far right — as close
-  // to the anchor as the geometry allows.
+  // 2028's four quarters sit to the right of 2027-q1, so the anchor is
+  // genuinely reachable — the jump lands flush at the frozen edge.
   await expect
-    .poll(() =>
-      wrapper.evaluate(
-        (el) => el.scrollWidth - el.clientWidth - Math.round(el.scrollLeft),
-      ),
-    )
-    .toBeLessThanOrEqual(1);
-  expect(await anchorOffset(page, "2027-q1")).toBeLessThan(50);
+    .poll(async () => Math.abs(await anchorOffset(page, "2027-q1")))
+    .toBeLessThanOrEqual(2);
 
   await page.getByRole("button", { name: "2025", exact: true }).click();
-  // 2025-q1 is the first scrolling column: its anchor is scrollLeft 0,
-  // flush after the pinned supplier column.
+  // 2024's quarters precede it, so this is a genuine mid-range anchor —
+  // neither edge of the scroll range.
   await expect
     .poll(async () => Math.abs(await anchorOffset(page, "2025-q1")))
     .toBeLessThanOrEqual(2);
-  expect(await scrollLeftOf(wrapper)).toBeLessThanOrEqual(1);
+  expect(await scrollLeftOf(wrapper)).toBeGreaterThan(100);
 });
 
 test("horizontal scrolling keeps the supplier column pinned", async ({
@@ -184,12 +171,12 @@ test("horizontal scrolling keeps the supplier column pinned", async ({
     1,
   );
 
-  // All the way back to the left edge: still pinned, with 2025-q1 flush
-  // after it.
+  // All the way back to the left edge: still pinned, with 2024-q1 (the
+  // first scrolling column) flush after it.
   await userScroll(wrapper, 0);
   await expect.poll(() => scrollLeftOf(wrapper)).toBe(0);
   await expect
-    .poll(async () => Math.abs(await anchorOffset(page, "2025-q1")))
+    .poll(async () => Math.abs(await anchorOffset(page, "2024-q1")))
     .toBeLessThanOrEqual(1);
   expect(Math.abs((await supplierHeaderX(page)) - pinnedX)).toBeLessThanOrEqual(
     1,
@@ -265,26 +252,67 @@ test("supplier sorting works with pinned and grouped columns", async ({
   ).toBeVisible();
 });
 
-test("a user's scroll position is not yanked by late re-anchors", async ({
+test("a user's scroll taken during load is not yanked when the rows land", async ({
   page,
 }) => {
+  // "Data refresh must not yank" only means something while data can
+  // still arrive: hold the schedule rows at the network layer so the
+  // user takes over the scroller while the rows are genuinely in
+  // flight. (Unheld, the 120ms server delay makes that a race the test
+  // would win only sometimes — and after the schedule settles, nothing
+  // is pending that could move the scroller at all, so a park taken
+  // then asserts stillness vacuously.)
+  let releaseRows = () => {};
+  const rowsHeld = new Promise<void>((resolve) => (releaseRows = resolve));
+  await page.route("**/_app/remote/**", async (route) => {
+    await rowsHeld;
+    await route.continue();
+  });
+
   await page.goto("/app/deliveries");
-  await waitForSettledSchedule(page);
   const wrapper = scroller(page);
 
-  // Take over the scroller as a user and park it somewhere deliberate,
-  // away from the anchor, the left edge, and the maximum.
+  // The initial anchor glide starts against the header-only layout —
+  // once the scroller has moved, the table's mount attachment has run
+  // and its user-ownership listeners are attached. Frame-granularity
+  // polling so the takeover lands within a frame or two of the glide
+  // starting, while the component's own re-anchor triggers (double-rAF,
+  // fonts.ready) are still in flight.
+  await expect
+    .poll(() => scrollLeftOf(wrapper), {
+      intervals: [16, 16, 16, 33, 66, 125, 250],
+      timeout: 10_000,
+    })
+    .toBeGreaterThan(0);
+  // The hold is genuinely holding: no data rows yet. If the remote
+  // endpoint's URL shape ever stops matching the route, this fails
+  // loudly instead of the test silently degrading into an
+  // after-the-settle park.
+  await expect(
+    page.getByRole("cell", { name: "Fromagerie Petit" }),
+  ).toHaveCount(0);
+
+  // A user takes over mid-glide (pointerdown releases the initial
+  // anchor's ownership) and parks somewhere deliberate — away from the
+  // anchor, the left edge, and the maximum.
   await userScroll(wrapper, 60);
   await expect.poll(() => scrollLeftOf(wrapper)).toBe(60);
   const pinnedX = await supplierHeaderX(page);
 
-  // Wait out anything that might still want to move it — late re-anchor
-  // passes, measurement effects, the rows query settling. (The page has
-  // no refresh control, so this covers every data/layout event a fresh
-  // visit produces.) The position must stay exactly where the user put
-  // it, with the supplier column still pinned.
+  // NOW the rows land: the table widens, the scroll range grows, and
+  // every measurement effect and late re-anchor trigger (double-rAF,
+  // fonts.ready) that will ever run gets its chance. The position must
+  // stay exactly where the user put it, with the supplier column still
+  // pinned.
+  releaseRows();
+  await expect(
+    page.getByRole("cell", { name: "Fromagerie Petit" }),
+  ).toBeVisible();
   await settle(page, 1000);
-  expect(await scrollLeftOf(wrapper)).toBe(60);
+  // A yank would move the scroller by tens or hundreds of px toward the
+  // anchor; a couple px of drift from browser scroll anchoring while the
+  // columns widen is acceptable.
+  expect(Math.abs((await scrollLeftOf(wrapper)) - 60)).toBeLessThanOrEqual(3);
   expect(Math.abs((await supplierHeaderX(page)) - pinnedX)).toBeLessThanOrEqual(
     1,
   );

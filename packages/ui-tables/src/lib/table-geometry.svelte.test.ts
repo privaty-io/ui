@@ -437,6 +437,43 @@ describe("initial scroll position", () => {
       .toBeLessThan(1.5);
   });
 
+  test("a rows SOURCE re-anchors initialColumn once its rows land", async () => {
+    // Rows arriving after mount widen the table past what the paint-time
+    // re-anchors ever saw — the anchor must follow the settled layout.
+    const source = $state<{
+      current:
+        | { id: string; name: string; price: number; added?: string }[]
+        | undefined;
+      loading: boolean;
+    }>({ current: undefined, loading: true });
+
+    const screen = await render(Fixture, {
+      rows: source,
+      withPinnedPrice: true,
+      withDateColumn: true,
+      initialColumn: "added",
+      containerClass: "w-56",
+    });
+
+    // Let the mount-time re-anchor triggers (double-rAF, fonts.ready)
+    // fire against the header-only layout first.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    source.current = rows;
+    source.loading = false;
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    await expect
+      .poll(
+        () =>
+          Math.abs(
+            wrapper.scrollLeft - expectedLeft(screen.container, "added"),
+          ),
+        { timeout: 4000 },
+      )
+      .toBeLessThan(1.5);
+  });
+
   test("user input releases the initial anchor — re-anchors never fight a person", async () => {
     const screen = await render(Fixture, {
       rows,
