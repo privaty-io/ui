@@ -102,9 +102,16 @@ everywhere else.
 // Checkboxes: unchecked submits NOTHING — the schema supplies the false.
 inStock: v.optional(v.boolean(), false),
 
-// Placeholder selects: the disabled placeholder is skipped by submission —
-// default "" so YOUR message fires instead of a raw missing-key error.
+// REQUIRED placeholder selects: the disabled prompt is skipped by
+// submission — default "" so YOUR message fires instead of a raw
+// missing-key error. (Optional selects are clearable instead: the empty
+// pick SUBMITS "", so a plain v.optional(v.string()) receives it.)
 category: v.pipe(v.optional(v.string(), ""), v.picklist(categories, "required")),
+
+// Optional selects, when the handler prefers undefined over "": FormData
+// cannot carry an absent value from an enabled option, so normalize at
+// the schema boundary — the designed seam for exactly this.
+categoryId: v.optional(v.pipe(v.string(), v.transform((value) => value || undefined))),
 
 // Month inputs submit "YYYY-MM"; empty submits "".
 availableFrom: v.pipe(v.string(), v.nonEmpty("required"), v.regex(/^\d{4}-\d{2}$/, "invalid-month")),

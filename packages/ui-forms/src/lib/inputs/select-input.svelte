@@ -27,8 +27,11 @@ instead of disabling — a disabled select is excluded from FormData.
      * `{ value: s, label: s }`; values must be unique — they key the
      * rendered list. */
     options: readonly (string | SelectOption)[];
-    /** Rendered as a disabled empty option, shown until a value is chosen.
-     * Its presence also makes "" the default seed for an unseeded field. */
+    /** The empty option's label — a disabled prompt on required fields, a
+     * selectable "none" row on optional ones (see Select's `clearable`;
+     * this input derives it from `required`, which never becomes the
+     * native attribute). Its presence also makes "" the default seed for
+     * an unseeded field. */
     placeholder?: string;
 
     /** Label placement: "top" (default), "left", or "hidden" — floating is
@@ -139,6 +142,7 @@ instead of disabling — a disabled select is excluded from FormData.
   {labelStyle}
   {options}
   {placeholder}
+  clearable={!required}
   errors={wired.errors}
   marker={wired.marker}
   aria-invalid={wired.errors.length > 0 ? true : undefined}

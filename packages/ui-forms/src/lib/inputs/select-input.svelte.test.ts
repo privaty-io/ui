@@ -22,9 +22,32 @@ describe("wiring", () => {
     await expect
       .element(screen.getByRole("option", { name: "wine" }))
       .toHaveValue("wine");
+    // Not required, so the placeholder labels a SELECTABLE empty option —
+    // the user can unselect. The schema-side `required` never becomes the
+    // native attribute; it drives Select's clearable instead.
+    await expect
+      .element(screen.getByRole("option", { name: "Choose one" }))
+      .not.toBeDisabled();
+    await expect.element(select).not.toHaveAttribute("required");
+  });
+
+  test("required turns the placeholder into a disabled prompt", async () => {
+    const { field } = fakeSelectField("category");
+    const screen = await render(Fixture, {
+      form: fakeForm().form,
+      field,
+      label: "Category",
+      options,
+      placeholder: "Choose one",
+      required: true,
+    });
+
     await expect
       .element(screen.getByRole("option", { name: "Choose one" }))
       .toBeDisabled();
+    await expect
+      .element(screen.getByLabelText("Category"))
+      .not.toHaveAttribute("required");
   });
 
   test("defaults an unseeded field to the placeholder", async () => {
