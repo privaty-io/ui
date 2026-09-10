@@ -63,6 +63,12 @@ interface UiCalendarLabels {
   open: string;
 }
 
+/** User-facing strings the modal renders. */
+interface UiModalLabels {
+  /** Accessible name of the corner close button. */
+  close: string;
+}
+
 /** All label groups, one per component family. */
 interface UiLabels {
   /** Strings the form components render. */
@@ -71,6 +77,8 @@ interface UiLabels {
   table: UiTableLabels;
   /** Strings the calendar pickers render. */
   calendar: UiCalendarLabels;
+  /** Strings the modal renders. */
+  modal: UiModalLabels;
 }
 
 /**
@@ -99,6 +107,7 @@ type PartialUiConfig = Partial<Omit<UiConfig, "labels">> & {
     form?: Partial<UiFormLabels>;
     table?: Partial<UiTableLabels>;
     calendar?: Partial<UiCalendarLabels>;
+    modal?: Partial<UiModalLabels>;
   };
 };
 
@@ -106,6 +115,7 @@ export type {
   MessageResolver,
   PartialUiConfig,
   UiCalendarLabels,
+  UiModalLabels,
   UiConfig,
   UiFormLabels,
   UiLabels,

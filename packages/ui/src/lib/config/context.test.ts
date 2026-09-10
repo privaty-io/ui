@@ -41,6 +41,9 @@ describe("defaultUiConfig", () => {
         year: "Year",
         open: "Open calendar",
       },
+      modal: {
+        close: "Close",
+      },
     });
   });
 });
@@ -108,6 +111,7 @@ describe("mergeUiConfig", () => {
       },
       table: defaultUiConfig.labels.table,
       calendar: defaultUiConfig.labels.calendar,
+      modal: defaultUiConfig.labels.modal,
     });
   });
 

@@ -261,7 +261,19 @@ test("deletes the row it created", async ({ page }) => {
   const name = `E2E Doomed ${Date.now()}`;
   const row = await createProduct(page, name);
 
+  // Destructive actions confirm first: the row button opens the modal,
+  // and cancelling must delete nothing.
   await row.getByRole("button", { name: "Delete" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText(name);
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(row).toHaveCount(1);
+
+  // Confirming commits the delete.
+  await row.getByRole("button", { name: "Delete" }).click();
+  await dialog.getByRole("button", { name: "Delete" }).click();
   await expect(row).toHaveCount(0);
   // Only the spec's own row went away.
   await expect(productRow(page, "Comté 18mo")).toBeVisible();

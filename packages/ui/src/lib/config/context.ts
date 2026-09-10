@@ -40,6 +40,9 @@ const defaultUiConfig: UiConfig = {
       year: "Year",
       open: "Open calendar",
     },
+    modal: {
+      close: "Close",
+    },
   },
 };
 
@@ -58,6 +61,7 @@ function mergeUiConfig(base: UiConfig, overrides: PartialUiConfig): UiConfig {
       form: { ...base.labels.form, ...overrides.labels?.form },
       table: { ...base.labels.table, ...overrides.labels?.table },
       calendar: { ...base.labels.calendar, ...overrides.labels?.calendar },
+      modal: { ...base.labels.modal, ...overrides.labels?.modal },
     },
   };
 }

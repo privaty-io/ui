@@ -138,6 +138,28 @@ const coreTheme = {
     ),
   },
 
+  modal: {
+    /** The <dialog> element: centered by the UA, panel chrome ours. p-0 is
+     * load-bearing — padding lives on `inner`, so backdrop clicks (which
+     * target the dialog itself) are distinguishable from content clicks. */
+    panel: cn(
+      "m-auto w-full max-w-md rounded border p-0 shadow-xl",
+      "border-stone-400 bg-stone-50 text-stone-800",
+      "dark:border-stone-600 dark:bg-stone-950 dark:text-stone-200",
+      "backdrop:bg-stone-950/40 backdrop:backdrop-blur-[2px]",
+    ),
+    /** The padded content wrapper inside the dialog. */
+    inner: "flex flex-col gap-3 p-4",
+    /** The dialog heading. */
+    title: "text-lg font-medium",
+    /** The corner close button. */
+    closeButton: cn(
+      "cursor-pointer rounded p-1",
+      "hover:bg-stone-200 dark:hover:bg-stone-800",
+      focusRing,
+    ),
+  },
+
   /** Popover panel: an opaque bordered surface floating on the top layer. */
   popover: cn(
     "rounded border p-3 shadow-lg",

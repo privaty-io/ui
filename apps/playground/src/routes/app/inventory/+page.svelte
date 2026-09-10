@@ -4,6 +4,7 @@
   // remote select options awaited IN the editor, a date picker editor,
   // and nested batch tables in expanded rows linked via hiddenFields.
   import { toSelectOptions } from "@privaty/ui";
+  import { Modal } from "@privaty/ui";
   import Button from "@privaty/ui/components/button.svelte";
   import DatePickerInput from "@privaty/ui-forms/inputs/date-picker-input.svelte";
   import NumberInput from "@privaty/ui-forms/inputs/number-input.svelte";
@@ -33,6 +34,11 @@
 
   const controller = new TableController();
   const productsQuery = getProducts();
+
+  // Destructive actions confirm first: the delete button opens the modal,
+  // the modal's Delete commits.
+  let pendingDelete = $state<Product>();
+  let confirmOpen = $state(false);
   const categoriesQuery = getCategoryOptions();
 
   const categoryLabel = (categoryId: string | undefined) =>
@@ -66,7 +72,10 @@
       createSchema={createProductSchema}
       editForm={updateProduct}
       editSchema={updateProductSchema}
-      ondelete={(row) => deleteProduct(row.id)}
+      ondelete={(row) => {
+        pendingDelete = row;
+        confirmOpen = true;
+      }}
       expanded={batchesFor}
     >
       <Column
@@ -162,6 +171,30 @@
     </Table>
   </div>
 </main>
+
+<Modal bind:open={confirmOpen} title="Delete product">
+  <p>
+    Delete “{pendingDelete?.name}”? This cannot be undone.
+  </p>
+  <div class="flex justify-end gap-2">
+    <Button
+      variant="secondary"
+      type="button"
+      onclick={() => (confirmOpen = false)}
+    >
+      Cancel
+    </Button>
+    <Button
+      type="button"
+      onclick={() => {
+        if (pendingDelete) void deleteProduct(pendingDelete.id);
+        confirmOpen = false;
+      }}
+    >
+      Delete
+    </Button>
+  </div>
+</Modal>
 
 {#snippet batchesFor({ row }: { row: Product })}
   <div class="flex flex-col gap-2 p-3" data-testid="batches-{row.id}">

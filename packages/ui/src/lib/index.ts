@@ -56,6 +56,7 @@ export type {
   Placement,
   Side,
 } from "./overlays/position";
+export { default as Modal } from "./overlays/modal.svelte";
 export { default as Popover } from "./overlays/popover.svelte";
 export { default as Tooltip } from "./overlays/tooltip.svelte";
 
@@ -73,6 +74,7 @@ export type {
   MessageResolver,
   PartialUiConfig,
   UiCalendarLabels,
+  UiModalLabels,
   UiConfig,
   UiFormLabels,
   UiLabels,

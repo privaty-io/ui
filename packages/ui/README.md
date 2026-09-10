@@ -116,12 +116,18 @@ strings the native inputs submit.
 
 ## Overlays
 
-`overlays/` is the top-layer toolkit: `Popover` and `Tooltip` components on
-the native popover attribute, and the positioning primitive they share.
+`overlays/` is the top-layer toolkit: `Popover` and `Tooltip` on the
+native popover attribute, `Modal` on the native `<dialog>`, and the
+positioning primitive the anchored ones share.
 
 - **`Popover`** — interactive overlay: native light dismiss + Escape, a
   `trigger` snippet whose props you spread onto a `<button>` (the native
   invoker), `bind:open` for programmatic control (e.g. close on select).
+- **`Modal`** — dialog on the native `<dialog>` element: top layer, focus
+  trap, and Escape from the browser; `trigger` snippet or `bind:open`;
+  `title` renders the heading and names the dialog; backdrop click closes
+  unless `lightDismiss={false}`; corner close button labeled by
+  `labels.modal.close`.
 - **`Tooltip`** — hover/focus label: `role="tooltip"` + `aria-describedby`
   wired, `popover="hint"` (degrades to `manual` where unsupported — same
   behavior, visibility is library-driven), non-interactive by contract
