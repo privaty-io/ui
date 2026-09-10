@@ -11,6 +11,7 @@ export { default as Form } from "./form.svelte";
 export { default as CheckboxInput } from "./inputs/checkbox-input.svelte";
 export { default as DateInput } from "./inputs/date-input.svelte";
 export { default as DatePickerInput } from "./inputs/date-picker-input.svelte";
+export { default as HiddenInput } from "./inputs/hidden-input.svelte";
 export { default as MonthPickerInput } from "./inputs/month-picker-input.svelte";
 export { default as NumberInput } from "./inputs/number-input.svelte";
 export { default as SelectInput } from "./inputs/select-input.svelte";
@@ -30,6 +31,8 @@ export type {
   DateFieldAttributes,
   DateFieldType,
   FieldRegistration,
+  HiddenField,
+  HiddenFieldAttributes,
   NumberField,
   NumberFieldAttributes,
   SelectField,

@@ -41,7 +41,9 @@ Inputs: `TextInput` (text/email/password/search/url/tel), `TextareaInput`,
 `NumberInput`, `DateInput` (date/month/week/time/datetime-local — one
 component, all string-valued), `SelectInput`, `CheckboxInput`. Plus
 `Submit`, `Reset`, `FormError`. Icon-style Submit/Reset: pass children; the
-label stays as the accessible name.
+label stays as the accessible name. `HiddenInput` carries a value the user
+never edits (a row id, a parent record's id) — context-free, no dirty
+tracking or marker, works outside a `<Form>` too.
 
 ## Picker inputs
 

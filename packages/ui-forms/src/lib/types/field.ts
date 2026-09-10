@@ -189,6 +189,25 @@ interface CheckboxField {
   set: (value: boolean) => void;
 }
 
+/** The attribute bag HiddenField.as() returns — spread onto the input. */
+type HiddenFieldAttributes = Omit<HTMLInputAttributes, "type"> & {
+  name: string;
+  type?: "hidden";
+};
+
+/**
+ * The slice of a remote form field HiddenInput needs — any Kit field
+ * satisfies it (`as("hidden", ...)` works on every field type). Same
+ * structural/method-syntax reasoning as TextField.
+ */
+interface HiddenField {
+  /** Attributes for the hidden input, seeding its value — same
+   * tuple-union call shape as the other field slices. */
+  as(
+    ...args: [type: "hidden", initialValue: string | number]
+  ): HiddenFieldAttributes;
+}
+
 export type {
   CheckboxField,
   CheckboxFieldAttributes,
@@ -196,6 +215,8 @@ export type {
   DateFieldAttributes,
   DateFieldType,
   FieldRegistration,
+  HiddenField,
+  HiddenFieldAttributes,
   NumberField,
   NumberFieldAttributes,
   SelectField,
