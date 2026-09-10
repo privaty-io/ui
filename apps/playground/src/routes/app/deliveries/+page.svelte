@@ -73,6 +73,7 @@
         value={(row: SupplierSchedule) => row.supplier}
         pin="left"
         sortable
+        summary={supplierSummary}
       />
       {#each quarters as quarter (quarter.key)}
         <Column
@@ -80,8 +81,23 @@
           label={quarter.label}
           group={quarter.year}
           value={(row: SupplierSchedule) => row.volumes[quarter.key]}
-        />
+        >
+          {#snippet summary({
+            rows: schedule,
+          }: {
+            rows: readonly SupplierSchedule[];
+          })}
+            {schedule.reduce(
+              (total, row) => total + row.volumes[quarter.key],
+              0,
+            )}
+          {/snippet}
+        </Column>
       {/each}
     </Table>
   </div>
 </main>
+
+{#snippet supplierSummary()}
+  <span class="font-medium">Total cases</span>
+{/snippet}

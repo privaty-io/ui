@@ -7,7 +7,7 @@ column must be destroyed and recreated to change.
 <script lang="ts" generics="Row">
   import { onDestroy, type Snippet } from "svelte";
   import { getTableContext } from "./context";
-  import type { EditorField } from "./types";
+  import type { ColumnEditorGroup, EditorField } from "./types";
 
   interface Props {
     /** Unique column identity — and the field name looked up on the
@@ -54,6 +54,18 @@ column must be destroyed and recreated to change.
     /** Present = the column is editable. `row` is undefined on the create
      * row. */
     editor?: Snippet<[{ field: EditorField; row: Row | undefined }]>;
+    /** Folds this column's editor into ONE array field on the form,
+     * shared with sibling columns declaring the same `field` — each
+     * column contributes a `{ [keyName], [valueName] }` entry, and the
+     * handler receives the whole array in one save (a calendar row's
+     * months, say). The editor snippet's `field` is the entry's value
+     * subfield; the key subfield rides along as a hidden input. */
+    editorGroup?: ColumnEditorGroup;
+    /** Renders this column's cell in the summary footer row — receives
+     * ALL current rows, so the content can be any computation over them
+     * (a sum, a surplus/deficit, a label). The footer renders when any
+     * column declares a summary. */
+    summary?: Snippet<[{ rows: readonly Row[] }]>;
   }
 
   const {
@@ -69,6 +81,8 @@ column must be destroyed and recreated to change.
     tooltip,
     cell,
     editor,
+    editorGroup,
+    summary,
   }: Props = $props();
 
   // Registration happens during init — never in onMount/$effect — so the
@@ -89,6 +103,8 @@ column must be destroyed and recreated to change.
     tooltip,
     cell,
     editor,
+    editorGroup,
+    summary,
   });
 
   onDestroy(unregister);

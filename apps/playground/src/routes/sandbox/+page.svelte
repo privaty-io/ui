@@ -32,6 +32,11 @@
       </a>
     </li>
     <li>
+      <a href={resolve("sandbox/table-grouped")}>
+        Grouped editor fields (months array + summary row)
+      </a>
+    </li>
+    <li>
       <a href={resolve("sandbox/table-await-editor")}>
         Awaited editor options (crash bench)
       </a>

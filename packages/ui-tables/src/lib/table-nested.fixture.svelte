@@ -19,9 +19,9 @@
 
   interface Props {
     rows: Parent[];
-    outerCreateForm?: Omit<RemoteForm<RemoteFormInput, unknown>, "for">;
+    outerCreateForm?: RemoteForm<RemoteFormInput, unknown>;
     outerEditForm?: RemoteForm<RemoteFormInput, unknown>;
-    innerCreateForm?: Omit<RemoteForm<RemoteFormInput, unknown>, "for">;
+    innerCreateForm?: RemoteForm<RemoteFormInput, unknown>;
     innerEditForm?: RemoteForm<RemoteFormInput, unknown>;
     innerHiddenFields?: { key: string; value: string | number }[];
   }

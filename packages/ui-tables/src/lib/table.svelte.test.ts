@@ -52,6 +52,29 @@ function firstCells(container: Element): string[] {
     .map((row) => row.querySelector("td")?.textContent?.trim() ?? "");
 }
 
+describe("summary row", () => {
+  test("renders computed summaries in a footer; absent without any", async () => {
+    const screen = await render(Fixture, { rows: items(), withSummary: true });
+
+    const footer = screen.container.querySelector("tfoot");
+    expect(footer).not.toBeNull();
+    // The label summary sees ALL rows…
+    await expect
+      .element(screen.getByTestId("summary-label"))
+      .toHaveTextContent("Total (3 rows)");
+    // …and the price summary is a COMPUTATION over them, not a blind
+    // column sum (129 + 89 + 42 = 260, minus the fixture's 100).
+    await expect
+      .element(screen.getByTestId("summary-price"))
+      .toHaveTextContent("160");
+  });
+
+  test("no summary on any column → no footer", async () => {
+    const screen = await render(Fixture, { rows: items() });
+    expect(screen.container.querySelector("tfoot")).toBeNull();
+  });
+});
+
 describe("display", () => {
   test("renders headers and cells from the registered columns", async () => {
     const screen = await render(Fixture, { rows: items() });

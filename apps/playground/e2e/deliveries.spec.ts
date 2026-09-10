@@ -296,7 +296,18 @@ test("a user's scroll taken during load is not yanked when the rows land", async
   // anchor's ownership) and parks somewhere deliberate — away from the
   // anchor, the left edge, and the maximum.
   await userScroll(wrapper, 60);
-  await expect.poll(() => scrollLeftOf(wrapper)).toBe(60);
+  // The browser can nudge the park a couple px (scroll anchoring against
+  // the mid-glide layout) — the contract is "wherever the user parked, it
+  // stays", so capture the SETTLED position instead of demanding 60.
+  let parked = -1;
+  await expect
+    .poll(async () => {
+      const current = await scrollLeftOf(wrapper);
+      const stable = current === parked;
+      parked = current;
+      return stable && Math.abs(current - 60) < 6;
+    })
+    .toBe(true);
   const pinnedX = await supplierHeaderX(page);
 
   // NOW the rows land: the table widens, the scroll range grows, and
@@ -312,7 +323,9 @@ test("a user's scroll taken during load is not yanked when the rows land", async
   // A yank would move the scroller by tens or hundreds of px toward the
   // anchor; a couple px of drift from browser scroll anchoring while the
   // columns widen is acceptable.
-  expect(Math.abs((await scrollLeftOf(wrapper)) - 60)).toBeLessThanOrEqual(3);
+  expect(Math.abs((await scrollLeftOf(wrapper)) - parked)).toBeLessThanOrEqual(
+    3,
+  );
   expect(Math.abs((await supplierHeaderX(page)) - pinnedX)).toBeLessThanOrEqual(
     1,
   );

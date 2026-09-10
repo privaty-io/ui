@@ -181,6 +181,61 @@ Entries whose key the current form's schema lacks are skipped, so create
 and edit schemas may declare different subsets. The playground's
 `sandbox/table-nested` route is the full worked example.
 
+### Summary row
+
+A `Column`'s `summary` snippet renders that column's cell in a sticky
+footer row (present when any column declares one). It receives ALL
+current rows — the content is any computation over them, not just a
+column sum:
+
+```svelte
+<Column key="2026-01" label="Jan" value={(row) => row.months["2026-01"]}>
+  {#snippet summary({ rows })}
+    {CAPACITY - rows.reduce((total, row) => total + row.months["2026-01"], 0)}h
+  {/snippet}
+</Column>
+```
+
+The footer mirrors the header's chrome (opaque, pinned columns stay
+pinned); `summaryCellClass` restyles it.
+
+### Grouped editor fields
+
+`Column`'s `editorGroup` folds several columns' editors into ONE array
+field, so a whole calendar row saves in a single editor pass — no nested
+per-entry table needed:
+
+```svelte
+<Column
+  key={month}
+  value={(row) => row.months[month] ?? 0}
+  editorGroup={{
+    field: "months",
+    key: month,
+    keyName: "month",
+    valueName: "hours",
+  }}
+>
+  {#snippet editor({ field, row })}
+    <NumberInput {field} ... />
+  {/snippet}
+</Column>
+```
+
+```ts
+// The schema declares the array; the handler receives it assembled.
+months: v.array(v.object({ month: v.string(), hours: v.number() })),
+```
+
+Each grouped column contributes one `months[i]` entry: the editor edits
+`months[i][valueName]`, and `months[i][keyName]` rides along as a hidden
+input seeded with the column's `key` — Kit's FormData conversion
+reassembles the array for the handler. Caveat: keep output-changing
+transforms OFF the grouped field's schema (fold entries into your
+storage shape in the handler instead) — a transform there defeats the
+Table's generic inference. The playground's `sandbox/table-grouped`
+route is the full worked example, summary row included.
+
 ### Nested tables
 
 A table inside an `expanded` row works — with one rule, enforced: **one
@@ -192,6 +247,12 @@ editor while an ancestor is editing is refused with a console warning —
 save or cancel the outer editor first.
 
 ## Layout features
+
+The table sizes to its container: give the surrounding element a height
+(`h-96`, a grid row) or let FLEX bound it — as a flex child the root
+carries `min-h-0`, so a `flex flex-col` parent with a title above needs
+no explicit height anywhere; the table shrinks to the leftover space and
+scrolls internally.
 
 - **Pinning**: `pin="left" | "right"` on a Column — pinned columns are
   reordered to their edge and **must declare `width`** (offsets fall back to

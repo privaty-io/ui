@@ -90,6 +90,25 @@ interface HiddenField {
 }
 
 /**
+ * Folds a column's editor into one ARRAY field on the form. Kit's remote
+ * forms convert nested field names back into structure at submit, so each
+ * grouped column contributes one `{ [keyName], [valueName] }` entry to
+ * `fields[field]` — the handler receives a typed array (e.g. every month
+ * of a calendar row in one save) instead of one flat field per column.
+ */
+interface ColumnEditorGroup {
+  /** The array field's name on the form schema (e.g. "months"). */
+  field: string;
+  /** This column's entry key — submitted alongside the edited value so
+   * the handler knows which entry each value belongs to. */
+  key: string;
+  /** Subfield carrying the key (default "key"). */
+  keyName?: string;
+  /** Subfield the column's editor edits (default "value"). */
+  valueName?: string;
+}
+
+/**
  * A column's definition as captured by <Column> during its init and read by
  * the Table — mirrors Column's props.
  */
@@ -134,9 +153,16 @@ interface ColumnRegistration<Row> {
   cell?: Snippet<[{ row: Row; value: unknown }]>;
   /** Present = the column is editable. `row` is undefined on the create row. */
   editor?: Snippet<[{ field: EditorField; row: Row | undefined }]>;
+  /** Folds the editor into one array field shared with sibling columns. */
+  editorGroup?: ColumnEditorGroup;
+  /** Renders this column's cell in the summary footer row — receives ALL
+   * current rows, so the content can be any computation over them (a sum,
+   * a surplus/deficit, a label), not just a column aggregate. */
+  summary?: Snippet<[{ rows: readonly Row[] }]>;
 }
 
 export type {
+  ColumnEditorGroup,
   ColumnRegistration,
   EditorField,
   HiddenField,

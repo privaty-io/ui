@@ -149,6 +149,114 @@ describe("empty state", () => {
   });
 });
 
+describe("flex-bounded sizing", () => {
+  test("a flex-column parent bounds the table without any explicit height", async () => {
+    // The work-app shape: title above, table sized ONLY by leftover flex
+    // space. Flex children default to min-height:auto and refuse to
+    // shrink below content height — without the root's min-h-0 the table
+    // overflows the parent and its own scroll container never engages.
+    const rows = Array.from({ length: 40 }, (_, index) => ({
+      id: `r${index}`,
+      name: `Row ${index}`,
+      price: index,
+    }));
+    const screen = await render(Fixture, { rows, withFlexParent: true });
+
+    const parent = screen.getByTestId("flex-parent").element() as HTMLElement;
+    const wrapper = parent.querySelector("div") as HTMLElement;
+
+    // Bounded by the parent…
+    expect(wrapper.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      parent.getBoundingClientRect().bottom + 1,
+    );
+    // …with the table's own scroll container doing the scrolling.
+    expect(wrapper.scrollHeight).toBeGreaterThan(wrapper.clientHeight + 40);
+  });
+});
+
+describe("summary row", () => {
+  test("a SHORT table parks the footer at the container's bottom edge", async () => {
+    // The reported bug: with rows that don't fill the container, the
+    // footer sat at the table's natural end with the filler below it.
+    // The spacer row absorbs the stretch — and must not stretch the
+    // data rows while doing it.
+    const screen = await render(Fixture, {
+      rows: [
+        { id: "r1", name: "Comté", price: 89 },
+        { id: "r2", name: "Rioja", price: 129 },
+      ],
+      withSummary: true,
+      containerClass: "h-96",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    const cell = screen.container.querySelector("tfoot td") as HTMLElement;
+    await expect
+      .poll(() =>
+        Math.abs(
+          cell.getBoundingClientRect().bottom -
+            (wrapper.getBoundingClientRect().bottom - wrapper.clientTop),
+        ),
+      )
+      .toBeLessThan(2);
+
+    // The extra height went to the spacer, not the data rows.
+    const dataRow = screen.container.querySelector("tbody tr") as HTMLElement;
+    expect(dataRow.getBoundingClientRect().height).toBeLessThan(60);
+  });
+
+  test("the footer row never adds a phantom column", async () => {
+    // An unconditional footer actions cell once gave the footer one MORE
+    // cell than the header — the browser resolves that as an extra empty
+    // column spanning the whole table.
+    const screen = await render(Fixture, {
+      rows: [{ id: "r1", name: "Comté", price: 89 }],
+      withSummary: true,
+    });
+
+    const headerCells = screen.container.querySelectorAll(
+      "thead tr:last-child > *",
+    ).length;
+    const footerCells =
+      screen.container.querySelectorAll("tfoot tr > td").length;
+    expect(footerCells).toBe(headerCells);
+  });
+
+  test("the footer sticks to the bottom edge under vertical scroll", async () => {
+    const rows = Array.from({ length: 30 }, (_, index) => ({
+      id: `r${index}`,
+      name: `Row ${index}`,
+      price: index,
+    }));
+    const screen = await render(Fixture, {
+      rows,
+      withSummary: true,
+      containerClass: "h-48",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    const cell = screen.container.querySelector("tfoot td") as HTMLElement;
+
+    const style = getComputedStyle(cell);
+    expect(style.position).toBe("sticky");
+    expect(style.bottom).toBe("0px");
+
+    // Pinned to the visible bottom edge before and after scrolling.
+    const wrapperBottom = () =>
+      wrapper.getBoundingClientRect().bottom - wrapper.clientTop;
+    expect(
+      Math.abs(cell.getBoundingClientRect().bottom - wrapperBottom()),
+    ).toBeLessThan(2);
+
+    wrapper.scrollTop = 200;
+    await expect
+      .poll(() =>
+        Math.abs(cell.getBoundingClientRect().bottom - wrapperBottom()),
+      )
+      .toBeLessThan(2);
+  });
+});
+
 describe("loading veil", () => {
   test("covers the visible scrollport, header included, and pins under scroll", async () => {
     const screen = await render(Fixture, {

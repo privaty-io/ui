@@ -82,7 +82,13 @@ surrounding container a height.
     /** Remote form driving the create editor — its presence puts the Add
      * trigger in the actions header. Used as-is (the create singleton, no
      * `.for()`). */
-    createForm?: Omit<RemoteForm<CreateInput, CreateOutput>, "for">;
+    createForm?: RemoteForm<CreateInput, CreateOutput>;
+    // ^ The FULL RemoteForm, not Omit<..., "for">: an Omit target blocks
+    // TS's generic inference, and with CreateInput fallen back to its
+    // constraint the assignment trips a Kit-internal assignability bug for
+    // inputs containing ARRAYS (RemoteForm<X>'s fields tree does not
+    // satisfy Kit's own RecursiveFormFields when X has array fields) —
+    // exactly the editorGroup shape. The unused `.for` is harmless.
     /** Client-side validation schema for the create editor's Form. Output
      * deliberately unconstrained — transform schemas are
      * Kit-legal. */
@@ -139,6 +145,8 @@ surrounding container a height.
     tableClass?: string;
     /** Extra classes for every header cell. */
     headerCellClass?: string;
+    /** Extra classes for every cell in the summary footer row. */
+    summaryCellClass?: string;
     /** Extra classes for every cell in the group header row. */
     groupHeaderCellClass?: string;
     /** Extra classes for every body cell. */
@@ -174,6 +182,7 @@ surrounding container a height.
     rows: rowsProp,
     rowKey,
     hiddenFields,
+    summaryCellClass,
 
     controller = new TableController(),
 
@@ -659,6 +668,27 @@ surrounding container a height.
     return field;
   }
 
+  // Resolves a grouped column's array entry on the form's fields proxy —
+  // fields[group.field][index] with the key/value subfields. The single
+  // cast site for grouped columns, like fieldOf for flat ones.
+  function groupedEntryOf(
+    fields: unknown,
+    group: NonNullable<ColumnRegistration<Row>["editorGroup"]>,
+    index: number,
+  ): { keyField: HiddenField; valueField: EditorField } {
+    const array = (fields as Record<string, unknown>)[group.field];
+    if (array === undefined || array === null)
+      throw new Error(
+        `Table: the editor form has no field named "${group.field}" — ` +
+          "editorGroup columns need a matching array field in the schema",
+      );
+    const entry = (array as Record<number, Record<string, unknown>>)[index];
+    return {
+      keyField: entry[group.keyName ?? "key"] as HiddenField,
+      valueField: entry[group.valueName ?? "value"] as EditorField,
+    };
+  }
+
   // The consumer's extra hidden inputs (hiddenFields): resolved against
   // the CURRENT session's form, skipping keys its schema lacks — create
   // and edit schemas may declare different subsets.
@@ -682,6 +712,7 @@ surrounding container a height.
     key: string;
     instance: Omit<RemoteForm<CreateInput, CreateOutput>, "for">;
     fields: Record<string, EditorField>;
+    groupKeyAttributes: Record<string, HiddenFieldAttributes>;
     hiddenAttributes: HiddenFieldAttributes[];
   }
 
@@ -692,6 +723,7 @@ surrounding container a height.
     fields: Record<string, EditorField>;
     rowId: EditRowKey;
     idAttributes: HiddenFieldAttributes;
+    groupKeyAttributes: Record<string, HiddenFieldAttributes>;
     hiddenAttributes: HiddenFieldAttributes[];
   }
 
@@ -712,18 +744,39 @@ surrounding container a height.
   function collectEditorFields(
     fields: unknown,
     seedOf: (column: ColumnRegistration<Row>) => unknown,
-  ): Record<string, EditorField> {
+  ): {
+    fields: Record<string, EditorField>;
+    groupKeyAttributes: Record<string, HiddenFieldAttributes>;
+  } {
     const collected: Record<string, EditorField> = {};
+    const groupKeyAttributes: Record<string, HiddenFieldAttributes> = {};
+    // Grouped columns take consecutive indices per array field, in
+    // registration order — Kit reassembles fields[field][i] into the
+    // array the handler receives.
+    const groupCounters: Record<string, number> = {};
 
     for (const column of columns) {
       if (!column.editor) continue;
+
+      if (column.editorGroup) {
+        const group = column.editorGroup;
+        const index = (groupCounters[group.field] ??= 0);
+        groupCounters[group.field] = index + 1;
+
+        const { keyField, valueField } = groupedEntryOf(fields, group, index);
+        (keyField.set as (value: unknown) => void)(group.key);
+        groupKeyAttributes[column.key] = keyField.as("hidden", group.key);
+        (valueField.set as (value: unknown) => void)(seedOf(column));
+        collected[column.key] = valueField;
+        continue;
+      }
 
       const field = fieldOf(fields, column.key);
       (field.set as (value: unknown) => void)(seedOf(column));
       collected[column.key] = field;
     }
 
-    return collected;
+    return { fields: collected, groupKeyAttributes };
   }
 
   // Cached remote form instances (`.for(key)` per key, and the create
@@ -752,14 +805,16 @@ surrounding container a height.
     if (editor.type === "create") {
       if (!createForm) return false;
 
+      const collected = collectEditorFields(
+        createForm.fields,
+        (column) => column.createSeed,
+      );
       session = {
         mode: "create",
         key: "create",
         instance: createForm,
-        fields: collectEditorFields(
-          createForm.fields,
-          (column) => column.createSeed,
-        ),
+        fields: collected.fields,
+        groupKeyAttributes: collected.groupKeyAttributes,
         hiddenAttributes: collectHiddenAttributes(createForm.fields),
       };
       return true;
@@ -780,13 +835,15 @@ surrounding container a height.
       const idField = idFieldOf(instance.fields);
       (idField.set as (value: unknown) => void)(rowId);
 
+      const collected = collectEditorFields(instance.fields, (column) =>
+        column.value(row),
+      );
       session = {
         mode: "edit",
         key: `edit:${String(rowId)}`,
         instance,
-        fields: collectEditorFields(instance.fields, (column) =>
-          column.value(row),
-        ),
+        fields: collected.fields,
+        groupKeyAttributes: collected.groupKeyAttributes,
         rowId,
         idAttributes: idField.as("hidden", rowId),
         hiddenAttributes: collectHiddenAttributes(instance.fields),
@@ -979,6 +1036,18 @@ surrounding container a height.
   const actionsCellClasses =
     "sticky right-0 z-10 w-px border-l bg-inherit whitespace-nowrap";
 
+  // The summary footer renders when any column declares a summary — one
+  // sticky row mirroring the header's chrome at the bottom edge.
+  const hasSummary = $derived(orderedColumns.some((column) => column.summary));
+  const defaultFooterCellClasses = $derived(
+    cn(
+      "sticky bottom-0 z-20 border-t whitespace-nowrap",
+      tableTheme.border,
+      tableTheme.headerBackground,
+      cellPadding,
+    ),
+  );
+
   const actionsStyle = $derived(
     actionsWidth
       ? `width: ${actionsWidth}; min-width: ${actionsWidth}; max-width: ${actionsWidth}`
@@ -1018,6 +1087,7 @@ surrounding container a height.
 
 {#snippet editorCells(
   fields: Record<string, EditorField>,
+  groupKeys: Record<string, HiddenFieldAttributes>,
   row: Row | undefined,
 )}
   {#each orderedColumns as column (column.key)}
@@ -1046,6 +1116,11 @@ surrounding container a height.
              the pre-open world (session still undefined: a crash). Editor
              rows never server-render, so the boundary's SSR caveat (the
              forms README) does not apply here. -->
+        {#if groupKeys[column.key]}
+          <!-- The grouped entry's key subfield — submitted alongside the
+               edited value so the handler knows which entry this is. -->
+          <input {...groupKeys[column.key]} />
+        {/if}
         <svelte:boundary>
           {@render column.editor({ field: fields[column.key], row })}
           {#snippet pending()}
@@ -1155,8 +1230,13 @@ surrounding container a height.
     {@attach observeScrollport}
     class={cn(
       // relative: the containing block for the loading veil's
-      // pre-measurement absolute cover (below).
-      "@container relative flex h-full flex-col",
+      // pre-measurement absolute cover (below). min-h-0: as a flex child
+      // (a flex column with a title above, say) the default
+      // min-height:auto would refuse to shrink below the content height,
+      // so this scroll container never engages and the table overflows
+      // its parent instead — flex-only sizing must work without the
+      // consumer knowing the trick.
+      "@container relative flex h-full min-h-0 flex-col",
       tableTheme.frame,
       settled ? "overflow-auto" : "overflow-hidden",
       styledScrollbars && scrollbarClasses,
@@ -1211,6 +1291,11 @@ surrounding container a height.
       inert={veiled}
       class={cn(
         "min-w-full shrink-0 border-separate border-spacing-0 text-left",
+        // With a summary the TABLE fills the leftover container height
+        // (instead of the filler div below) and the spacer row absorbs
+        // the extra — that is what parks the tfoot at the bottom edge
+        // when the rows don't fill the container.
+        hasSummary && "grow",
         compact ? tableTheme.type.compact : tableTheme.type.comfortable,
         tableClass,
       )}
@@ -1376,7 +1461,11 @@ surrounding container a height.
                 )}
               ></td>
             {/if}
-            {@render editorCells(session?.fields ?? {}, undefined)}
+            {@render editorCells(
+              session?.fields ?? {},
+              session?.groupKeyAttributes ?? {},
+              undefined,
+            )}
             <td
               class={cn(defaultCellClasses, actionsCellClasses, cellClass)}
               style={actionsStyle}
@@ -1395,7 +1484,11 @@ surrounding container a height.
               {#if expanded}
                 {@render expanderCell(row)}
               {/if}
-              {@render editorCells(session?.fields ?? {}, row)}
+              {@render editorCells(
+                session?.fields ?? {},
+                session?.groupKeyAttributes ?? {},
+                row,
+              )}
               <td
                 class={cn(defaultCellClasses, actionsCellClasses, cellClass)}
                 style={actionsStyle}
@@ -1469,7 +1562,80 @@ surrounding container a height.
           {/if}
           {@render expandedContent(row)}
         {/each}
+        {#if hasSummary}
+          <!-- Absorbs the stretched table's extra height (rows with a
+               percentage height take it before auto rows), so data rows
+               keep their natural heights and the tfoot rests at the
+               container's bottom edge. Hosts the empty state, which
+               otherwise lives in the (now zero-height) filler div. -->
+          <tr aria-hidden={showEmpty ? undefined : "true"} class="h-full">
+            <td
+              colspan={orderedColumns.length +
+                (expanded ? 1 : 0) +
+                (hasActionsColumn ? 1 : 0)}
+              class="p-0"
+            >
+              {#if showEmpty}
+                <div
+                  class="sticky left-0 flex h-full w-[100cqw] items-center justify-center py-6"
+                  style={scrollportWidth !== undefined
+                    ? `width: ${scrollportWidth}px`
+                    : undefined}
+                >
+                  {#if empty}
+                    {@render empty()}
+                  {:else}
+                    <span class={tableTheme.emptyText}>
+                      {config.labels.table.empty}
+                    </span>
+                  {/if}
+                </div>
+              {/if}
+            </td>
+          </tr>
+        {/if}
       </tbody>
+      {#if hasSummary}
+        <tfoot>
+          <tr>
+            {#if expanded}
+              <td
+                class={cn(
+                  defaultFooterCellClasses,
+                  "left-0 z-30 w-10 max-w-10 min-w-10 border-r",
+                  summaryCellClass,
+                )}
+              ></td>
+            {/if}
+            {#each orderedColumns as column (column.key)}
+              <td
+                class={cn(
+                  defaultFooterCellClasses,
+                  pinOffsets.has(column.key) && "z-30",
+                  column.key === lastLeftPinnedKey && "border-r",
+                  column.key === firstRightPinnedKey && "border-l",
+                  summaryCellClass,
+                )}
+                style={columnStyle(column)}
+              >
+                {#if column.summary}
+                  {@render column.summary({ rows })}
+                {/if}
+              </td>
+            {/each}
+            {#if hasActionsColumn}
+              <td
+                class={cn(
+                  defaultFooterCellClasses,
+                  "right-0 z-30 w-px border-l",
+                  summaryCellClass,
+                )}
+                style={actionsStyle}
+              ></td>
+            {/if}
+          </tr>
+        </tfoot>
+      {/if}
     </table>
 
     <!-- Grows into the leftover container height; the wrapper's background
@@ -1478,10 +1644,10 @@ surrounding container a height.
          empty state along the x scroll. The inner layer then sticks to the
          VISIBLE viewport (same mechanism as expanded content). -->
     <div
-      class="min-w-full grow"
+      class={cn("min-w-full", !hasSummary && "grow")}
       style={tableWidth !== undefined ? `width: ${tableWidth}px` : undefined}
     >
-      {#if showEmpty}
+      {#if showEmpty && !hasSummary}
         <div
           class="sticky left-0 flex h-full w-[100cqw] items-center justify-center py-6"
           style={scrollportWidth !== undefined
