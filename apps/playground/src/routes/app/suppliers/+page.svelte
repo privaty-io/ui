@@ -3,17 +3,20 @@
   // select, all three picker inputs, textarea, checkbox, code-style
   // validation messages, and a live list fed by the query refresh.
   import { toSelectOptions } from "@privaty/ui";
-  import FormError from "@privaty/ui-forms/components/form-error.svelte";
-  import Reset from "@privaty/ui-forms/components/reset.svelte";
-  import Submit from "@privaty/ui-forms/components/submit.svelte";
-  import Form from "@privaty/ui-forms/form.svelte";
-  import CheckboxInput from "@privaty/ui-forms/inputs/checkbox-input.svelte";
-  import DatePickerInput from "@privaty/ui-forms/inputs/date-picker-input.svelte";
-  import MonthPickerInput from "@privaty/ui-forms/inputs/month-picker-input.svelte";
-  import SelectInput from "@privaty/ui-forms/inputs/select-input.svelte";
-  import TextareaInput from "@privaty/ui-forms/inputs/textarea-input.svelte";
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
-  import WeekPickerInput from "@privaty/ui-forms/inputs/week-picker-input.svelte";
+  import {
+    FormError,
+    Reset,
+    Submit,
+    Form,
+    CheckboxInput,
+    DatePickerInput,
+    MonthPickerInput,
+    SelectInput,
+    TextareaInput,
+    TextInput,
+    WeekPickerInput,
+  } from "@privaty/ui-forms";
+
   import { setUiConfig } from "@privaty/ui";
   import { createSupplier, getSuppliers } from "./data.remote";
   import { createSupplierSchema, regions } from "./schema";

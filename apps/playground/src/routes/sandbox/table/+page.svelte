@@ -1,10 +1,8 @@
 <script lang="ts">
-  import NumberInput from "@privaty/ui-forms/inputs/number-input.svelte";
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
-  import Column from "@privaty/ui-tables/column.svelte";
-  import { TableController } from "@privaty/ui-tables/table-controller.svelte.js";
-  import Table from "@privaty/ui-tables/table.svelte";
-  import Button from "@privaty/ui/components/button.svelte";
+  import { NumberInput, TextInput } from "@privaty/ui-forms";
+  import { Column, TableController, Table } from "@privaty/ui-tables";
+  import { Button } from "@privaty/ui";
+
   import { createRow, deleteRow, getRows, updateRow } from "./data.remote";
   import { createRowSchema, updateRowSchema } from "./schema";
 

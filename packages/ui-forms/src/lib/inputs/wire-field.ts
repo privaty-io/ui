@@ -1,8 +1,8 @@
-import { getUiConfig } from "@privaty/ui/config/context.js";
+import { getUiConfig } from "@privaty/ui";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { onDestroy } from "svelte";
-import { getFormContext } from "../context";
-import type { FormState } from "../form-state.svelte";
+import { getFormContext } from "../form/context";
+import type { FormState } from "../form/form-state.svelte";
 
 interface WireFieldOptions {
   /** The field's form name (from the attributes Kit's `as(...)` returned).

@@ -1,23 +1,24 @@
 /**
- * Root barrel for `@privaty/ui-forms`. Every export here is also reachable
- * via its deep subpath (e.g. `@privaty/ui-forms/form.svelte`). The testing
- * fakes stay deep-only: `@privaty/ui-forms/testing/fakes.svelte.js`.
+ * Root barrel for `@privaty/ui-forms` — the package's ONLY app-facing
+ * module. The testing fakes live behind their own barrel,
+ * `@privaty/ui-forms/testing`, so test doubles never mix into this
+ * surface. Folder layout is internal.
  */
 
-export { default as FormError } from "./components/form-error.svelte";
-export { default as Reset } from "./components/reset.svelte";
-export { default as Submit } from "./components/submit.svelte";
-export { default as Form } from "./form.svelte";
-export { default as CheckboxInput } from "./inputs/checkbox-input.svelte";
-export { default as DateInput } from "./inputs/date-input.svelte";
-export { default as DatePickerInput } from "./inputs/date-picker-input.svelte";
-export { default as HiddenInput } from "./inputs/hidden-input.svelte";
-export { default as MonthPickerInput } from "./inputs/month-picker-input.svelte";
-export { default as NumberInput } from "./inputs/number-input.svelte";
-export { default as SelectInput } from "./inputs/select-input.svelte";
-export { default as TextareaInput } from "./inputs/textarea-input.svelte";
-export { default as TextInput } from "./inputs/text-input.svelte";
-export { default as WeekPickerInput } from "./inputs/week-picker-input.svelte";
+export { default as FormError } from "./feedback/form-error/form-error.svelte";
+export { default as Reset } from "./controls/reset/reset.svelte";
+export { default as Submit } from "./controls/submit/submit.svelte";
+export { default as Form } from "./form/form.svelte";
+export { default as CheckboxInput } from "./inputs/checkbox-input/checkbox-input.svelte";
+export { default as DateInput } from "./inputs/date-input/date-input.svelte";
+export { default as DatePickerInput } from "./inputs/date-picker-input/date-picker-input.svelte";
+export { default as HiddenInput } from "./inputs/hidden-input/hidden-input.svelte";
+export { default as MonthPickerInput } from "./inputs/month-picker-input/month-picker-input.svelte";
+export { default as NumberInput } from "./inputs/number-input/number-input.svelte";
+export { default as SelectInput } from "./inputs/select-input/select-input.svelte";
+export { default as TextareaInput } from "./inputs/textarea-input/textarea-input.svelte";
+export { default as TextInput } from "./inputs/text-input/text-input.svelte";
+export { default as WeekPickerInput } from "./inputs/week-picker-input/week-picker-input.svelte";
 
 // The extension point for custom inputs.
 export { wireField } from "./inputs/wire-field";

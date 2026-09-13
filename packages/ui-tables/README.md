@@ -13,18 +13,17 @@ pnpm add @privaty/ui @privaty/ui-forms @privaty/ui-tables
 > the same lockstep version (single instances — Symbol-keyed contexts), plus
 > the Kit/Tailwind setup from their READMEs.
 
-Every export is also available from the package root — `import { Table,
-Column } from "@privaty/ui-tables"` — alongside the deep subpaths shown
-below; both tree-shake.
+Everything imports from the package root — `import { Table, Column }
+from "@privaty/ui-tables"` — which tree-shakes; there are no deep
+subpaths (as of 0.6.0). The testing fakes live behind their own barrel,
+`@privaty/ui-tables/testing`.
 
 ## Quickstart
 
 ```svelte
 <script>
-  import Table from "@privaty/ui-tables/table.svelte";
-  import Column from "@privaty/ui-tables/column.svelte";
-  import { TableController } from "@privaty/ui-tables/table-controller.svelte.js";
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
+  import { Column, Table, TableController } from "@privaty/ui-tables";
+  import { TextInput } from "@privaty/ui-forms";
   import { createRow, deleteRow, getRows, updateRow } from "./data.remote";
 
   const controller = new TableController();
@@ -307,9 +306,9 @@ height.
 
 ## Testing
 
-`testing/fakes.svelte.ts` adds `fakeEditableRemoteForm` /
+`@privaty/ui-tables/testing` adds `fakeEditableRemoteForm` /
 `fakeKeyedRemoteForm` on top of the forms fakes for table specs. Note for
 geometry assertions: load Tailwind explicitly
-(`import "@privaty/ui/testing/tailwind.css"`) — component classes are inert
+(a stylesheet that `@import`s Tailwind) — component classes are inert
 in the test browser otherwise — and headless Chromium always uses OVERLAY
 scrollbars, so classic-scrollbar geometry cannot be asserted there.

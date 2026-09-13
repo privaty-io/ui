@@ -2,9 +2,9 @@
   // Async-rows bench: the query takes 2s. Expected with `rows={query}`:
   // instant SSR shipping the veiled table, veil during client loads and
   // navigations, veil again on refresh — never a blocked response.
-  import Button from "@privaty/ui/components/button.svelte";
-  import Column from "@privaty/ui-tables/column.svelte";
-  import Table from "@privaty/ui-tables/table.svelte";
+  import { Button } from "@privaty/ui";
+  import { Column, Table } from "@privaty/ui-tables";
+
   import { getSlowRows, type SlowItem } from "./data.remote";
 
   const rowsQuery = getSlowRows();

@@ -2,11 +2,10 @@
   // Minimal repro: ONE table, no nesting — an editor snippet that AWAITS
   // a not-yet-resolved options query while the editor opens.
   import { toSelectOptions } from "@privaty/ui";
-  import SelectInput from "@privaty/ui-forms/inputs/select-input.svelte";
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
+  import { SelectInput, TextInput } from "@privaty/ui-forms";
+  import { Column, Table } from "@privaty/ui-tables";
   import * as v from "valibot";
-  import Column from "@privaty/ui-tables/column.svelte";
-  import Table from "@privaty/ui-tables/table.svelte";
+
   import {
     getCategories,
     getItems,

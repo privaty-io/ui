@@ -1,8 +1,7 @@
 <script lang="ts">
   // Minimal hydration repro bench: a static array, no loading, no editing,
   // no async — the shape of the work app's failing case.
-  import Column from "@privaty/ui-tables/column.svelte";
-  import Table from "@privaty/ui-tables/table.svelte";
+  import { Column, Table } from "@privaty/ui-tables";
 
   interface Item {
     id: string;

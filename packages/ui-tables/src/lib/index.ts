@@ -1,15 +1,15 @@
 /**
- * Root barrel for `@privaty/ui-tables`. Every export here is also reachable
- * via its deep subpath (e.g. `@privaty/ui-tables/table.svelte`). The
- * testing fakes stay deep-only:
- * `@privaty/ui-tables/testing/fakes.svelte.js`.
+ * Root barrel for `@privaty/ui-tables` — the package's ONLY app-facing
+ * module. The testing fakes live behind their own barrel,
+ * `@privaty/ui-tables/testing`. Folder layout is internal.
  */
 
 export { default as Column } from "./column.svelte";
-export { TableController } from "./table-controller.svelte";
-export { default as Table } from "./table.svelte";
+export { TableController } from "./table-controller/table-controller.svelte";
+export { default as Table } from "./table/table.svelte";
 export { tableTheme } from "./theme";
 export type {
+  ColumnEditorGroup,
   ColumnRegistration,
   EditorField,
   HiddenField,

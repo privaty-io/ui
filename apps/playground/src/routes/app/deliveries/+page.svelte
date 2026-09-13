@@ -2,10 +2,9 @@
   // Deliveries: the schedule shape — grouped quarter columns under year
   // headers, a pinned supplier column, initial scroll anchored on the
   // current year, and controller jumps.
-  import Button from "@privaty/ui/components/button.svelte";
-  import Column from "@privaty/ui-tables/column.svelte";
-  import { TableController } from "@privaty/ui-tables/table-controller.svelte.js";
-  import Table from "@privaty/ui-tables/table.svelte";
+  import { Button } from "@privaty/ui";
+  import { Column, TableController, Table } from "@privaty/ui-tables";
+
   import { getSchedule, type SupplierSchedule } from "./data.remote";
 
   const controller = new TableController();

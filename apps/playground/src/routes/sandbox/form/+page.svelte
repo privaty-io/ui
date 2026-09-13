@@ -1,15 +1,18 @@
 <script lang="ts">
-  import FormError from "@privaty/ui-forms/components/form-error.svelte";
-  import Reset from "@privaty/ui-forms/components/reset.svelte";
-  import Submit from "@privaty/ui-forms/components/submit.svelte";
-  import CheckboxInput from "@privaty/ui-forms/inputs/checkbox-input.svelte";
-  import DatePickerInput from "@privaty/ui-forms/inputs/date-picker-input.svelte";
-  import Form from "@privaty/ui-forms/form.svelte";
-  import MonthPickerInput from "@privaty/ui-forms/inputs/month-picker-input.svelte";
-  import NumberInput from "@privaty/ui-forms/inputs/number-input.svelte";
-  import SelectInput from "@privaty/ui-forms/inputs/select-input.svelte";
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
-  import TextareaInput from "@privaty/ui-forms/inputs/textarea-input.svelte";
+  import {
+    FormError,
+    Reset,
+    Submit,
+    CheckboxInput,
+    DatePickerInput,
+    Form,
+    MonthPickerInput,
+    NumberInput,
+    SelectInput,
+    TextInput,
+    TextareaInput,
+  } from "@privaty/ui-forms";
+
   import { createItem, getItems } from "./data.remote";
   import { categories, createItemSchema } from "./schema";
 </script>

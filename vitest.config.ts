@@ -86,13 +86,13 @@ export default defineConfig({
             "packages/ui/src/lib/overlays/**/*.svelte.{test,spec}.{js,ts}",
             // Cross-browser scroll math burned us twice — the sandbox
             // replica runs in Firefox too.
-            "packages/ui-tables/src/lib/table-sandbox-replica.svelte.test.ts",
+            "packages/ui-tables/src/lib/table/table-sandbox-replica.svelte.test.ts",
             // The pickers exist BECAUSE of Firefox's missing month/week
             // inputs — their specs run there natively.
-            "packages/ui/src/lib/calendar/**/*.svelte.{test,spec}.{js,ts}",
+            "packages/ui/src/lib/inputs/calendar/**/*.svelte.{test,spec}.{js,ts}",
             // The forms wrappers carry Firefox-specific behavior too (the
             // native date affordance wins there) — guarded in-browser.
-            "packages/ui-forms/src/lib/inputs/*-picker-input.svelte.test.ts",
+            "packages/ui-forms/src/lib/inputs/**/*-picker-input.svelte.test.ts",
           ],
         },
       },

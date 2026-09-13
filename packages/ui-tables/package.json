@@ -30,14 +30,7 @@
       "svelte": "./src/lib/index.js",
       "default": "./src/lib/index.js"
     },
-    "./*.svelte": {
-      "svelte": "./src/lib/*.svelte",
-      "default": "./src/lib/*.svelte"
-    },
-    "./*": {
-      "svelte": "./src/lib/*",
-      "default": "./src/lib/*"
-    }
+    "./testing": "./src/lib/testing/index.js"
   },
   "publishConfig": {
     "access": "public",
@@ -49,14 +42,9 @@
         "svelte": "./dist/index.js",
         "default": "./dist/index.js"
       },
-      "./*.svelte": {
-        "types": "./dist/*.svelte.d.ts",
-        "svelte": "./dist/*.svelte",
-        "default": "./dist/*.svelte"
-      },
-      "./*": {
-        "svelte": "./dist/*",
-        "default": "./dist/*"
+      "./testing": {
+        "types": "./dist/testing/index.d.ts",
+        "default": "./dist/testing/index.js"
       }
     }
   },

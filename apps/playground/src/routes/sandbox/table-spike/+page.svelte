@@ -1,11 +1,14 @@
 <script lang="ts">
-  import Button from "@privaty/ui/components/button.svelte";
-  import FormError from "@privaty/ui-forms/components/form-error.svelte";
-  import Reset from "@privaty/ui-forms/components/reset.svelte";
-  import Submit from "@privaty/ui-forms/components/submit.svelte";
-  import Form from "@privaty/ui-forms/form.svelte";
-  import NumberInput from "@privaty/ui-forms/inputs/number-input.svelte";
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
+  import { Button } from "@privaty/ui";
+  import {
+    FormError,
+    Reset,
+    Submit,
+    Form,
+    NumberInput,
+    TextInput,
+  } from "@privaty/ui-forms";
+
   import { createRow, getRows, updateRow } from "./data.remote";
   import { createRowSchema, updateRowSchema } from "./schema";
 

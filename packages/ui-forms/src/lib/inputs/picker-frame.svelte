@@ -14,13 +14,16 @@ special programmatic branch.
 <script lang="ts">
   import { tick, type Snippet } from "svelte";
   import { CalendarIcon } from "@lucide/svelte";
-  import { cn } from "@privaty/ui/cn.js";
-  import FieldFrame from "@privaty/ui/components/field-frame.svelte";
-  import type { LabelStyle } from "@privaty/ui/components/types.js";
-  import { getUiConfig } from "@privaty/ui/config/context.js";
-  import { getUiDensity } from "@privaty/ui/config/density.js";
-  import Popover from "@privaty/ui/overlays/popover.svelte";
-  import { coreTheme } from "@privaty/ui/theme.js";
+  import {
+    cn,
+    FieldFrame,
+    type LabelStyle,
+    getUiConfig,
+    getUiDensity,
+    Popover,
+    coreTheme,
+  } from "@privaty/ui";
+
   import type { DateField, DateFieldType } from "../types/field";
   import { wireField } from "./wire-field";
 

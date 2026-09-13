@@ -3,10 +3,9 @@
   // array field, so a whole calendar row saves in a single editor pass —
   // no nested months table needed. A summary row computes the monthly
   // surplus/deficit against a fixed capacity (the FTE shape).
-  import NumberInput from "@privaty/ui-forms/inputs/number-input.svelte";
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
-  import Column from "@privaty/ui-tables/column.svelte";
-  import Table from "@privaty/ui-tables/table.svelte";
+  import { NumberInput, TextInput } from "@privaty/ui-forms";
+  import { Column, Table } from "@privaty/ui-tables";
+
   import {
     createAllocation,
     getAllocations,

@@ -1,0 +1,51 @@
+<script lang="ts">
+  // Test-only host — see date-picker-input.fixture.svelte.
+  import { setUiConfig, type PartialUiConfig } from "@privaty/ui";
+
+  import type { ComponentProps } from "svelte";
+  import { setFormContext } from "../../form/context";
+  import { FormState } from "../../form/form-state.svelte";
+  import type { ValidatableForm } from "../../types/form";
+  import WeekPickerInput from "./week-picker-input.svelte";
+
+  interface Props extends ComponentProps<typeof WeekPickerInput> {
+    form: ValidatableForm;
+    uiConfig?: PartialUiConfig;
+    settled?: boolean;
+    /** Mirrors Kit's form-level input listener — pass the fake's `edit`. */
+    syncField?: (value: string) => void;
+  }
+
+  const {
+    form,
+    uiConfig,
+    settled = true,
+    syncField,
+    ...inputProps
+  }: Props = $props();
+
+  // All fixture props are stable for the component's lifetime.
+  // svelte-ignore state_referenced_locally
+  if (uiConfig) setUiConfig(uiConfig);
+
+  // svelte-ignore state_referenced_locally
+  export const state = new FormState(form);
+  // svelte-ignore state_referenced_locally
+  setFormContext({ form, state });
+
+  // svelte-ignore state_referenced_locally
+  state.settled = settled;
+
+  function oninput(event: Event) {
+    // Like Kit's real form-level listener, sync only NAMED controls — the
+    // picker's unnamed header dropdowns must not write into the field.
+    const target = event.target;
+    if (target instanceof HTMLInputElement && target.name) {
+      syncField?.(target.value);
+    }
+  }
+</script>
+
+<div {oninput}>
+  <WeekPickerInput {...inputProps} />
+</div>

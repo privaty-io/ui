@@ -1,4 +1,4 @@
-import { cn } from "@privaty/ui/cn.js";
+import { cn } from "@privaty/ui";
 
 /**
  * The table's visual skin — every color, padding, radius, and scrollbar

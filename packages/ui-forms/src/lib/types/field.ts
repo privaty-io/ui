@@ -1,4 +1,4 @@
-import type { InputType } from "@privaty/ui/components/types.js";
+import type { InputType } from "@privaty/ui";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type {
   HTMLInputAttributes,

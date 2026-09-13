@@ -1,7 +1,7 @@
 /**
- * Root barrel for `@privaty/ui`. Every export here is also reachable via
- * its deep subpath (e.g. `@privaty/ui/components/button.svelte`) — pick
- * whichever import style reads better; bundlers tree-shake both.
+ * Root barrel for `@privaty/ui` — the package's ONLY public module (plus
+ * the explicit testing subpath). Folder layout below is internal and free
+ * to change; bundlers tree-shake the barrel.
  */
 
 // Calendar engine
@@ -16,35 +16,31 @@ export {
   monthNames,
   parseIsoDate,
   weekdayNames,
-} from "./calendar/calendar";
+} from "./inputs/calendar/calendar";
 export type {
   CalendarDay,
   CalendarMonth,
   CalendarMonthOptions,
   CalendarWeek,
-} from "./calendar/calendar";
-export { default as DatePicker } from "./calendar/date-picker.svelte";
-export { default as MonthPicker } from "./calendar/month-picker.svelte";
-export { default as WeekPicker } from "./calendar/week-picker.svelte";
+} from "./inputs/calendar/calendar";
+export { default as DatePicker } from "./inputs/calendar/date-picker/date-picker.svelte";
+export { default as MonthPicker } from "./inputs/calendar/month-picker/month-picker.svelte";
+export { default as WeekPicker } from "./inputs/calendar/week-picker/week-picker.svelte";
 
-// Components
-export { default as Button } from "./components/button.svelte";
-export { default as Checkbox } from "./components/checkbox.svelte";
-export { default as FieldFrame } from "./components/field-frame.svelte";
-export { default as Input } from "./components/input.svelte";
-export { default as Select } from "./components/select.svelte";
-export { toSelectOptions } from "./components/select-options";
-export { default as Spinner } from "./components/spinner.svelte";
-export { default as Textarea } from "./components/textarea.svelte";
-export type {
-  ButtonVariant,
-  InputType,
-  LabelStyle,
-  SelectOption,
-} from "./components/types";
+// Controls & display
+export { default as Button } from "./controls/button/button.svelte";
+export { default as Checkbox } from "./inputs/checkbox/checkbox.svelte";
+export { default as FieldFrame } from "./inputs/field-frame.svelte";
+export { default as Input } from "./inputs/input/input.svelte";
+export { default as Select } from "./inputs/select/select.svelte";
+export { toSelectOptions } from "./inputs/select/select-options";
+export { default as Spinner } from "./feedback/spinner/spinner.svelte";
+export { default as Textarea } from "./inputs/textarea.svelte";
+export type { ButtonVariant } from "./controls/button/types";
+export type { InputType, LabelStyle, SelectOption } from "./inputs/types";
 
 // Overlays
-export { anchorTo, computeAnchorPosition } from "./overlays/position";
+export { anchorTo, computeAnchorPosition } from "./overlays/position/position";
 export type {
   Alignment,
   AnchorPosition,
@@ -55,13 +51,13 @@ export type {
   ComputeAnchorPositionInput,
   Placement,
   Side,
-} from "./overlays/position";
-export { default as Modal } from "./overlays/modal.svelte";
-export { default as Popover } from "./overlays/popover.svelte";
-export { default as Tooltip } from "./overlays/tooltip.svelte";
+} from "./overlays/position/position";
+export { default as Modal } from "./overlays/modal/modal.svelte";
+export { default as Popover } from "./overlays/popover/popover.svelte";
+export { default as Tooltip } from "./overlays/tooltip/tooltip.svelte";
 
 // Configuration, theming, utilities
-export { cn } from "./cn";
+export { cn } from "./cn/cn";
 export {
   defaultUiConfig,
   getUiConfig,

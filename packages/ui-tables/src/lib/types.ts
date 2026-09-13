@@ -4,7 +4,7 @@ import type {
   NumberField,
   SelectField,
   TextField,
-} from "@privaty/ui-forms/types/field.js";
+} from "@privaty/ui-forms";
 import type { Snippet } from "svelte";
 import type { HTMLInputAttributes } from "svelte/elements";
 

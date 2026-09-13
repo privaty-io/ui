@@ -11,9 +11,9 @@ pnpm add @privaty/ui
 > Pre-1.0 until SvelteKit 3 is stable — all `@privaty/*` packages version in
 > lockstep, so install matching versions.
 
-Every export is also available from the package root — `import { Button,
-Tooltip, cn } from "@privaty/ui"` — alongside the deep subpaths shown
-throughout this README; both tree-shake.
+Everything imports from the package root — `import { Button, Tooltip,
+cn } from "@privaty/ui"` — which tree-shakes; there are no deep subpaths
+(as of 0.6.0).
 
 ## Requirements
 
@@ -36,7 +36,7 @@ throughout this README; both tree-shake.
 
 The controls are **self-sufficient**: they carry their own border widths,
 `appearance` resets, and the select chevron. No `@tailwindcss/forms` (or any
-other plugin) is required — or expected. `components/control-chrome.svelte.test.ts`
+other plugin) is required — or expected. `inputs/control-chrome.svelte.test.ts`
 guards this.
 
 ## Configuration
@@ -95,7 +95,7 @@ replacements for the native inputs Firefox never got (`type="month"`,
 
 ## Calendar engine
 
-`calendar/calendar.js` is the headless layer the pickers
+`inputs/calendar/calendar.js` is the headless layer the pickers
 build on — pure math + Intl, no DOM, no state, values in the same ISO
 strings the native inputs submit.
 
@@ -139,12 +139,12 @@ positioning primitive the anchored ones share.
 
 ### Positioning
 
-`overlays/position.js` exports the anchored-positioning primitive the
+The `anchorTo` attachment is the anchored-positioning primitive the
 overlays are built on — public, so consumer content can use it too:
 
 ```svelte
 <script>
-  import { anchorTo } from "@privaty/ui/overlays/position.js";
+  import { anchorTo } from "@privaty/ui";
   let anchor = $state();
 </script>
 

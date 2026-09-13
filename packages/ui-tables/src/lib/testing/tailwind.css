@@ -1,0 +1,5 @@
+/* Loads Tailwind into browser-mode specs that assert real geometry —
+   component classes are inert without it. Same one-liner as the other
+   packages' testing stylesheets: v4 auto-detects sources from the repo
+   root, so this needs no @source directives. */
+@import "tailwindcss";

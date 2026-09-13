@@ -14,18 +14,16 @@ pnpm add @privaty/ui @privaty/ui-forms
 > `experimental.remoteFunctions` + `compilerOptions.experimental.async`, and
 > Tailwind v4 (`@source` the package, see the core README).
 
-Every export is also available from the package root — `import { Form,
-TextInput, Submit } from "@privaty/ui-forms"` — alongside the deep
-subpaths shown below; both tree-shake.
+Everything imports from the package root — `import { Form, TextInput,
+Submit } from "@privaty/ui-forms"` — which tree-shakes; there are no deep
+subpaths (as of 0.6.0). The testing fakes live behind their own barrel,
+`@privaty/ui-forms/testing`.
 
 ## Quickstart
 
 ```svelte
 <script>
-  import Form from "@privaty/ui-forms/form.svelte";
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
-  import Submit from "@privaty/ui-forms/components/submit.svelte";
-  import FormError from "@privaty/ui-forms/components/form-error.svelte";
+  import { Form, FormError, Submit, TextInput } from "@privaty/ui-forms";
   import { createItem } from "./data.remote";
   import { createItemSchema } from "./schema";
 </script>
@@ -184,7 +182,7 @@ form.fields.as(...)"_.
 
 ## Testing
 
-`testing/fakes.svelte.ts` ships Kit-faithful fakes: `fakeRemoteForm`
+`@privaty/ui-forms/testing` ships Kit-faithful fakes: `fakeRemoteForm`
 preflight-gates its enhance callback like Kit does, and the field fakes'
 `edit()` stores raw DOM values (`"5"`, `"on"`) while `set()` stores typed
 ones — mirroring Kit's mid-edit behavior so dirty-tracking tests mean

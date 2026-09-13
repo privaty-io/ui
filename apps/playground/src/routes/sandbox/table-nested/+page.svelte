@@ -1,9 +1,9 @@
 <script lang="ts">
   // Nested-table repro bench: expanded rows host a second, editable table
   // of records connected to the parent row — real remote forms throughout.
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
-  import Column from "@privaty/ui-tables/column.svelte";
-  import Table from "@privaty/ui-tables/table.svelte";
+  import { TextInput } from "@privaty/ui-forms";
+  import { Column, Table } from "@privaty/ui-tables";
+
   import {
     createChild,
     getParents,

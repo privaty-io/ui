@@ -1,4 +1,4 @@
-import { fakeRemoteForm } from "@privaty/ui-forms/testing/fakes.svelte.js";
+import { fakeRemoteForm } from "@privaty/ui-forms/testing";
 import { SvelteMap } from "svelte/reactivity";
 
 /**

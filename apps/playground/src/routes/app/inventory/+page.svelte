@@ -5,14 +5,15 @@
   // and nested batch tables in expanded rows linked via hiddenFields.
   import { toSelectOptions } from "@privaty/ui";
   import { Modal } from "@privaty/ui";
-  import Button from "@privaty/ui/components/button.svelte";
-  import DatePickerInput from "@privaty/ui-forms/inputs/date-picker-input.svelte";
-  import NumberInput from "@privaty/ui-forms/inputs/number-input.svelte";
-  import SelectInput from "@privaty/ui-forms/inputs/select-input.svelte";
-  import TextInput from "@privaty/ui-forms/inputs/text-input.svelte";
-  import Column from "@privaty/ui-tables/column.svelte";
-  import { TableController } from "@privaty/ui-tables/table-controller.svelte.js";
-  import Table from "@privaty/ui-tables/table.svelte";
+  import { Button } from "@privaty/ui";
+  import {
+    DatePickerInput,
+    NumberInput,
+    SelectInput,
+    TextInput,
+  } from "@privaty/ui-forms";
+  import { Column, TableController, Table } from "@privaty/ui-tables";
+
   import {
     createBatch,
     createProduct,
