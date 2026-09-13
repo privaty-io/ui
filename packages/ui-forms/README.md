@@ -125,6 +125,45 @@ availableFrom: v.pipe(
 ),
 ```
 
+## One form object, one `<form>` element
+
+Kit enforces it at attach time: _"A form object can only be attached to a
+single `<form>` element. To create multiple instances, use
+`name.for(key)`."_ The singleton returned by `form(schema, handler)` can
+back exactly one mounted `<Form>` — a second mount anywhere on the page
+throws.
+
+The trap is REPEATED content: a create-form modal inside a table's
+`expanded` snippet renders once per expanded row, and a closed `<dialog>`
+still MOUNTS its children — so expanding a second row crashes before any
+modal is opened. Key the instance per repetition instead:
+
+```svelte
+{#snippet expandedContent({ row })}
+  {@const bulkForm = bulkCreateMonths.for(row.id)}
+  <Modal title="Bulk create">
+    <Form form={bulkForm} schema={bulkCreateSchema}>
+      <!-- The key is client-side instance identity only — it is NOT
+           submitted. Parent linkage still rides along explicitly. -->
+      <HiddenInput field={bulkForm.fields.allocationId} value={row.id} />
+      ...
+    </Form>
+  </Modal>
+{/snippet}
+```
+
+`<Form>` accepts a `.for()` instance as-is (the tables' per-row edit
+forms are exactly this), and each key gets independent draft and issue
+state — two open modals never share a half-typed value.
+
+**Every input's `field` must come off the SAME keyed instance** — hold
+it in one `{@const}` and read `fields` from it, never from the
+singleton. Each instance suffixes its field names with its own id, so
+singleton fields inside a keyed `<Form>` are invisible to it: edits
+sync nowhere, dirty never trips, Submit/Reset stay disabled, and a
+forced submit throws _"Form contained a field that wasn't created with
+form.fields.as(...)"_.
+
 ## Rules learned the hard way
 
 - **Never disable controls while submitting** — disabled controls are
