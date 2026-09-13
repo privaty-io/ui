@@ -9,19 +9,19 @@ allowBuilds:
 
 # Single source of truth for versions shared across workspace manifests.
 catalog:
-  "@lucide/svelte": ^1.39.0
-  "@playwright/test": ^1.62.1
+  "@lucide/svelte": ^1.45.0
+  "@playwright/test": ^1.63.0
   "@standard-schema/spec": ^1.1.0
   "@sveltejs/kit": 3.0.0-next.25
   "@sveltejs/package": ^2.5.8
   "@sveltejs/vite-plugin-svelte": ^7.3.0
   "@tailwindcss/vite": ^4.3.3
   clsx: ^2.1.1
-  eslint: ^10.9.1
+  eslint: ^10.10.0
   publint: ^0.3.24
   svelte: ^5.57.0
   svelte-check: ^4.7.6
   tailwind-merge: ^3.6.0
   tailwindcss: ^4.3.3
   typescript: ^6.0.3
-  vite: ^8.2.2
+  vite: ^8.3.0
