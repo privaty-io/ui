@@ -246,6 +246,12 @@ therefore closes any descendant table's editor, and opening a descendant
 editor while an ancestor is editing is refused with a console warning —
 save or cancel the outer editor first.
 
+That rule covers the tables' OWN editors. A custom `<Form>` you render
+inside the `expanded` snippet (a bulk-create modal, say) repeats per
+expanded row, and a form object attaches to only one `<form>` element —
+key it per row (`bulkCreate.for(row.id)`); see "One form object, one
+`<form>` element" in the `@privaty/ui-forms` README.
+
 ## Layout features
 
 The table sizes to its container: give the surrounding element a height
