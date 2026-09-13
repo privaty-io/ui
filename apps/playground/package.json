@@ -24,7 +24,7 @@
   "devDependencies": {
     "@config/eslint": "workspace:*",
     "@playwright/test": "catalog:",
-    "@sveltejs/adapter-node": "next",
+    "@sveltejs/adapter-node": "6.0.0-next.10",
     "@sveltejs/kit": "catalog:",
     "@sveltejs/vite-plugin-svelte": "catalog:",
     "@tailwindcss/vite": "catalog:",
