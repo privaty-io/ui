@@ -205,6 +205,36 @@ describe("summary row", () => {
     expect(dataRow.getBoundingClientRect().height).toBeLessThan(60);
   });
 
+  test("a parked footer never manufactures scroll", async () => {
+    // The spacer is MEASURED px, never a percentage: an h-full table
+    // row resolves against a height that includes itself, overflowing
+    // the container by the natural content height — the phantom-scroll
+    // signature (hit on the grouped and deliveries pages).
+    const screen = await render(Fixture, {
+      rows: [
+        { id: "r1", name: "Comté", price: 89 },
+        { id: "r2", name: "Rioja", price: 129 },
+      ],
+      withSummary: true,
+      containerClass: "h-96",
+    });
+
+    const wrapper = screen.container.querySelector("div") as HTMLElement;
+    // Give the measurement pipeline its frames, then require NO
+    // vertical overflow (1px of rounding tolerated)…
+    await expect
+      .poll(() => wrapper.scrollHeight - wrapper.clientHeight)
+      .toBeLessThan(2);
+    // …while the footer is still parked at the bottom edge.
+    const cell = screen.container.querySelector("tfoot td") as HTMLElement;
+    expect(
+      Math.abs(
+        cell.getBoundingClientRect().bottom -
+          (wrapper.getBoundingClientRect().bottom - wrapper.clientTop),
+      ),
+    ).toBeLessThan(2);
+  });
+
   test("the footer row never adds a phantom column", async () => {
     // An unconditional footer actions cell once gave the footer one MORE
     // cell than the header — the browser resolves that as an extra empty

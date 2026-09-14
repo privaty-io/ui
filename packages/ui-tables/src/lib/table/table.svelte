@@ -33,7 +33,7 @@ surrounding container a height.
     XIcon,
   } from "@lucide/svelte";
   import type { StandardSchemaV1 } from "@standard-schema/spec";
-  import { onDestroy, onMount, type Snippet } from "svelte";
+  import { onDestroy, onMount, untrack, type Snippet } from "svelte";
   import { SvelteMap, SvelteSet } from "svelte/reactivity";
   import {
     getTableTree,
@@ -495,6 +495,17 @@ surrounding container a height.
   let scrollportHeight = $state<number>();
   let tableWidth = $state<number>();
 
+  // The summary spacer's height is COMPUTED px, never a percentage: a
+  // 100%-of-table row resolves against a height that includes itself,
+  // making the table overflow its box by exactly the natural content
+  // height — the phantom-scroll signature (the 2026-08-27 fill rework
+  // removed the same bug from the filler row). Updated in measure();
+  // the natural height is derived by subtracting the height WE styled,
+  // not a measured row — ResizeObserver-backed dimension bindings do
+  // not fire for table rows, and a stale feedback term made the target
+  // oscillate between zero and the full leftover.
+  let summarySpacerTarget = $state(0);
+
   // Editor swaps remount the whole markup (the Form wrapper is keyed) —
   // the scroll position is carried across remounts so opening or closing an
   // editor doesn't snap the table back to 0,0.
@@ -580,11 +591,24 @@ surrounding container a height.
     // an explicit request wins over the declarative default.
     controller.flushScroll();
 
-    const measure = () => {
-      scrollportWidth = wrapper.clientWidth;
-      scrollportHeight = wrapper.clientHeight;
-      tableWidth = table?.offsetWidth;
-    };
+    // untrack: this runs SYNCHRONOUSLY inside the attachment, so any
+    // reactive READ here would become an attachment dependency — the
+    // first spacer write would then re-run the whole attachment, which
+    // restores scrollLeft and killed the mount glide (deliveries e2e
+    // caught it).
+    const measure = () =>
+      untrack(() => {
+        scrollportWidth = wrapper.clientWidth;
+        scrollportHeight = wrapper.clientHeight;
+        tableWidth = table?.offsetWidth;
+        if (hasSummary && table) {
+          // Fixed point: once the styled height applies, offsetHeight −
+          // target IS the natural content height, and the target stops
+          // moving. Equal reassignments don't re-trigger the observer.
+          const natural = table.offsetHeight - summarySpacerTarget;
+          summarySpacerTarget = Math.max(0, wrapper.clientHeight - natural);
+        }
+      });
 
     const observer = new ResizeObserver(measure);
     observer.observe(wrapper);
@@ -1175,6 +1199,7 @@ surrounding container a height.
       type="button"
       class={cn(
         "inline-flex cursor-pointer items-center justify-center align-middle",
+        tableTheme.expander,
         expanderButtonClasses,
       )}
       aria-expanded={expandedRows.has(rowKey(row))}
@@ -1294,11 +1319,11 @@ surrounding container a height.
       inert={veiled}
       class={cn(
         "min-w-full shrink-0 border-separate border-spacing-0 text-left",
-        // With a summary the TABLE fills the leftover container height
-        // (instead of the filler div below) and the spacer row absorbs
-        // the extra — that is what parks the tfoot at the bottom edge
-        // when the rows don't fill the container.
-        hasSummary && "grow",
+        // With a summary the MEASURED spacer row (not flex stretch)
+        // brings the table to exactly the scrollport height, parking
+        // the tfoot at the bottom edge when rows don't fill the
+        // container. No `grow` here on purpose: stretch distributes
+        // extra height across the DATA rows before the spacer exists.
         compact ? tableTheme.type.compact : tableTheme.type.comfortable,
         tableClass,
       )}
@@ -1405,7 +1430,10 @@ surrounding container a height.
               {#if column.sortable}
                 <button
                   type="button"
-                  class="flex w-full cursor-pointer items-center gap-1 overflow-hidden"
+                  class={cn(
+                    "flex w-full items-center gap-1 overflow-hidden",
+                    tableTheme.headerButton,
+                  )}
                   onclick={() => cycleSort(column.key)}
                 >
                   <span class="truncate">{column.label}</span>
@@ -1508,7 +1536,7 @@ surrounding container a height.
               </td>
             </tr>
           {:else}
-            <tr class={cn(defaultRowClasses, rowClass)}>
+            <tr class={cn(defaultRowClasses, tableTheme.rowHover, rowClass)}>
               {#if expanded}
                 {@render expanderCell(row)}
               {/if}
@@ -1576,17 +1604,19 @@ surrounding container a height.
           {@render expandedContent(row)}
         {/each}
         {#if hasSummary}
-          <!-- Absorbs the stretched table's extra height (rows with a
-               percentage height take it before auto rows), so data rows
-               keep their natural heights and the tfoot rests at the
-               container's bottom edge. Hosts the empty state, which
-               otherwise lives in the (now zero-height) filler div. -->
-          <tr aria-hidden={showEmpty ? undefined : "true"} class="h-full">
+          <!-- Absorbs the leftover container height at a MEASURED px
+               size (see summarySpacerTarget — percentage row heights
+               are the phantom-scroll bug), so data rows keep their
+               natural heights and the tfoot rests at the container's
+               bottom edge. Hosts the empty state, which otherwise
+               lives in the (here zero-height) filler div. -->
+          <tr aria-hidden={showEmpty ? undefined : "true"}>
             <td
               colspan={orderedColumns.length +
                 (expanded ? 1 : 0) +
                 (hasActionsColumn ? 1 : 0)}
               class="p-0"
+              style={`height: ${summarySpacerTarget}px`}
             >
               {#if showEmpty}
                 <div

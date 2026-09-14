@@ -14,9 +14,12 @@ import { cn } from "@privaty/ui";
  */
 const tableTheme = {
   /** Root scroll wrapper: the outer frame, rounding, and the background
-   * that paints the fill region below sparse rows. */
+   * that paints the fill region below sparse rows. The tiling language:
+   * a control-scale hairline frame whose surface MATCHES the tile it
+   * sits in (stone-50 / dark stone-900), so the table reads as part of
+   * the pane, not a slab on it. */
   frame:
-    "rounded border border-stone-300 bg-stone-50 dark:border-stone-700 dark:bg-stone-950",
+    "rounded-md border border-stone-300/80 bg-stone-50 dark:border-stone-700 dark:bg-stone-900",
 
   /** Type scale on the <table> per density. */
   type: { comfortable: "", compact: "text-sm" },
@@ -29,15 +32,24 @@ const tableTheme = {
   editorCellMinWidth: "min-w-32",
 
   /** Grid line color; the lines themselves (bottom borders + pinned
-   * boundaries) are drawn by the mechanics. */
-  border: "border-stone-300 dark:border-stone-700",
+   * boundaries) are drawn by the mechanics. Matches the FRAME border —
+   * one step past the row-hover wash, so grid lines stay visible on a
+   * warmed row (stone-800 lines on a stone-800 hover vanished). */
+  border: "border-stone-300/80 dark:border-stone-700",
 
-  /** Sticky header background — opaque, per the rules above. */
-  headerBackground: "bg-stone-100 dark:bg-stone-900",
+  /** Sticky header background — opaque, per the rules above; one step
+   * off the row surface. */
+  headerBackground: "bg-stone-100 dark:bg-stone-800",
   /** Display-row background — pinned cells inherit it as their mask. */
-  rowBackground: "bg-stone-50 dark:bg-stone-950",
+  rowBackground: "bg-stone-50 dark:bg-stone-900",
+  /** Display rows warm one step under the pointer — the tile hover
+   * language at row scale. OPAQUE on purpose (pinned cells inherit it
+   * as their mask); applied to display rows only, never filler or
+   * expanded content. */
+  rowHover:
+    "transition-colors duration-150 hover:bg-stone-100 dark:hover:bg-stone-800",
   /** Background for the create/edit editor rows. */
-  editorRowBackground: "bg-stone-100 dark:bg-stone-900",
+  editorRowBackground: "bg-stone-100 dark:bg-stone-800",
 
   /** Empty-state message color. */
   emptyText: "text-stone-500",
@@ -50,10 +62,17 @@ const tableTheme = {
   loadingOverlay: cn(
     "flex items-center justify-center",
     "bg-stone-50/40 backdrop-blur-[2px]",
-    "dark:bg-stone-950/40",
+    "dark:bg-stone-900/40",
   ),
   /** The spinner centered in the loading veil. */
   loadingSpinner: "size-6",
+
+  /** Sortable header buttons: the header text itself is the control —
+   * it sharpens a step under the pointer instead of growing chrome. */
+  headerButton: cn(
+    "cursor-pointer transition-colors duration-150",
+    "hover:text-stone-950 dark:hover:text-stone-50",
+  ),
 
   /** Icon sizing for every action/expander icon. */
   icon: "size-4",
@@ -61,6 +80,13 @@ const tableTheme = {
   iconButton: { comfortable: "p-1.5", compact: "p-1" },
   /** Padding for the row-expander toggle per density. */
   expanderButton: { comfortable: "p-2", compact: "p-1" },
+  /** The expander toggle's chrome: a ghost wash one step past the row
+   * hover, so it stays visible inside an already-warmed row. */
+  expander: cn(
+    "rounded-md transition-colors duration-150",
+    "hover:bg-stone-200/70 active:bg-stone-300/60",
+    "dark:hover:bg-stone-700/60 dark:active:bg-stone-700",
+  ),
 
   /** Custom scrollbars (classic-scrollbar environments only). Tracks and
    * corner carry no background COLOR on purpose — transparent tracks
@@ -71,7 +97,7 @@ const tableTheme = {
     "[scrollbar-color:auto]!",
     "[&::-webkit-scrollbar]:size-2.5",
     "[&::-webkit-scrollbar-corner]:bg-transparent",
-    "[&::-webkit-scrollbar-track]:border-stone-300 dark:[&::-webkit-scrollbar-track]:border-stone-700",
+    "[&::-webkit-scrollbar-track]:border-stone-300/80 dark:[&::-webkit-scrollbar-track]:border-stone-700",
     "[&::-webkit-scrollbar-track:vertical]:border-l",
     "[&::-webkit-scrollbar-track:horizontal]:border-t",
     "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-padding",
