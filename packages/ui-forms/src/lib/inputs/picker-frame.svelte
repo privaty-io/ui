@@ -100,9 +100,10 @@ special programmatic branch.
     name,
     initialValue,
     required,
-    issues: () => field.issues(),
-    getValue: () => field.value(),
-    setValue: (value) => field.set(value as string),
+    issues: () => field?.issues(),
+    wasEdited: () => field?.dirty?.() ?? false,
+    getValue: () => field?.value(),
+    setValue: (value) => field?.set(value as string),
     normalize: (value) => (value == null ? "" : String(value)),
   });
 
@@ -111,7 +112,7 @@ special programmatic branch.
 
   // What the picker highlights: the field's live value (Kit tracks
   // undefined until the first edit — the seed stands in).
-  const currentValue = $derived(String(field.value() ?? initialValue));
+  const currentValue = $derived(String(field?.value() ?? initialValue));
 
   const uid = $props.id();
   const locked = $derived(disabled || readonly || wired.state.isSubmitting);

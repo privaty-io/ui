@@ -110,9 +110,10 @@ submit/reset — and a cleared input counts as unset.
     name,
     initialValue,
     required,
-    issues: () => field.issues(),
-    getValue: () => field.value(),
-    setValue: (value) => field.set(value as number),
+    issues: () => field?.issues(),
+    wasEdited: () => field?.dirty?.() ?? false,
+    getValue: () => field?.value(),
+    setValue: (value) => field?.set(value as number),
     // Kit stores the raw DOM string mid-edit; "" (cleared) means unset.
     normalize: (value) =>
       value === "" || value == null ? undefined : Number(value),

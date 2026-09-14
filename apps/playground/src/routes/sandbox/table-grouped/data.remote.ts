@@ -26,8 +26,16 @@ const getAllocations = query(async () => allocations);
 // The submitted entries fold into the Record the rows store. In the
 // HANDLER, not a schema transform: an output-changing transform on the
 // grouped field defeats the Table's generic inference from the schema.
-const foldMonths = (entries: { month: string; hours: number }[]) =>
-  Object.fromEntries(entries.map((entry) => [entry.month, entry.hours]));
+// An entry without hours is a CLEARED cell — delete semantics: the month
+// is dropped from the stored record instead of written as 0.
+const foldMonths = (
+  entries: { month: string; hours?: number }[],
+): Record<string, number> =>
+  Object.fromEntries(
+    entries.flatMap((entry) =>
+      entry.hours === undefined ? [] : [[entry.month, entry.hours] as const],
+    ),
+  );
 
 const createAllocation = form(createAllocationSchema, async (data) => {
   allocations.push({

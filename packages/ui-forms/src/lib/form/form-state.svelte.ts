@@ -1,3 +1,4 @@
+import { untrack } from "svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { FieldRegistration } from "../types/field";
 import type { ValidatableForm } from "../types/form";
@@ -62,12 +63,17 @@ class FormState {
     for (const field of this.fields.values()) {
       // Both sides pass through the field's normalizer: Kit stores raw DOM
       // strings mid-edit while registrations hold typed seeds, so "5" vs 5
-      // and "on" vs true must compare equal. Only undefined means
-      // "untouched" — null is a real value (Kit's unchecked checkbox).
+      // and "on" vs true must compare equal. An undefined current value is
+      // AMBIGUOUS: pristine fields have no entry in Kit's state, but a
+      // CLEARED number field stores undefined too (Kit coerces "" to
+      // undefined) — the edited-once flag tells the two apart, so clearing
+      // a seeded field counts as dirty instead of masquerading as pristine.
+      // null stays a real value (Kit's unchecked checkbox).
       const raw = field.getValue();
-      const value = field.normalize(
-        raw === undefined ? field.initialValue : raw,
-      );
+      const value =
+        raw === undefined && !field.wasEdited()
+          ? field.normalize(field.initialValue)
+          : field.normalize(raw);
       if (value !== field.normalize(field.initialValue)) return true;
     }
     return false;
@@ -109,11 +115,18 @@ class FormState {
     if (this.fields.has(field.name))
       throw new Error(`FormState: field '${field.name}' is already registered`);
 
-    this.fields.set(field.name, field);
+    // untrack: registration is BOOKKEEPING running during component init —
+    // and under async mode an <svelte:boundary> resume can execute that
+    // init inside a derived-flavored flush, where a tracked reactive write
+    // is state_unsafe_mutation (a fatal page error). Untracked writes are
+    // legal in any context and still notify the map's readers.
+    untrack(() => this.fields.set(field.name, field));
 
     return () => {
-      this.fields.delete(field.name);
-      this.touched.delete(field.name);
+      untrack(() => {
+        this.fields.delete(field.name);
+        this.touched.delete(field.name);
+      });
     };
   }
 

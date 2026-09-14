@@ -6,7 +6,10 @@ import * as v from "valibot";
 const monthEntries = v.array(
   v.object({
     month: v.pipe(v.string(), v.regex(/^\d{4}-\d{2}$/, "invalid-month")),
-    hours: v.pipe(v.number("required"), v.minValue(0, "too-small")),
+    // OPTIONAL on purpose: a cleared month submits NO hours key (Kit
+    // coerces the empty number input to undefined and drops it from the
+    // payload) — the delete-this-cell semantics.
+    hours: v.optional(v.pipe(v.number(), v.minValue(0, "too-small"))),
   }),
 );
 

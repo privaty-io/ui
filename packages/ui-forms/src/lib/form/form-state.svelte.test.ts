@@ -19,23 +19,49 @@ function fakeField(name: string, options: FakeFieldOptions = {}): FakeField {
 
   // Seeded fields mirror remote functions: value() is undefined until edited.
   let value = $state<unknown>(options.seeded ? undefined : initialValue);
+  let edited = $state(false);
 
   return {
     name,
     initialValue,
     required: options.required ?? false,
     getValue: () => value,
+    wasEdited: () => edited,
     setValue: (next) => {
       value = next;
     },
     normalize: (next) => next,
     edit: (next) => {
+      edited = true;
       value = next;
     },
   };
 }
 
 describe("isDirty", () => {
+  test("clearing a seeded field to undefined IS dirty; never-edited stays pristine", () => {
+    // Kit coerces a cleared number input's "" to undefined — the same
+    // value an untouched field reads. The edited-once flag must tell
+    // them apart, or clearing a cell (delete-this-record semantics)
+    // disables Save/Reset. Regression: the editor-group months case.
+    const state = new FormState(fakeForm().form);
+    const field = fakeField("hours", { initialValue: 120, seeded: true });
+    state.register(field);
+
+    // Seeded + never edited: value() is undefined -> falls back to the
+    // seed -> pristine.
+    expect(state.isDirty).toBe(false);
+
+    // The user clears the field: Kit stores undefined, but the field WAS
+    // edited -> dirty.
+    field.edit(undefined);
+    expect(state.isDirty).toBe(true);
+
+    // Typing the seed back returns to pristine (value comparison wins).
+    field.edit(120);
+    expect(state.isDirty).toBe(false);
+  });
+
   test("starts clean and follows value changes both ways", () => {
     const state = new FormState(fakeForm().form);
     const name = fakeField("name", { initialValue: "Ost" });

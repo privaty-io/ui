@@ -14,6 +14,7 @@ function registration(
     initialValue: "",
     required: false,
     getValue: () => "",
+    wasEdited: () => false,
     setValue: () => {},
     normalize: (value) => value,
     ...overrides,

@@ -107,9 +107,10 @@ instead of disabling — a disabled select is excluded from FormData.
     name,
     initialValue: seed,
     required,
-    issues: () => field.issues(),
-    getValue: () => field.value(),
-    setValue: (value) => field.set(value as never),
+    issues: () => field?.issues(),
+    wasEdited: () => field?.dirty?.() ?? false,
+    getValue: () => field?.value(),
+    setValue: (value) => field?.set(value as never),
     normalize: (value) => (value == null ? "" : String(value)),
   });
 

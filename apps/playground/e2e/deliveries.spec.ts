@@ -258,10 +258,12 @@ test("a user's scroll taken during load is not yanked when the rows land", async
   // "Data refresh must not yank" only means something while data can
   // still arrive: hold the schedule rows at the network layer so the
   // user takes over the scroller while the rows are genuinely in
-  // flight. (Unheld, the 120ms server delay makes that a race the test
-  // would win only sometimes — and after the schedule settles, nothing
-  // is pending that could move the scroller at all, so a park taken
-  // then asserts stillness vacuously.)
+  // flight. CLIENT-SIDE navigation on purpose — a fresh document load
+  // receives the rows via Kit's SSR hydration STREAM with no network
+  // fetch at all, so a route hold on /_app/remote/ holds nothing there
+  // and the no-rows precondition below only ever passed by racing
+  // ahead of hydration (CI's slower CPUs lost that race). An SPA nav
+  // runs the query over the network, which the hold genuinely holds.
   let releaseRows = () => {};
   const rowsHeld = new Promise<void>((resolve) => (releaseRows = resolve));
   await page.route("**/_app/remote/**", async (route) => {
@@ -269,21 +271,35 @@ test("a user's scroll taken during load is not yanked when the rows land", async
     await route.continue();
   });
 
-  await page.goto("/app/deliveries");
+  await page.goto("/app");
+  await settle(page);
+  await page
+    .getByRole("navigation")
+    .getByRole("link", { name: "Deliveries" })
+    .click();
   const wrapper = scroller(page);
 
-  // The initial anchor glide starts against the header-only layout —
-  // once the scroller has moved, the table's mount attachment has run
-  // and its user-ownership listeners are attached. Frame-granularity
-  // polling so the takeover lands within a frame or two of the glide
-  // starting, while the component's own re-anchor triggers (double-rAF,
-  // fonts.ready) are still in flight.
+  // Let the initial anchor glide RUN OUT against the header-only layout
+  // (parking mid-glide is hopeless: the browser keeps animating the
+  // component's smooth scrollTo and fights any programmatic park). The
+  // rows are still held, so the event that could yank — data landing,
+  // widening the table, firing the veil-lift re-anchor — is still
+  // entirely in the future when the user parks below.
   await expect
-    .poll(() => scrollLeftOf(wrapper), {
-      intervals: [16, 16, 16, 33, 66, 125, 250],
-      timeout: 10_000,
-    })
+    .poll(() => scrollLeftOf(wrapper), { timeout: 10_000 })
     .toBeGreaterThan(0);
+  let previous = -1;
+  await expect
+    .poll(
+      async () => {
+        const current = await scrollLeftOf(wrapper);
+        const stable = current === previous;
+        previous = current;
+        return stable;
+      },
+      { intervals: [250], timeout: 10_000 },
+    )
+    .toBe(true);
   // The hold is genuinely holding: no data rows yet. If the remote
   // endpoint's URL shape ever stops matching the route, this fails
   // loudly instead of the test silently degrading into an

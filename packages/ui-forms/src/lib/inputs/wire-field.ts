@@ -17,6 +17,9 @@ interface WireFieldOptions {
   issues: () => readonly StandardSchemaV1.Issue[] | undefined;
   /** Reads the field's current value — raw DOM strings can appear mid-edit. */
   getValue: () => unknown;
+  /** Whether the user has EVER edited the field (Kit's edited-once dirty
+   * flag) — see FieldRegistration.wasEdited. */
+  wasEdited: () => boolean;
   /** Writes a value back to the field — used by the form-level reset. */
   setValue: (value: unknown) => void;
   /** Maps raw field values onto the initialValue's domain before dirty
@@ -55,6 +58,7 @@ function wireField(options: WireFieldOptions): WiredField {
       initialValue: options.initialValue,
       required: options.required,
       getValue: options.getValue,
+      wasEdited: options.wasEdited,
       setValue: options.setValue,
       normalize: options.normalize,
     }),

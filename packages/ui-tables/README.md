@@ -229,7 +229,13 @@ months: v.array(v.object({ month: v.string(), hours: v.number() })),
 Each grouped column contributes one `months[i]` entry: the editor edits
 `months[i][valueName]`, and `months[i][keyName]` rides along as a hidden
 input seeded with the column's `key` — Kit's FormData conversion
-reassembles the array for the handler. Caveat: keep output-changing
+reassembles the array for the handler.
+
+**Clearing a cell = deleting its record**: declare the value subfield
+OPTIONAL (`hours: v.optional(v.number())`) — a cleared number input
+submits no key at all (Kit coerces `""` to undefined and drops it), so
+the handler sees an entry without `hours` and can delete the stored
+record instead of writing 0. Clearing counts as dirty like any edit. Caveat: keep output-changing
 transforms OFF the grouped field's schema (fold entries into your
 storage shape in the handler instead) — a transform there defeats the
 Table's generic inference. The playground's `sandbox/table-grouped`

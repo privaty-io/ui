@@ -104,9 +104,10 @@ form submits.
     name,
     initialValue,
     required,
-    issues: () => field.issues(),
-    getValue: () => field.value(),
-    setValue: (value) => field.set(value as string),
+    issues: () => field?.issues(),
+    wasEdited: () => field?.dirty?.() ?? false,
+    getValue: () => field?.value(),
+    setValue: (value) => field?.set(value as string),
     normalize: (value) => (value == null ? "" : String(value)),
   });
 </script>

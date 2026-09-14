@@ -17,6 +17,11 @@ interface FieldRegistration {
   /** The typed seed the field started from — the reference value for the
    * dirty comparison and the value reset restores. */
   initialValue: unknown;
+  /** Whether the user has EVER edited the field (Kit's edited-once
+   * `dirty()` flag). Disambiguates an undefined current value: pristine
+   * fields have no entry in Kit's state, but a CLEARED number field
+   * stores undefined too — without this, clearing reads as pristine. */
+  wasEdited: () => boolean;
   /** Whether the field is required — feeds the majority-aware
    * required/optional markers. */
   required: boolean;
@@ -65,6 +70,10 @@ interface TextField {
   ): TextFieldAttributes;
   /** Validation issues belonging to this field, if any. */
   issues(): readonly StandardSchemaV1.Issue[] | undefined;
+  /** Kit's edited-once flag — true after any user edit, never
+   * cleared by editing back. Optional in the slice (fakes may omit
+   * it); inputs read it defensively. */
+  dirty?(): boolean;
   /** The field's current value, or undefined when Kit tracks none. */
   value(): string | undefined;
   /** Writes a value into the field — reset uses it to restore the seed. */
@@ -97,6 +106,10 @@ interface DateField {
   ): DateFieldAttributes;
   /** Validation issues belonging to this field, if any. */
   issues(): readonly StandardSchemaV1.Issue[] | undefined;
+  /** Kit's edited-once flag — true after any user edit, never
+   * cleared by editing back. Optional in the slice (fakes may omit
+   * it); inputs read it defensively. */
+  dirty?(): boolean;
   /** The field's current ISO-style value, or undefined when Kit tracks none. */
   value(): string | undefined;
   /** Writes a value into the field — reset uses it to restore the seed. */
@@ -121,6 +134,10 @@ interface NumberField {
   ): NumberFieldAttributes;
   /** Validation issues belonging to this field, if any. */
   issues(): readonly StandardSchemaV1.Issue[] | undefined;
+  /** Kit's edited-once flag — true after any user edit, never
+   * cleared by editing back. Optional in the slice (fakes may omit
+   * it); inputs read it defensively. */
+  dirty?(): boolean;
   /** The field's current value, or undefined when Kit tracks none. Raw DOM
    * strings appear mid-edit — Kit only coerces at submit/reset. */
   value(): number | string | undefined;
@@ -148,6 +165,10 @@ interface SelectField {
   ): SelectFieldAttributes;
   /** Validation issues belonging to this field, if any. */
   issues(): readonly StandardSchemaV1.Issue[] | undefined;
+  /** Kit's edited-once flag — true after any user edit, never
+   * cleared by editing back. Optional in the slice (fakes may omit
+   * it); inputs read it defensively. */
+  dirty?(): boolean;
   /** The field's current value, or undefined when Kit tracks none. */
   value(): string | undefined;
   /**
@@ -181,6 +202,10 @@ interface CheckboxField {
   ): CheckboxFieldAttributes;
   /** Validation issues belonging to this field, if any. */
   issues(): readonly StandardSchemaV1.Issue[] | undefined;
+  /** Kit's edited-once flag — true after any user edit, never
+   * cleared by editing back. Optional in the slice (fakes may omit
+   * it); inputs read it defensively. */
+  dirty?(): boolean;
   /** The field's current value, or undefined when Kit tracks none. Mid-edit,
    * Kit stores the raw DOM value ("on") or null for unchecked — coercion to
    * boolean only happens at submit/reset. */

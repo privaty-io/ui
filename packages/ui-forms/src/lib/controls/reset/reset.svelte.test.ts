@@ -13,6 +13,7 @@ function editableRegistration(name: string) {
     initialValue: "",
     required: false,
     getValue: () => value,
+    wasEdited: () => value !== "",
     setValue: (next) => {
       value = next as string;
     },

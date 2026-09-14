@@ -77,11 +77,13 @@ function fakeTextField(
   options: { issues?: readonly { message: string }[] } = {},
 ) {
   let value = $state<string | undefined>(undefined);
+  let edited = $state(false);
   let issues = $state<readonly { message: string }[] | undefined>(
     options.issues,
   );
 
   const field: TextField = {
+    dirty: () => edited,
     as: (type: TextFieldType, initialValue?: string) => ({
       name,
       type,
@@ -100,6 +102,7 @@ function fakeTextField(
     /** Simulates USER typing (string fields store the same value `set()`
      * would — no raw/typed split here). */
     edit: (next: string) => {
+      edited = true;
       value = next;
     },
     /** Replaces the field's issue set. */
@@ -119,11 +122,13 @@ function fakeDateField(
   options: { issues?: readonly { message: string }[] } = {},
 ) {
   let value = $state<string | undefined>(undefined);
+  let edited = $state(false);
   let issues = $state<readonly { message: string }[] | undefined>(
     options.issues,
   );
 
   const field: DateField = {
+    dirty: () => edited,
     as: (type: DateFieldType, initialValue?: string) => ({
       name,
       type,
@@ -142,6 +147,7 @@ function fakeDateField(
     /** Simulates USER input — an ISO-style string, same as `set()` would
      * store. */
     edit: (next: string) => {
+      edited = true;
       value = next;
     },
     /** Replaces the field's issue set. */
@@ -163,11 +169,13 @@ function fakeNumberField(
 ) {
   // Kit stores raw DOM strings mid-edit; set() stores typed values.
   let value = $state<number | string | undefined>(undefined);
+  let edited = $state(false);
   let issues = $state<readonly { message: string }[] | undefined>(
     options.issues,
   );
 
   const field: NumberField = {
+    dirty: () => edited,
     as: (type: "number", initialValue?: number) => ({
       name,
       type,
@@ -185,6 +193,7 @@ function fakeNumberField(
     field,
     /** Simulates USER typing: stores the raw DOM string, like Kit does. */
     edit: (next: number | undefined) => {
+      edited = true;
       value = next === undefined ? "" : String(next);
     },
     /** Replaces the field's issue set. */
@@ -204,11 +213,13 @@ function fakeSelectField(
   options: { issues?: readonly { message: string }[] } = {},
 ) {
   let value = $state<string | undefined>(undefined);
+  let edited = $state(false);
   let issues = $state<readonly { message: string }[] | undefined>(
     options.issues,
   );
 
   const field: SelectField = {
+    dirty: () => edited,
     as: (type: "select", initialValue?: string) => ({
       name,
       value: initialValue,
@@ -225,6 +236,7 @@ function fakeSelectField(
     field,
     /** Simulates the USER choosing an option: stores its string value. */
     edit: (next: string) => {
+      edited = true;
       value = next;
     },
     /** Replaces the field's issue set. */
@@ -247,11 +259,13 @@ function fakeCheckboxField(
 ) {
   // Kit stores the raw DOM value mid-edit: "on" checked, null unchecked.
   let value = $state<boolean | string | null | undefined>(undefined);
+  let edited = $state(false);
   let issues = $state<readonly { message: string }[] | undefined>(
     options.issues,
   );
 
   const field: CheckboxField = {
+    dirty: () => edited,
     as: (type: "checkbox", initialValue?: boolean) => ({
       name,
       type,
@@ -275,6 +289,7 @@ function fakeCheckboxField(
     field,
     /** Simulates a USER toggle: raw DOM value, like Kit's input listener. */
     edit: (next: boolean) => {
+      edited = true;
       value = next ? "on" : null;
     },
     /** Replaces the field's issue set. */

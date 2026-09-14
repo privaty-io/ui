@@ -80,14 +80,15 @@ FormData and would silently submit as false.
     name,
     initialValue,
     required,
-    issues: () => field.issues(),
+    issues: () => field?.issues(),
+    wasEdited: () => field?.dirty?.() ?? false,
     // Kit's field state: undefined = untouched (fall back to the seed);
     // null = explicitly UNCHECKED (must not fall through to the seed).
     getValue: () => {
-      const value = field.value();
+      const value = field?.value();
       return value === undefined ? initialValue : value;
     },
-    setValue: (value) => field.set(value as boolean),
+    setValue: (value) => field?.set(value as boolean),
     // Mid-edit Kit stores the raw DOM value: "on" when checked, null when
     // unchecked.
     normalize: (value) => value === true || value === "on",
