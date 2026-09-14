@@ -52,6 +52,56 @@ function firstCells(container: Element): string[] {
     .map((row) => row.querySelector("td")?.textContent?.trim() ?? "");
 }
 
+describe("composed actions", () => {
+  test("custom actions render the defaults in the consumer's chosen order", async () => {
+    const name = fakeTextField("name");
+    const id = fakeTextField("id");
+    const keyed = fakeKeyedRemoteForm(() =>
+      fakeEditableRemoteForm({ id, name }),
+    );
+    const deleted: string[] = [];
+    const screen = await render(Fixture, {
+      rows: items(),
+      withComposedActions: true,
+      editForm: keyed.form as unknown as NonNullable<FixtureProps["editForm"]>,
+      ondelete: (row) => void deleted.push(row.id),
+    });
+
+    // Leading custom, built-in Edit/Delete, trailing custom — exactly the
+    // order the snippet declared.
+    const cell = screen.container.querySelector(
+      "tbody tr td:last-child",
+    ) as HTMLElement;
+    const labels = [...cell.querySelectorAll("button")].map(
+      (button) => button.title || button.textContent?.trim(),
+    );
+    expect(labels).toEqual(["Copy Rioja", "Edit", "Delete", "More"]);
+
+    // The composed defaults are LIVE, not decorative: Edit opens the
+    // editor, Delete fires ondelete.
+    await screen.getByRole("button", { name: "Edit" }).first().click();
+    await expect.element(screen.getByLabelText("Name")).toBeInTheDocument();
+    await screen.getByRole("button", { name: "Cancel" }).click();
+
+    await screen.getByRole("button", { name: "Delete" }).first().click();
+    expect(deleted.length).toBe(1);
+  });
+
+  test("a custom snippet that ignores defaults still replaces them", async () => {
+    const screen = await render(Fixture, {
+      rows: items(),
+      withCustomActions: true,
+      ondelete: () => {},
+    });
+    await expect
+      .element(screen.getByRole("button", { name: "Zap Rioja" }))
+      .toBeInTheDocument();
+    expect(
+      screen.container.querySelector('tbody button[title="Delete"]'),
+    ).toBeNull();
+  });
+});
+
 describe("summary row", () => {
   test("renders computed summaries in a footer; absent without any", async () => {
     const screen = await render(Fixture, { rows: items(), withSummary: true });

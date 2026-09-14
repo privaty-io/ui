@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { TextInput } from "@privaty/ui-forms";
   import type { RemoteForm, RemoteFormInput } from "$app/server";
   import Column from "../column.svelte";
@@ -19,6 +20,7 @@
     createForm?: RemoteForm<RemoteFormInput, unknown>;
     editForm?: RemoteForm<RemoteFormInput, unknown>;
     withCustomActions?: boolean;
+    withComposedActions?: boolean;
     withExpanded?: boolean;
     withSummary?: boolean;
     withPinnedPrice?: boolean;
@@ -41,6 +43,7 @@
     createForm,
     editForm,
     withCustomActions = false,
+    withComposedActions = false,
     withExpanded = false,
     withSummary = false,
     withPinnedPrice = false,
@@ -66,6 +69,23 @@
   <button type="button">Zap {row.name}</button>
 {/snippet}
 
+{#snippet composedActions({
+  row,
+  defaults,
+}: {
+  row: Item;
+  controller: TableController;
+  defaults: Snippet;
+})}
+  <!-- Ordering is the consumer's: leading custom, built-ins, trailing
+       custom. -->
+  <div class="flex gap-1">
+    <button type="button">Copy {row.name}</button>
+    {@render defaults()}
+    <button type="button">More</button>
+  </div>
+{/snippet}
+
 {#snippet theTable()}
   <Table
     {rows}
@@ -73,7 +93,11 @@
     {controller}
     {createForm}
     {editForm}
-    actions={withCustomActions ? zapActions : undefined}
+    actions={withComposedActions
+      ? composedActions
+      : withCustomActions
+        ? zapActions
+        : undefined}
     expanded={withExpanded ? rowDetails : undefined}
     class={containerClass}
     {loading}

@@ -269,6 +269,23 @@ scrolls internally.
 - **Expansion**: an `expanded` snippet enables per-row chevrons; content
   renders full-width below the row, holds position under horizontal scroll,
   and any markup goes.
+- **Custom actions**: the `actions` snippet owns the actions cell on
+  display rows. It receives `defaults` — the built-in Edit/Delete pair —
+  as a renderable snippet, so custom buttons COMPOSE with the defaults in
+  any order instead of re-implementing them:
+
+  ```svelte
+  {#snippet actions({ row, controller, defaults })}
+    <div class="flex gap-1">
+      <button onclick={() => copy(row)}>Copy</button>
+      {@render defaults()}
+      <button onclick={() => openMenu(row)}>More</button>
+    </div>
+  {/snippet}
+  ```
+
+  Don't render `defaults()` to replace the built-ins entirely.
+
 - **Fill + empty**: in a height-constrained container the table fills it;
   with zero rows the `empty` snippet (or `labels.table.empty`) shows,
   centered in the visible viewport.

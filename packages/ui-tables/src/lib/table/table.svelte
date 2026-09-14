@@ -167,8 +167,13 @@ surrounding container a height.
     /** The <Column> definitions — columns self-register with the table via
      * context while this renders. */
     children: Snippet;
-    /** Replaces the default actions cell on display rows. */
-    actions?: Snippet<[{ row: Row; controller: TableController }]>;
+    /** Custom content for the actions cell on display rows. `defaults`
+     * renders the built-in Edit/Delete buttons — place it anywhere among
+     * your own (before for leading actions, after for trailing ones), or
+     * don't render it to replace them entirely. */
+    actions?: Snippet<
+      [{ row: Row; controller: TableController; defaults: Snippet }]
+    >;
     /** Enables row expansion: an expander column is prepended and this
      * renders full-width below an expanded row — any content goes. */
     expanded?: Snippet<[{ row: Row }]>;
@@ -1513,45 +1518,55 @@ surrounding container a height.
                   class={cn(defaultCellClasses, actionsCellClasses, cellClass)}
                   style={actionsStyle}
                 >
+                  <!-- The built-in Edit/Delete pair, captured per row so
+                       a custom actions snippet can render it wherever it
+                       wants among its own buttons. -->
+                  {#snippet defaultActions()}
+                    {#if editForm}
+                      <Button
+                        variant="secondary"
+                        type="button"
+                        class={iconButtonClasses}
+                        title={config.labels.table.edit}
+                        onclick={() => controller.startEdit(rowKey(row))}
+                      >
+                        <PencilIcon
+                          class={tableTheme.icon}
+                          aria-hidden="true"
+                        />
+                        <span class="sr-only">
+                          {config.labels.table.edit}
+                        </span>
+                      </Button>
+                    {/if}
+                    {#if ondelete}
+                      <Button
+                        variant="secondary"
+                        type="button"
+                        class={iconButtonClasses}
+                        title={config.labels.table.delete}
+                        disabled={deleting.has(rowKey(row))}
+                        onclick={() => void handleDelete(row)}
+                      >
+                        <Trash2Icon
+                          class={tableTheme.icon}
+                          aria-hidden="true"
+                        />
+                        <span class="sr-only">
+                          {config.labels.table.delete}
+                        </span>
+                      </Button>
+                    {/if}
+                  {/snippet}
                   {#if actions}
-                    {@render actions({ row, controller })}
+                    {@render actions({
+                      row,
+                      controller,
+                      defaults: defaultActions,
+                    })}
                   {:else}
                     <div class="flex gap-1">
-                      {#if editForm}
-                        <Button
-                          variant="secondary"
-                          type="button"
-                          class={iconButtonClasses}
-                          title={config.labels.table.edit}
-                          onclick={() => controller.startEdit(rowKey(row))}
-                        >
-                          <PencilIcon
-                            class={tableTheme.icon}
-                            aria-hidden="true"
-                          />
-                          <span class="sr-only">
-                            {config.labels.table.edit}
-                          </span>
-                        </Button>
-                      {/if}
-                      {#if ondelete}
-                        <Button
-                          variant="secondary"
-                          type="button"
-                          class={iconButtonClasses}
-                          title={config.labels.table.delete}
-                          disabled={deleting.has(rowKey(row))}
-                          onclick={() => void handleDelete(row)}
-                        >
-                          <Trash2Icon
-                            class={tableTheme.icon}
-                            aria-hidden="true"
-                          />
-                          <span class="sr-only">
-                            {config.labels.table.delete}
-                          </span>
-                        </Button>
-                      {/if}
+                      {@render defaultActions()}
                     </div>
                   {/if}
                 </td>
