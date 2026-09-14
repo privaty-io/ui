@@ -75,6 +75,30 @@ describe("tile split", () => {
     expect(screen.component.currentSize()).toBe(560);
   });
 
+  test("collapsedSize moves the collapse target: Home lands on the compact width", async () => {
+    const screen = await render(Fixture, {
+      initial: 200,
+      min: 120,
+      collapsible: true,
+      collapsedSize: 48,
+    });
+
+    // The compact width is the advertised minimum…
+    expect(separator(screen).getAttribute("aria-valuemin")).toBe("48");
+
+    press(screen, "Home");
+    expect(screen.component.currentSize()).toBe(48);
+    // …the gutter KEEPS its width (only a full 0-collapse gives it up)…
+    expect(separator(screen).className).toContain("w-1.5");
+    expect(separator(screen).className).not.toContain("w-0");
+
+    // …shrinking below it stays put, and any grow reopens at min.
+    press(screen, "ArrowLeft");
+    expect(screen.component.currentSize()).toBe(48);
+    press(screen, "ArrowRight");
+    expect(screen.component.currentSize()).toBe(120);
+  });
+
   test("collapse and reopen: Home to 0, any grow reopens at min", async () => {
     const screen = await render(Fixture, {
       initial: 200,

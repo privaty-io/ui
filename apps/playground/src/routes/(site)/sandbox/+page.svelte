@@ -33,7 +33,12 @@
     </li>
     <li>
       <a href={resolve("sandbox/tiles")}>
-        Tiles (ui-layouts preview — hover + focus-within section cues)
+        Tiles (the tiling system — hover + focus-within section cues)
+      </a>
+    </li>
+    <li>
+      <a href={resolve("sandbox/layouts")}>
+        Layouts (@privaty/ui-layouts — SidebarPage, ListDetail, CenteredPage)
       </a>
     </li>
     <li>

@@ -1,24 +1,21 @@
 import { base, library } from "@config/eslint";
 import { defineConfig } from "eslint/config";
 
+// The architecture rule this package exists under: layouts are composed
+// of CORE components only — never forms, never tables.
 export default defineConfig(
   ...base,
   ...library(
     {
       group: [
+        "@privaty/ui-forms",
+        "@privaty/ui-forms/**",
         "@privaty/ui-tables",
         "@privaty/ui-tables/**",
+        "**/ui-forms/src/**",
         "**/ui-tables/src/**",
       ],
-      message: "forms must never import tables.",
-    },
-    {
-      group: [
-        "@privaty/ui-layouts",
-        "@privaty/ui-layouts/**",
-        "**/ui-layouts/src/**",
-      ],
-      message: "forms must never import layouts.",
+      message: "layouts are composed of core only — never forms or tables.",
     },
     {
       group: ["**/ui/src/**"],

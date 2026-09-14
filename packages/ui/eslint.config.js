@@ -9,9 +9,12 @@ export default defineConfig(
       "@privaty/ui-forms/**",
       "@privaty/ui-tables",
       "@privaty/ui-tables/**",
+      "@privaty/ui-layouts",
+      "@privaty/ui-layouts/**",
       "**/ui-forms/src/**",
       "**/ui-tables/src/**",
+      "**/ui-layouts/src/**",
     ],
-    message: "core must not depend on forms or tables.",
+    message: "core must not depend on the packages built on top of it.",
   }),
 );

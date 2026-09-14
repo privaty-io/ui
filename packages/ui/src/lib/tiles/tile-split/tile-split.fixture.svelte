@@ -8,6 +8,7 @@
     min?: number;
     max?: number;
     collapsible?: boolean;
+    collapsedSize?: number;
   }
 
   const props: Props = $props();

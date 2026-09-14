@@ -103,6 +103,9 @@ real window-splitter: drag it (with a widened invisible hit area),
 arrow keys resize (Shift for big steps), Home collapses when
 `collapsible` (dragging hard past `min` snaps closed too — the
 side-nav gesture), End maxes, double-click resets to `initial`.
+`collapsedSize` moves the collapse target off zero, so a pane
+collapses to a compact rail (an icon side nav) instead of
+disappearing.
 `TileTitle` gives panes a consistent title row with an `actions` slot.
 
 ## Display & feedback

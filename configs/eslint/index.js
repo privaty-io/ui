@@ -71,7 +71,7 @@ const app = [
             {
               group: ["**/packages/**"],
               message:
-                "Import UI packages via their package names (@privaty/ui, @privaty/ui-forms, @privaty/ui-tables).",
+                "Import UI packages via their package names (@privaty/ui, @privaty/ui-forms, @privaty/ui-tables, @privaty/ui-layouts).",
             },
           ],
         },

@@ -2,6 +2,7 @@ import { createRawSnippet } from "svelte";
 import { describe, expect, test } from "vitest";
 import { render } from "vitest-browser-svelte";
 
+import { coreTheme } from "../../theme";
 import Link from "./link.svelte";
 
 function label(text: string) {
@@ -38,6 +39,15 @@ describe("link", () => {
 
     // The same theme token Button's primary uses.
     await expect.element(screen.getByRole("link")).toHaveClass(/bg-stone-800/);
+  });
+
+  test("the shared variant states must never be enabled:-gated", () => {
+    // `:enabled` only matches form controls — an `enabled:hover` wash
+    // is DEAD on the <a> side of the Button/Link family (the nav-item
+    // hover regression). `not-disabled:` matches both sides.
+    for (const [name, token] of Object.entries(coreTheme.button)) {
+      expect(token, name).not.toContain("enabled:");
+    }
   });
 
   test("native anchor attributes pass through", async () => {

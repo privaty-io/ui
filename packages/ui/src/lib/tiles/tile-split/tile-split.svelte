@@ -7,7 +7,9 @@ TileCanvas gaps) with a handle that fades in on hover; it is a real
 `role="separator"`: focusable, arrow keys resize (Shift for big steps),
 Home collapses (when `collapsible`) or goes to `min`, End to `max`, and
 double-click resets to `initial`. With `collapsible`, dragging well past
-`min` snaps the pane closed — the side-nav gesture.
+`min` snaps the pane closed — the side-nav gesture. `collapsedSize`
+moves that snap target off zero: the pane collapses to a compact width
+(an icon rail) instead of disappearing.
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
@@ -33,9 +35,13 @@ double-click resets to `initial`. With `collapsible`, dragging well past
     /** Size bounds (px) for drag and keyboard alike. */
     min?: number;
     max?: number;
-    /** Dragging clearly past `min` snaps the sized pane to 0, and Home
-     * collapses it — arrow keys or a drag reopen it at `min`. */
+    /** Dragging clearly past `min` snaps the sized pane closed, and
+     * Home collapses it — arrow keys or a drag reopen it at `min`. */
     collapsible?: boolean;
+    /** Where a collapse lands (px). 0 hides the pane entirely (and the
+     * gutter gives up its width); a compact width keeps a sliver open —
+     * the icon-rail side nav. */
+    collapsedSize?: number;
 
     /** Current size (px) of the sized pane — bindable, so the consumer
      * can persist and restore it. 0 = collapsed. */
@@ -56,6 +62,7 @@ double-click resets to `initial`. With `collapsible`, dragging well past
     min = 120,
     max = 560,
     collapsible = false,
+    collapsedSize = 0,
     size = $bindable(initial),
     label,
     class: classes,
@@ -85,7 +92,7 @@ double-click resets to `initial`. With `collapsible`, dragging well past
   /** Drag clamp: continuous inside [min, max], with the collapse snap
    * once the candidate falls clearly below min. */
   function clampDrag(candidate: number): number {
-    if (collapsible && candidate < min / 2) return 0;
+    if (collapsible && candidate < min / 2) return collapsedSize;
     return Math.min(max, Math.max(min, candidate));
   }
 
@@ -130,7 +137,7 @@ double-click resets to `initial`. With `collapsible`, dragging well past
     let next: number;
     if (towardStart) next = size + (sized === "end" ? step : -step);
     else if (towardEnd) next = size + (sized === "end" ? -step : step);
-    else if (event.key === "Home") next = collapsible ? 0 : min;
+    else if (event.key === "Home") next = collapsible ? collapsedSize : min;
     else if (event.key === "End") next = max;
     else return;
     event.preventDefault();
@@ -138,7 +145,11 @@ double-click resets to `initial`. With `collapsible`, dragging well past
     // Keyboard never snap-collapses on its own (Home is the deliberate
     // gesture); from collapsed, any grow reopens at min.
     size =
-      next <= 0 ? (collapsible ? 0 : min) : Math.min(max, Math.max(min, next));
+      next <= collapsedSize
+        ? collapsible
+          ? collapsedSize
+          : min
+        : Math.min(max, Math.max(min, next));
   }
 </script>
 
@@ -159,7 +170,7 @@ double-click resets to `initial`. With `collapsible`, dragging well past
     tabindex="0"
     aria-orientation={horizontal ? "vertical" : "horizontal"}
     aria-label={label}
-    aria-valuemin={collapsible ? 0 : min}
+    aria-valuemin={collapsible ? collapsedSize : min}
     aria-valuemax={max}
     aria-valuenow={size}
     class={cn(

@@ -282,7 +282,10 @@ const coreTheme = {
 
   /** Buttons AND Links share these (Link mirrors Button variant for
    * variant). The state language matches the tiles: borders and washes
-   * wake up on interaction, nothing shifts layout. */
+   * wake up on interaction, nothing shifts layout. Interaction states
+   * are gated with `not-disabled:` on purpose — `:enabled` only ever
+   * matches form controls, so `enabled:`-gated hovers are DEAD on the
+   * `<a>` side of this family; `:not(:disabled)` matches both. */
   button: {
     /** Chrome shared by all variants — sizing, radius, cursor, and the
      * tiles' transition timing. */
@@ -295,29 +298,29 @@ const coreTheme = {
     /** Filled high-contrast variant — the one loud thing on a quiet
      * page, so a form's single primary action is findable at a glance. */
     primary: cn(
-      "bg-stone-800 text-stone-50 enabled:hover:bg-stone-700 enabled:active:bg-stone-900",
+      "bg-stone-800 text-stone-50 not-disabled:hover:bg-stone-700 not-disabled:active:bg-stone-900",
       "disabled:bg-stone-800/50",
-      "dark:bg-stone-200 dark:text-stone-900 dark:enabled:hover:bg-stone-300 dark:enabled:active:bg-stone-100",
+      "dark:bg-stone-200 dark:text-stone-900 dark:not-disabled:hover:bg-stone-300 dark:not-disabled:active:bg-stone-100",
       "dark:disabled:bg-stone-200/50",
     ),
     /** A tile in miniature: hairline border on a bare surface; hovering
      * warms the border and lifts the wash — the tile hover language. */
     secondary: cn(
       "border border-stone-300/80 bg-transparent text-inherit",
-      "enabled:hover:border-stone-400/80 enabled:hover:bg-stone-200/40",
-      "enabled:active:bg-stone-200/70",
+      "not-disabled:hover:border-stone-400/80 not-disabled:hover:bg-stone-200/40",
+      "not-disabled:active:bg-stone-200/70",
       "disabled:border-stone-300/50 disabled:text-stone-500",
-      "dark:border-stone-700 dark:enabled:hover:border-stone-600 dark:enabled:hover:bg-stone-800/60",
-      "dark:enabled:active:bg-stone-800",
+      "dark:border-stone-700 dark:not-disabled:hover:border-stone-600 dark:not-disabled:hover:bg-stone-800/60",
+      "dark:not-disabled:active:bg-stone-800",
       "dark:disabled:border-stone-700/50 dark:disabled:text-stone-500",
     ),
     /** Blends into the surface until the pointer finds it — nav items,
      * toolbars, repeated row actions. */
     ghost: cn(
       "bg-transparent text-inherit",
-      "enabled:hover:bg-stone-200/70 enabled:active:bg-stone-300/60",
+      "not-disabled:hover:bg-stone-200/70 not-disabled:active:bg-stone-300/60",
       "disabled:text-stone-500",
-      "dark:enabled:hover:bg-stone-800 dark:enabled:active:bg-stone-800/70",
+      "dark:not-disabled:hover:bg-stone-800 dark:not-disabled:active:bg-stone-800/70",
       "dark:disabled:text-stone-500",
     ),
     /** Reads as text: underlined, tight padding, a gentle wash on hover
@@ -325,9 +328,9 @@ const coreTheme = {
     text: cn(
       "rounded px-1 py-0.5 text-inherit",
       "underline decoration-stone-400 underline-offset-3",
-      "enabled:hover:bg-stone-200/60 enabled:hover:decoration-current",
+      "not-disabled:hover:bg-stone-200/60 not-disabled:hover:decoration-current",
       "disabled:text-stone-500 disabled:decoration-stone-300",
-      "dark:decoration-stone-500 dark:enabled:hover:bg-stone-800/70",
+      "dark:decoration-stone-500 dark:not-disabled:hover:bg-stone-800/70",
       "dark:disabled:decoration-stone-700",
     ),
   },

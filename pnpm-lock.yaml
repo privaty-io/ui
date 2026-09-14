@@ -122,6 +122,9 @@ importers:
       '@privaty/ui-forms':
         specifier: workspace:*
         version: link:../../packages/ui-forms
+      '@privaty/ui-layouts':
+        specifier: workspace:*
+        version: link:../../packages/ui-layouts
       '@privaty/ui-tables':
         specifier: workspace:*
         version: link:../../packages/ui-tables
@@ -259,6 +262,36 @@ importers:
       '@sveltejs/kit':
         specifier: 'catalog:'
         version: 3.0.0-next.25(@sveltejs/vite-plugin-svelte@7.3.0(svelte@5.57.0(@typescript-eslint/types@8.70.0))(vite@8.3.0(@types/node@24.13.4)(jiti@2.7.0)))(svelte@5.57.0(@typescript-eslint/types@8.70.0))(typescript@6.0.3)(vite@8.3.0(@types/node@24.13.4)(jiti@2.7.0))
+      '@sveltejs/package':
+        specifier: 'catalog:'
+        version: 2.5.8(svelte@5.57.0(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
+      eslint:
+        specifier: 'catalog:'
+        version: 10.10.0(jiti@2.7.0)
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.24
+      svelte:
+        specifier: 'catalog:'
+        version: 5.57.0(@typescript-eslint/types@8.70.0)
+      svelte-check:
+        specifier: 'catalog:'
+        version: 4.7.6(picomatch@4.0.7)(svelte@5.57.0(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  packages/ui-layouts:
+    devDependencies:
+      '@config/eslint':
+        specifier: workspace:*
+        version: link:../../configs/eslint
+      '@config/typescript':
+        specifier: workspace:*
+        version: link:../../configs/typescript
+      '@privaty/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@sveltejs/package':
         specifier: 'catalog:'
         version: 2.5.8(svelte@5.57.0(@typescript-eslint/types@8.70.0))(typescript@6.0.3)

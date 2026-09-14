@@ -1,0 +1,61 @@
+{
+  "name": "@privaty/ui-layouts",
+  "version": "0.6.2",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/privaty-io/ui.git",
+    "directory": "packages/ui-layouts"
+  },
+  "type": "module",
+  "scripts": {
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "build": "svelte-package && publint",
+    "lint": "eslint .",
+    "prepack": "pnpm build"
+  },
+  "files": [
+    "dist",
+    "NOTICE",
+    "!dist/**/*.test.*",
+    "!dist/**/*.spec.*",
+    "!dist/**/*.fixture.*"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "svelte": "./src/lib/index.js",
+      "default": "./src/lib/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.ts",
+        "svelte": "./dist/index.js",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "peerDependencies": {
+    "@privaty/ui": "workspace:^",
+    "svelte": "^5.29.0"
+  },
+  "devDependencies": {
+    "@config/eslint": "workspace:*",
+    "@config/typescript": "workspace:*",
+    "@privaty/ui": "workspace:*",
+    "@sveltejs/package": "catalog:",
+    "eslint": "catalog:",
+    "publint": "catalog:",
+    "svelte": "catalog:",
+    "svelte-check": "catalog:",
+    "typescript": "catalog:"
+  }
+}

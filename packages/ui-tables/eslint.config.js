@@ -12,5 +12,13 @@ export default defineConfig(
       group: ["**/ui-forms/src/**"],
       message: "Import forms via its package name (@privaty/ui-forms).",
     },
+    {
+      group: [
+        "@privaty/ui-layouts",
+        "@privaty/ui-layouts/**",
+        "**/ui-layouts/src/**",
+      ],
+      message: "tables must never import layouts.",
+    },
   ),
 );
