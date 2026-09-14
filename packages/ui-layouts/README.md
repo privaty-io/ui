@@ -60,8 +60,8 @@ leftover column or any bounded container.
 - **`Header`** — a tile row: brand (title + quiet subtitle, or a
   `brand` snippet), free `children` in the middle, `actions` docked
   right; `themeToggle` drops the core ThemeToggle into the dock.
-- **`Footer`** — a still tile row of quiet fine print: `children` plus
-  an `end` dock. Doubles as a status bar (give a section's its own
+- **`Footer`** — a tile row of quiet fine print: `children` plus an
+  `end` dock. Doubles as a status bar (give a section's its own
   `label`).
 
 ## Navigation pieces

@@ -57,7 +57,7 @@ describe("header", () => {
 });
 
 describe("footer", () => {
-  test("a STILL tile of quiet fine print with an end dock", async () => {
+  test("a tile of quiet fine print with an end dock, cues included", async () => {
     const screen = await render(Footer, {
       children: label("nav 230px"),
       end: label("hints"),
@@ -69,8 +69,8 @@ describe("footer", () => {
     for (const cls of layoutsTheme.footer.root.split(" ")) {
       expect(root.className).toContain(cls);
     }
-    // Still: a footer never takes the focus cue.
-    expect(root.className).not.toContain("focus-within:");
+    // An interactive tile like every pane — it warms under the pointer.
+    expect(root.className).toContain("hover:");
     expect(root.textContent).toContain("nav 230px");
     expect((root.lastElementChild as HTMLElement).textContent).toBe("hints");
   });

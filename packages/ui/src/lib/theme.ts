@@ -203,20 +203,15 @@ const coreTheme = {
       "border-stone-300/70 bg-stone-50 text-stone-800",
       "dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200",
     ),
-    /** Hover: a half-step border warm-up — enough for the pointer to
-     * feel the pane boundaries, never enough to draw the eye from
-     * content. Focus-within: one full step plus a breath of shadow. */
+    /** Hover and focus-within share ONE half-step border warm-up —
+     * enough for the pointer to feel the pane boundaries and for the
+     * keyboard's pane to stay marked, never enough to draw the eye
+     * from content (a stronger focus step read as jarring). Equal
+     * values also mean hover-vs-focus precedence can't matter. */
     tileInteractive: cn(
-      "transition-[border-color,box-shadow] duration-200",
+      "transition-colors duration-200",
       "hover:border-stone-400/70 dark:hover:border-stone-700",
-      "focus-within:border-stone-500/80 dark:focus-within:border-stone-500",
-      // Hover and focus-within tie on specificity and hover wins on
-      // source order — the compound (two pseudos, higher specificity)
-      // keeps the FOCUS step in charge when the pointer rests on the
-      // focused pane.
-      "hover:focus-within:border-stone-500/80 dark:hover:focus-within:border-stone-500",
-      "focus-within:shadow-md focus-within:shadow-stone-950/5",
-      "dark:focus-within:shadow-stone-950/40",
+      "focus-within:border-stone-400/70 dark:focus-within:border-stone-700",
     ),
     /** The default content inset. */
     tilePadding: "p-1.5",

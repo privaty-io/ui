@@ -59,9 +59,9 @@ test("focus-within marks exactly the pane the keyboard is in", async ({
   const focused = await settledBorderColor(mainTile(page));
   expect(focused).not.toBe(resting);
 
-  // Focus moving to another pane moves the cue with it. (The nav tile
-  // is then hovered AND focused — the focus step must win; keyboard
-  // moves focus away from the pointer to keep the comparison pure.)
+  // Focus moving to another pane moves the cue with it. (Focus-within
+  // and hover share one border step by design — parking the mouse off
+  // every pane keeps the resting comparison pure.)
   await page.getByRole("button", { name: "Dashboard" }).click();
   await page.mouse.move(640, 60);
   expect(await settledBorderColor(navTile(page))).toBe(focused);
