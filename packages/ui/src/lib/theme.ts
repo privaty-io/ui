@@ -129,7 +129,11 @@ const coreTheme = {
      * must read as blocked. */
     cell: cn(
       "cursor-pointer rounded text-center text-sm",
-      "enabled:not-aria-disabled:hover:bg-stone-200 dark:enabled:not-aria-disabled:hover:bg-stone-800",
+      // not-aria-selected: the base hover must never reach a SELECTED
+      // cell — its longer variant chain outguns cellSelected's own
+      // hover on specificity, and the base dark wash under the
+      // selected cell's dark text was illegible.
+      "enabled:not-aria-disabled:not-aria-selected:hover:bg-stone-200 dark:enabled:not-aria-disabled:not-aria-selected:hover:bg-stone-800",
       "disabled:cursor-not-allowed disabled:opacity-40",
       "aria-disabled:cursor-not-allowed aria-disabled:opacity-40",
       focusRing,

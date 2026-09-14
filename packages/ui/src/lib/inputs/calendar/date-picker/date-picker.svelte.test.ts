@@ -2,12 +2,22 @@ import { userEvent } from "vitest/browser";
 import { describe, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 
+import { coreTheme } from "../../../theme";
 import Fixture from "./date-picker.fixture.svelte";
 
 const day = (iso: string) =>
   document.querySelector<HTMLButtonElement>(`button[data-iso="${iso}"]`);
 
 describe("date picker", () => {
+  test("the base cell hover is gated off selected cells", () => {
+    // cellSelected paints its own hover; the base cell hover's LONGER
+    // variant chain outguns it on specificity, so it must exclude
+    // selected cells — the base dark wash under the selected cell's
+    // dark text was illegible.
+    expect(coreTheme.calendar.cell).toContain("not-aria-selected:hover");
+    expect(coreTheme.calendar.cellSelected).toContain("hover");
+  });
+
   test("initial active clamps into [min,max] so the grid keeps its tab stop", async () => {
     // Nothing selected and today far outside the window: the roving
     // fallback must clamp to min — a disabled cell cannot take focus, and
