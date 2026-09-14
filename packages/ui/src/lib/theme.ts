@@ -33,16 +33,23 @@ const coreTheme = {
    * that never sets color-scheme (e.g. system-preference dark without a
    * data-theme attribute) gets light popups under dark text. */
   controlBase: cn(
-    "w-full appearance-none rounded border px-2 scheme-light dark:scheme-dark",
+    "w-full appearance-none rounded-md border px-2 scheme-light dark:scheme-dark",
+    "transition-colors duration-150",
     focusRing,
   ),
   /** Neutral stone surface, border, and placeholder colors for the box
    * controls, with focus/hover/active/disabled states in light and dark. */
+  /** The tiling state language, applied to controls: a hairline border
+   * at rest that WAKES UP — warms on hover, strengthens on focus (the
+   * same step the tile takes on focus-within) — while the wash stays
+   * quiet. The focus ring remains the a11y signal on top. */
   controlSurface: cn(
-    "bg-stone-200/25 focus:bg-stone-200/50 enabled:hover:bg-stone-200/75 enabled:active:bg-stone-200/25 disabled:bg-stone-200/10",
-    "border-stone-400 placeholder:text-stone-600 disabled:border-stone-400/50 disabled:text-stone-600",
-    "dark:bg-stone-800/25 dark:focus:bg-stone-800/50 dark:enabled:hover:bg-stone-800/75 dark:enabled:active:bg-stone-800/25 dark:disabled:bg-stone-800/10",
-    "dark:border-stone-600 dark:placeholder:text-stone-400 dark:disabled:border-stone-600/50 dark:disabled:text-stone-400",
+    "bg-stone-200/25 focus:bg-stone-200/40 enabled:hover:bg-stone-200/60 enabled:active:bg-stone-200/25 disabled:bg-stone-200/10",
+    "border-stone-300/80 focus:border-stone-500/80 enabled:hover:border-stone-400/80",
+    "placeholder:text-stone-600 disabled:border-stone-300/50 disabled:text-stone-600",
+    "dark:bg-stone-800/25 dark:focus:bg-stone-800/40 dark:enabled:hover:bg-stone-800/60 dark:enabled:active:bg-stone-800/25 dark:disabled:bg-stone-800/10",
+    "dark:border-stone-700 dark:focus:border-stone-500 dark:enabled:hover:border-stone-600",
+    "dark:placeholder:text-stone-400 dark:disabled:border-stone-700/50 dark:disabled:text-stone-400",
   ),
   /** Vertical rhythm per density (the ambient density context selects). */
   controlPadding: { comfortable: "py-1.5", compact: "py-0.5 text-sm" },
@@ -138,6 +145,104 @@ const coreTheme = {
     ),
   },
 
+  /** In-tile hairline separators — the quiet structure inside a pane. */
+  divider: {
+    /** The line itself (used for both plain and labeled forms). */
+    line: "bg-stone-300/70 dark:bg-stone-800",
+    /** The labeled form's text. */
+    label: "text-xs whitespace-nowrap text-stone-500",
+  },
+
+  /** Status chips. Tone backgrounds stay muted — the TEXT carries the
+   * meaning (color is never the only signal). */
+  badge: {
+    base: cn(
+      "inline-flex items-center gap-1 rounded-full px-2 py-0.5",
+      "text-xs font-medium whitespace-nowrap",
+    ),
+    tones: {
+      neutral:
+        "bg-stone-200/70 text-stone-700 dark:bg-stone-800 dark:text-stone-300",
+      positive:
+        "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300",
+      warning:
+        "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
+      critical: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300",
+    },
+  },
+
+  /** Key-cap chip for keyboard hints — the tiling system is keyboard-
+   * first, so UIs get to SAY so legibly. */
+  kbd: cn(
+    "rounded border px-1 font-mono text-[11px]",
+    "border-stone-300 bg-stone-100 text-stone-600 shadow-[inset_0_-1px_0] shadow-stone-300",
+    "dark:border-stone-700 dark:bg-stone-900 dark:text-stone-400 dark:shadow-stone-700",
+  ),
+
+  /** Loading placeholder blocks — Spinner's quieter sibling for
+   * pane-shaped waits. motion-reduce turns the pulse off. */
+  skeleton: cn(
+    "animate-pulse rounded bg-stone-200 motion-reduce:animate-none",
+    "dark:bg-stone-800",
+  ),
+
+  /** The tiling system: the page is a CANVAS a shade removed from the
+   * tile surface; tiles sit on it with tight gutters, and the canvas
+   * showing through the gaps is what reads as panes. Two deliberately
+   * quiet states: hover warms a tile's border a half-step; focus-within
+   * marks the tile that owns the keyboard as the section you are IN —
+   * one tile at a time, page-wide. */
+  tiles: {
+    /** The surface tiles sit on — visible only through the gutters. */
+    canvas: "bg-stone-200/70 dark:bg-stone-950",
+    /** Every tile: a soft-cornered surface with a hairline border. The
+     * states modulate the BORDER only — background stays put, so content
+     * never shifts appearance. */
+    tile: cn(
+      "rounded-lg border",
+      "border-stone-300/70 bg-stone-50 text-stone-800",
+      "dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200",
+    ),
+    /** Hover: a half-step border warm-up — enough for the pointer to
+     * feel the pane boundaries, never enough to draw the eye from
+     * content. Focus-within: one full step plus a breath of shadow. */
+    tileInteractive: cn(
+      "transition-[border-color,box-shadow] duration-200",
+      "hover:border-stone-400/70 dark:hover:border-stone-700",
+      "focus-within:border-stone-500/80 dark:focus-within:border-stone-500",
+      // Hover and focus-within tie on specificity and hover wins on
+      // source order — the compound (two pseudos, higher specificity)
+      // keeps the FOCUS step in charge when the pointer rests on the
+      // focused pane.
+      "hover:focus-within:border-stone-500/80 dark:hover:focus-within:border-stone-500",
+      "focus-within:shadow-md focus-within:shadow-stone-950/5",
+      "dark:focus-within:shadow-stone-950/40",
+    ),
+    /** The default content inset. */
+    tilePadding: "p-1.5",
+
+    /** A TileSplit's gutter — canvas showing through, widened hit area
+     * inside, focusable for keyboard resizing. */
+    /** Flex-centered: margin-auto only centers on the inline axis, so
+     * the vertical-split handle sat pressed against the pane above. */
+    separator: cn(
+      "group relative flex touch-none items-center justify-center rounded select-none",
+      focusRing,
+    ),
+    /** The gutter's handle line — invisible until hover/focus finds it,
+     * solid while dragging (the component adds that state). */
+    separatorHandle: cn(
+      "rounded-full opacity-0 transition-opacity duration-150",
+      "bg-stone-400 dark:bg-stone-600",
+      "group-hover:opacity-100 group-focus-visible:opacity-100",
+    ),
+
+    /** TileTitle: the pane-title row and its parts. */
+    title: "mb-3 flex items-center gap-2",
+    titleText: "text-sm font-medium",
+    titleActions: "ml-auto flex items-center gap-1",
+  },
+
   modal: {
     /** The <dialog> element: centered by the UA, panel chrome ours. p-0 is
      * load-bearing — padding lives on `inner`, so backdrop clicks (which
@@ -175,25 +280,55 @@ const coreTheme = {
     "dark:bg-stone-200 dark:text-stone-900",
   ),
 
+  /** Buttons AND Links share these (Link mirrors Button variant for
+   * variant). The state language matches the tiles: borders and washes
+   * wake up on interaction, nothing shifts layout. */
   button: {
-    /** Chrome shared by both variants — sizing, radius, cursor. */
+    /** Chrome shared by all variants — sizing, radius, cursor, and the
+     * tiles' transition timing. */
     base: cn(
-      "cursor-pointer rounded px-3 py-1.5 disabled:cursor-not-allowed",
+      "inline-flex cursor-pointer items-center justify-center gap-1.5",
+      "rounded-md px-3 py-1.5 transition-colors duration-150",
+      "disabled:cursor-not-allowed",
       focusRing,
     ),
-    /** Filled high-contrast variant. */
+    /** Filled high-contrast variant — the one loud thing on a quiet
+     * page, so a form's single primary action is findable at a glance. */
     primary: cn(
-      "bg-stone-800 text-stone-50 enabled:hover:bg-stone-700 enabled:active:bg-stone-800",
+      "bg-stone-800 text-stone-50 enabled:hover:bg-stone-700 enabled:active:bg-stone-900",
       "disabled:bg-stone-800/50",
-      "dark:bg-stone-200 dark:text-stone-900 dark:enabled:hover:bg-stone-300 dark:enabled:active:bg-stone-200",
+      "dark:bg-stone-200 dark:text-stone-900 dark:enabled:hover:bg-stone-300 dark:enabled:active:bg-stone-100",
       "dark:disabled:bg-stone-200/50",
     ),
-    /** Outlined transparent variant. */
+    /** A tile in miniature: hairline border on a bare surface; hovering
+     * warms the border and lifts the wash — the tile hover language. */
     secondary: cn(
-      "border border-stone-400 bg-transparent text-inherit enabled:hover:bg-stone-200/50 enabled:active:bg-transparent",
-      "disabled:border-stone-400/50 disabled:text-stone-500",
-      "dark:border-stone-600 dark:bg-transparent dark:enabled:hover:bg-stone-800/50 dark:enabled:active:bg-transparent",
-      "dark:disabled:border-stone-600/50 dark:disabled:text-stone-400",
+      "border border-stone-300/80 bg-transparent text-inherit",
+      "enabled:hover:border-stone-400/80 enabled:hover:bg-stone-200/40",
+      "enabled:active:bg-stone-200/70",
+      "disabled:border-stone-300/50 disabled:text-stone-500",
+      "dark:border-stone-700 dark:enabled:hover:border-stone-600 dark:enabled:hover:bg-stone-800/60",
+      "dark:enabled:active:bg-stone-800",
+      "dark:disabled:border-stone-700/50 dark:disabled:text-stone-500",
+    ),
+    /** Blends into the surface until the pointer finds it — nav items,
+     * toolbars, repeated row actions. */
+    ghost: cn(
+      "bg-transparent text-inherit",
+      "enabled:hover:bg-stone-200/70 enabled:active:bg-stone-300/60",
+      "disabled:text-stone-500",
+      "dark:enabled:hover:bg-stone-800 dark:enabled:active:bg-stone-800/70",
+      "dark:disabled:text-stone-500",
+    ),
+    /** Reads as text: underlined, tight padding, a gentle wash on hover
+     * — the Link default, and fine for inline button actions too. */
+    text: cn(
+      "rounded px-1 py-0.5 text-inherit",
+      "underline decoration-stone-400 underline-offset-3",
+      "enabled:hover:bg-stone-200/60 enabled:hover:decoration-current",
+      "disabled:text-stone-500 disabled:decoration-stone-300",
+      "dark:decoration-stone-500 dark:enabled:hover:bg-stone-800/70",
+      "dark:disabled:decoration-stone-700",
     ),
   },
 

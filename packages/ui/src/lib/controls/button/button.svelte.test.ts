@@ -29,6 +29,25 @@ describe("button", () => {
     await expect.element(button).toBeDisabled();
   });
 
+  test("ghost and text variants render transparent, distinctly styled", async () => {
+    const ghost = await render(Button, {
+      variant: "ghost",
+      children: label("Ghost"),
+    });
+    // Both renders stay mounted in one browser test — scope by name.
+    await expect
+      .element(ghost.getByRole("button", { name: "Ghost" }))
+      .toHaveClass(/bg-transparent/);
+
+    const text = await render(Button, {
+      variant: "text",
+      children: label("Text"),
+    });
+    await expect
+      .element(text.getByRole("button", { name: "Text" }))
+      .toHaveClass(/underline/);
+  });
+
   test("renders the secondary variant without the primary background", async () => {
     const screen = await render(Button, {
       children: label("Cancel"),

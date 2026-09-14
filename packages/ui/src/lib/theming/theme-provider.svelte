@@ -87,4 +87,14 @@ theme-ssr.ts).
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
     {@html initScriptHtml}
   {/if}
+  <!-- A running view-transition crossfade overlays the page and would
+       swallow clicks for its duration — rapid theme togglers lose every
+       second click without this. -->
+  {#if headScript}
+    <style>
+      ::view-transition {
+        pointer-events: none;
+      }
+    </style>
+  {/if}
 </svelte:head>

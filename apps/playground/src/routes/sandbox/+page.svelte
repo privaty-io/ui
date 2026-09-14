@@ -32,6 +32,11 @@
       </a>
     </li>
     <li>
+      <a href={resolve("sandbox/tiles")}>
+        Tiles (ui-layouts preview — hover + focus-within section cues)
+      </a>
+    </li>
+    <li>
       <a href={resolve("sandbox/table-grouped")}>
         Grouped editor fields (months array + summary row)
       </a>

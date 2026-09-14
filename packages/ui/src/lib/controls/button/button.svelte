@@ -1,5 +1,6 @@
 <!-- @component
-Themed button with primary and secondary variants. All native <button>
+Themed button — primary, secondary, ghost, and text variants (see the
+variant type for when each fits). All native <button>
 attributes pass through; classes are merged with tailwind-merge, so
 conflicting consumer utilities win over the theme's.
 -->
@@ -33,6 +34,8 @@ conflicting consumer utilities win over the theme's.
   const variantClasses: Record<ButtonVariant, string> = {
     primary: coreTheme.button.primary,
     secondary: coreTheme.button.secondary,
+    ghost: coreTheme.button.ghost,
+    text: coreTheme.button.text,
   };
 </script>
 

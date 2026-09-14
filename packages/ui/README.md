@@ -1,8 +1,10 @@
 # @privaty/ui
 
 Core building blocks shared by `@privaty/ui-forms` and `@privaty/ui-tables`:
-the base controls (Input, Textarea, Select, Checkbox, Button, Spinner,
-FieldFrame), the `cn()` class merger, and the configuration contexts.
+the base controls (Input, Textarea, Select, Checkbox, Button, Link,
+Spinner, FieldFrame), the tiling system, the theme system, the small
+display/feedback kit (Divider, Badge, Kbd, Skeleton), the `cn()` class
+merger, and the configuration contexts.
 
 ```bash
 pnpm add @privaty/ui
@@ -67,6 +69,52 @@ with a getter so changes propagate.
   ring differs per engine (near-invisible in Chromium/Edge against this
   palette). `coreTheme.focusRing` is public: put it on your own focusable
   elements (a Popover trigger, a link) to match.
+
+## Buttons & links
+
+Four variants, one skin — `Link` renders an `<a>` with exactly the
+Button classes, so the two are visually interchangeable and only the
+semantics differ:
+
+- **primary** — the filled call to action; the one loud thing on a
+  quiet page (Button's default).
+- **secondary** — a tile in miniature: hairline border, hover warms it
+  and lifts a wash.
+- **ghost** — blends into the surface until hovered; nav items,
+  toolbars, repeated row actions.
+- **text** — reads as underlined copy with a gentle hover wash (Link's
+  default).
+
+## Tiling system
+
+Every section of a page is a `Tile` (a labeled `<section>`) on a
+`TileCanvas` — the canvas showing through the tight gutters is what
+reads as panes. Two deliberately quiet state cues, border-only so
+content never shifts: hovering warms a pane's border a half-step, and
+**focus-within marks the pane the keyboard is in** — one tile at a
+time, page-wide (screen-reader users get the same answer from the
+section labels). `still` opts a decorative pane out; `flush` drops the
+content inset.
+
+`TileSplit` makes any boundary resizable: two panes (`start`/`end`
+snippets — nest splits to build pane trees), one carrying a px size
+(`sized`, bindable via `size` so apps can persist it). The gutter is a
+real window-splitter: drag it (with a widened invisible hit area),
+arrow keys resize (Shift for big steps), Home collapses when
+`collapsible` (dragging hard past `min` snaps closed too — the
+side-nav gesture), End maxes, double-click resets to `initial`.
+`TileTitle` gives panes a consistent title row with an `actions` slot.
+
+## Display & feedback
+
+- **`Divider`** — in-tile hairline: plain, labeled ("Optional
+  details"), or `vertical` for header rows.
+- **`Badge`** — status chip; tones `neutral | positive | warning |
+critical` keep muted backgrounds so the text carries the meaning.
+- **`Kbd`** — a real `<kbd>` key-cap chip for keyboard hints.
+- **`Skeleton`** — pane-shaped loading placeholder (`lines={n}` for
+  text bars with a ragged last line); `aria-hidden`, pair with a live
+  region; the pulse respects reduced motion.
 
 ## Theme system
 

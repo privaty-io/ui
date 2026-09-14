@@ -27,9 +27,17 @@ export { default as DatePicker } from "./inputs/calendar/date-picker/date-picker
 export { default as MonthPicker } from "./inputs/calendar/month-picker/month-picker.svelte";
 export { default as WeekPicker } from "./inputs/calendar/week-picker/week-picker.svelte";
 
+// Display & feedback bits
+export { default as Badge } from "./feedback/badge/badge.svelte";
+export { default as Divider } from "./display/divider/divider.svelte";
+export { default as Kbd } from "./display/kbd/kbd.svelte";
+export { default as Skeleton } from "./feedback/skeleton/skeleton.svelte";
+export type { BadgeTone } from "./feedback/badge/badge.svelte";
+
 // Controls & display
 export { default as Button } from "./controls/button/button.svelte";
 export { default as Checkbox } from "./inputs/checkbox/checkbox.svelte";
+export { default as Link } from "./controls/link/link.svelte";
 export { default as FieldFrame } from "./inputs/field-frame.svelte";
 export { default as Input } from "./inputs/input/input.svelte";
 export { default as Select } from "./inputs/select/select.svelte";
@@ -53,6 +61,10 @@ export type {
   Side,
 } from "./overlays/position/position";
 export { default as Modal } from "./overlays/modal/modal.svelte";
+export { default as Tile } from "./tiles/tile/tile.svelte";
+export { default as TileCanvas } from "./tiles/tile-canvas/tile-canvas.svelte";
+export { default as TileSplit } from "./tiles/tile-split/tile-split.svelte";
+export { default as TileTitle } from "./tiles/tile-title/tile-title.svelte";
 export { default as Popover } from "./overlays/popover/popover.svelte";
 export { default as Tooltip } from "./overlays/tooltip/tooltip.svelte";
 

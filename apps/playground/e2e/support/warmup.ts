@@ -16,6 +16,7 @@ const pages = [
   "/app/deliveries",
   "/app/suppliers",
   "/sandbox",
+  "/sandbox/tiles",
 ];
 
 export default async function warmup(config: FullConfig) {
