@@ -65,6 +65,21 @@ export {
   setUiConfig,
 } from "./config/context";
 export { getUiDensity, setUiDensity } from "./config/density";
+
+// Theming: the light/dark/system machinery (see theming/theme-ssr.ts for
+// the FOUC-free delivery recipes).
+export { default as ThemeProvider } from "./theming/theme-provider.svelte";
+export { default as ThemeToggle } from "./theming/theme-toggle.svelte";
+export { switchTheme } from "./theming/switch-theme";
+export {
+  defaultThemeCookie,
+  parseThemePreference,
+  readThemeCookie,
+  theme,
+  themePreferences,
+} from "./theming/theme.svelte";
+export type { ThemePreference } from "./theming/theme.svelte";
+export { themeHtmlAttributes, themeInitScript } from "./theming/theme-ssr";
 export type { UiDensity, UiDensityContext } from "./config/density";
 export type {
   MessageResolver,

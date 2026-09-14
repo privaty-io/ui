@@ -2,7 +2,7 @@
   import "#lib/assets/styles/app.css";
   import "#lib/assets/styles/fonts.css";
   import Header from "#lib/components/layout/header.svelte";
-  import ThemeSync from "#lib/components/theme/theme-sync.svelte";
+  import { ThemeProvider } from "@privaty/ui";
   import type { LayoutProps } from "./$types";
 
   let { children }: LayoutProps = $props();
@@ -12,7 +12,7 @@
   <title>Privaty/ui</title>
 </svelte:head>
 
-<ThemeSync />
+<ThemeProvider />
 <Header />
 
 <div class="flex flex-col justify-center py-8">

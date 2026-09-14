@@ -68,6 +68,37 @@ with a getter so changes propagate.
   palette). `coreTheme.focusRing` is public: put it on your own focusable
   elements (a Popover trigger, a link) to match.
 
+## Theme system
+
+The light/dark/system machinery, FOUC-free. Mount `<ThemeProvider />`
+once in the root layout and drop `<ThemeToggle />` wherever the switch
+belongs; `theme.preference` is the store either can drive.
+
+- **Resolution**: `data-theme` on `<html>` is the resolved scheme;
+  `data-theme-preference` is the stated preference (style against it
+  with an attribute variant). "system" follows the OS live.
+- **No first-paint flash**: two delivery mechanisms, use one or both.
+  SSR: put `%theme-preference%` in app.html's `<html>` tag and replace
+  it in a server hook via `themeHtmlAttributes(parseThemePreference(
+cookies.get(defaultThemeCookie)))`. Client: ThemeProvider emits the
+  guard script into `<head>` (importable — no app.html edits); under a
+  strict CSP set `headScript={false}` and paste `themeInitScript()`
+  into app.html with your nonce instead.
+- **Atomic switching**: flips route through `switchTheme(apply)` — a
+  whole-page View Transition crossfade where supported, transition
+  suppression elsewhere (and under reduced motion). Components carry
+  `transition-colors` for their interaction states, which would
+  otherwise half-fade element by element; never fix that by putting
+  transitions on everything.
+- **Persistence**: an explicit preference lands in the
+  `theme-preference` cookie (name configurable via the provider's
+  `cookie` prop — keep every layer on the same name); "system" clears
+  it, absence IS system. Cookies, not localStorage, so SSR can render
+  the right theme.
+- `ThemeToggle` renders all three preference icons and lets CSS pick
+  one from `data-theme-preference` — server and client markup stay
+  identical, so hydration stays clean.
+
 ## Calendar pickers
 
 Cross-browser `DatePicker`, `MonthPicker`, and `WeekPicker` — the custom

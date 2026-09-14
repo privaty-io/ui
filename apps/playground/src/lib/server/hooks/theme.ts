@@ -1,16 +1,19 @@
 import type { Handle } from "@sveltejs/kit/hooks";
-import { parseTheme, Theme } from "#lib/enums/theme.js";
+import {
+  defaultThemeCookie,
+  parseThemePreference,
+  themeHtmlAttributes,
+} from "@privaty/ui";
 
+// SSR half of FOUC-free theming: the first byte of HTML already carries
+// the right attributes (see @privaty/ui's theming/theme-ssr.ts).
 export const themeServerHook: Handle = async ({ event, resolve }) => {
-  const themePreference = parseTheme(event.cookies.get("theme-preference"));
+  const preference = parseThemePreference(
+    event.cookies.get(defaultThemeCookie),
+  );
 
   return await resolve(event, {
     transformPageChunk: ({ html }) =>
-      html.replace(
-        "%theme-preference%",
-        themePreference === Theme.System
-          ? `data-theme-preference="${Theme.System}"`
-          : `data-theme="${themePreference}" data-theme-preference="${themePreference}"`,
-      ),
+      html.replace("%theme-preference%", themeHtmlAttributes(preference)),
   });
 };
