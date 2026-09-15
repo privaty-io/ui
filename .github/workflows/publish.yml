@@ -63,7 +63,22 @@ jobs:
       # pnpm rewrites workspace:^ peers to the lockstep version and applies
       # each package's publishConfig (exports -> dist). Private workspace
       # projects (playground, configs) are skipped automatically. Auth is
-      # OIDC trusted publishing — no token. If pnpm's OIDC exchange ever
+      # OIDC trusted publishing — no token.
+      #
+      # A BRAND-NEW package cannot be first-published this way: trusted
+      # publishing is configured per EXISTING package (npm has no
+      # pending-publisher pre-registration). First publish it locally,
+      # once, from the tagged commit — `pnpm login`, then
+      # `pnpm --filter <pkg> publish --access public --no-git-checks`,
+      # then `pnpm logout` (a login session, no token to mint) — and
+      # configure the trusted publisher on npmjs.com so future tags
+      # cover it. NOTE a failed recursive publish strands every
+      # not-yet-published package (v0.7.0 shipped only ui + ui-forms);
+      # publish the stragglers the same way, then RE-RUN the workflow:
+      # recursive publish skips versions that already exist, so the
+      # re-run goes green and creates the missed GitHub Release
+      # (delete a hand-made release for the tag first — the create
+      # step fails if one exists). If pnpm's OIDC exchange ever
       # regresses (pnpm/pnpm#11513 was a pnpm 11 404), swap this step for
       # `pnpm -r pack` + `npm publish` of the tarballs — pack applies the
       # same publishConfig/workspace rewrites and the npm CLI does OIDC.
