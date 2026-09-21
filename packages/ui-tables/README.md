@@ -141,6 +141,38 @@ from `rows`. Editors reseed on entry (cached remote-form instances would
 resurrect old drafts otherwise). The edit schema needs a row-id field
 (`idKey`, default `"id"`), rendered as a hidden input automatically.
 
+### Where refreshes live: server handler or `onsuccess`
+
+Two places can refresh the queries a save invalidates, and they scale
+differently:
+
+- **In the form's server handler** (`getRows().refresh()`): single-flight —
+  the fresh rows piggyback on the save's round trip. Best while the form
+  serves ONE page, and the right default.
+- **On the client, via the table's `onsuccess`/`onerror`**: the moment the
+  same form serves several pages, the handler would have to refresh every
+  query ANY consumer depends on, on every save. Instead keep the handler
+  refresh-free and let each page refresh exactly what it shows:
+
+  ```svelte
+  <Table
+    {rows}
+    rowKey={(row) => row.id}
+    {editForm}
+    {createForm}
+    onsuccess={() => Promise.all([getRows().refresh(), getStats().refresh()])}
+  >
+  ```
+
+  `onsuccess` runs after the editor closes and receives
+  `{ mode: "create", result }` or `{ mode: "edit", rowId, result }` — it
+  fires even when the user has already switched editors, because the data
+  changed regardless. `onerror` receives the same shape with `error` and is
+  additive: the table still renders its general error. A throw inside
+  `onsuccess` lands in the same place. (Costs one extra round trip versus
+  single-flight — that's the trade for decoupling the handler from its
+  consumers.)
+
 - One `TableController` drives one `<Table>`; construct controllers per
   component/request — NOT at module scope (concurrent async SSR would share
   them).

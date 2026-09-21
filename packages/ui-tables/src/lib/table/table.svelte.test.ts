@@ -400,6 +400,136 @@ describe("editing", () => {
     expect(controller.editor).toEqual({ type: "edit", rowId: "r2" });
   });
 
+  test("onsuccess reports mode and rowId AFTER the editor closed — the client-refresh seam", async () => {
+    const { name, editForm } = makeEditForm();
+    const controller = new TableController();
+    const events: unknown[] = [];
+    let editorAtCallback: unknown;
+    const screen = await render(Fixture, {
+      rows: items(),
+      editForm,
+      controller,
+      onsuccess: (context) => {
+        // The table's own close-on-success must have run already: the
+        // whole point is refreshing queries against a settled editor.
+        editorAtCallback = controller.editor;
+        events.push(context);
+      },
+    });
+
+    controller.startEdit("r2");
+    name.edit("Ribera");
+    await screen.getByRole("button", { name: "Save" }).click();
+
+    await expect.poll(() => events.length).toBe(1);
+    expect(events[0]).toMatchObject({ mode: "edit", rowId: "r2" });
+    expect(editorAtCallback).toEqual({ type: "idle" });
+  });
+
+  test("a stale save still reports success — the data changed regardless", async () => {
+    let release!: (outcome: boolean) => void;
+    const pending = new Promise<boolean>((resolve) => {
+      release = resolve;
+    });
+    const name = fakeTextField("name");
+    const id = fakeTextField("id");
+    const keyed = fakeKeyedRemoteForm(() =>
+      fakeEditableRemoteForm({ id, name }, { onSubmit: () => pending }),
+    );
+    const editForm = keyed.form as unknown as NonNullable<
+      FixtureProps["editForm"]
+    >;
+    const controller = new TableController();
+    const events: unknown[] = [];
+    const screen = await render(Fixture, {
+      rows: items(),
+      editForm,
+      controller,
+      onsuccess: (context) => {
+        events.push(context);
+      },
+    });
+
+    controller.startEdit("r2");
+    name.edit("Ribera");
+    await screen.getByRole("button", { name: "Save" }).click();
+
+    // Switch while the save is in flight, then let it succeed: the
+    // CURRENT editor survives, but the consumer still hears about the
+    // row that actually saved.
+    controller.startEdit("r1");
+    release(true);
+    await expect.poll(() => events.length).toBe(1);
+    expect(events[0]).toMatchObject({ mode: "edit", rowId: "r2" });
+    expect(controller.editor).toEqual({ type: "edit", rowId: "r1" });
+  });
+
+  test("onerror receives the failure alongside the rendered general error", async () => {
+    const name = fakeTextField("name");
+    const id = fakeTextField("id");
+    const keyed = fakeKeyedRemoteForm(() =>
+      fakeEditableRemoteForm(
+        { id, name },
+        {
+          onSubmit: () => {
+            throw new Error("boom");
+          },
+        },
+      ),
+    );
+    const editForm = keyed.form as unknown as NonNullable<
+      FixtureProps["editForm"]
+    >;
+    const controller = new TableController();
+    const failures: {
+      mode: string;
+      rowId?: string | number;
+      error: unknown;
+    }[] = [];
+    const screen = await render(Fixture, {
+      rows: items(),
+      editForm,
+      controller,
+      onerror: (context) => {
+        failures.push(context);
+      },
+    });
+
+    controller.startEdit("r2");
+    name.edit("Ribera");
+    await screen.getByRole("button", { name: "Save" }).click();
+
+    // Additive: the hook fires AND the table's FormError still renders.
+    await expect
+      .element(screen.getByText("Something went wrong. Please try again."))
+      .toBeInTheDocument();
+    await expect.poll(() => failures.length).toBe(1);
+    expect(failures[0]).toMatchObject({ mode: "edit", rowId: "r2" });
+    expect((failures[0].error as Error).message).toBe("boom");
+  });
+
+  test("a create save reports mode create", async () => {
+    const { name, createForm } = makeCreateForm();
+    const controller = new TableController();
+    const events: unknown[] = [];
+    const screen = await render(Fixture, {
+      rows: items(),
+      createForm,
+      controller,
+      onsuccess: (context) => {
+        events.push(context);
+      },
+    });
+
+    controller.startCreate();
+    name.edit("Halloumi");
+    await screen.getByRole("button", { name: "Add" }).last().click();
+
+    await expect.poll(() => events.length).toBe(1);
+    expect(events[0]).toMatchObject({ mode: "create" });
+    expect(controller.editor).toEqual({ type: "idle" });
+  });
+
   test("closes silently when the edited row disappears", async () => {
     const { editForm } = makeEditForm();
     const controller = new TableController();

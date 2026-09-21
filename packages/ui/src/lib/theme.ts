@@ -63,14 +63,14 @@ const coreTheme = {
     // colors, not color-scheme (that covers Chromium) — a transparent-ish
     // select means a white popup under dark text without these.
     "[&>option]:bg-stone-50 [&>option]:text-stone-800",
-    "dark:[&>option]:bg-stone-950 dark:[&>option]:text-stone-200",
+    "dark:[&>option]:bg-stone-900 dark:[&>option]:text-stone-200",
   ),
   /** An interactive adornment button overlaid on a control's inline end
    * (the picker inputs' calendar trigger) — pair it with `pr-8` on the
    * control so text never runs beneath it. */
   controlTrigger: cn(
     "absolute top-1/2 right-1 -translate-y-1/2 cursor-pointer rounded p-1",
-    "text-stone-600 enabled:hover:bg-stone-200 enabled:hover:text-stone-800",
+    "text-stone-600 enabled:hover:bg-stone-200/70 enabled:hover:text-stone-800",
     "dark:text-stone-400 dark:enabled:hover:bg-stone-800 dark:enabled:hover:text-stone-200",
     "disabled:cursor-not-allowed disabled:opacity-40",
     focusRing,
@@ -106,16 +106,16 @@ const coreTheme = {
     headerSelect: cn(
       "scheme-light dark:scheme-dark",
       "cursor-pointer rounded bg-transparent px-1 py-0.5 text-sm font-medium",
-      "hover:bg-stone-200 dark:hover:bg-stone-800",
+      "hover:bg-stone-200/70 dark:hover:bg-stone-800",
       focusRing,
       // See coreTheme.select: Firefox popups need explicit option colors.
       "[&>option]:bg-stone-50 [&>option]:text-stone-800",
-      "dark:[&>option]:bg-stone-950 dark:[&>option]:text-stone-200",
+      "dark:[&>option]:bg-stone-900 dark:[&>option]:text-stone-200",
     ),
     /** The prev/next navigation buttons framing the header dropdowns. */
     navButton: cn(
       "cursor-pointer rounded p-1",
-      "enabled:hover:bg-stone-200 dark:enabled:hover:bg-stone-800",
+      "enabled:hover:bg-stone-200/70 dark:enabled:hover:bg-stone-800",
       "disabled:cursor-not-allowed disabled:opacity-40",
       focusRing,
     ),
@@ -133,7 +133,7 @@ const coreTheme = {
       // cell — its longer variant chain outguns cellSelected's own
       // hover on specificity, and the base dark wash under the
       // selected cell's dark text was illegible.
-      "enabled:not-aria-disabled:not-aria-selected:hover:bg-stone-200 dark:enabled:not-aria-disabled:not-aria-selected:hover:bg-stone-800",
+      "enabled:not-aria-disabled:not-aria-selected:hover:bg-stone-200/70 dark:enabled:not-aria-disabled:not-aria-selected:hover:bg-stone-800",
       "disabled:cursor-not-allowed disabled:opacity-40",
       "aria-disabled:cursor-not-allowed aria-disabled:opacity-40",
       focusRing,
@@ -247,9 +247,12 @@ const coreTheme = {
      * load-bearing — padding lives on `inner`, so backdrop clicks (which
      * target the dialog itself) are distinguishable from content clicks. */
     panel: cn(
-      "m-auto w-full max-w-md rounded border p-0 shadow-xl",
-      "border-stone-400 bg-stone-50 text-stone-800",
-      "dark:border-stone-600 dark:bg-stone-950 dark:text-stone-200",
+      // A floating TILE: the tile surface and radius with a control
+      // hairline — the shadow and backdrop carry the elevation, not a
+      // heavy border or a darker-than-everything dark surface.
+      "m-auto w-full max-w-md rounded-lg border p-0 shadow-xl",
+      "border-stone-300/80 bg-stone-50 text-stone-800",
+      "dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200",
       "backdrop:bg-stone-950/40 backdrop:backdrop-blur-[2px]",
     ),
     /** The padded content wrapper inside the dialog. */
@@ -259,16 +262,17 @@ const coreTheme = {
     /** The corner close button. */
     closeButton: cn(
       "cursor-pointer rounded p-1",
-      "hover:bg-stone-200 dark:hover:bg-stone-800",
+      "hover:bg-stone-200/70 dark:hover:bg-stone-800",
       focusRing,
     ),
   },
 
-  /** Popover panel: an opaque bordered surface floating on the top layer. */
+  /** Popover panel: an opaque floating surface in the tiling language —
+   * tile surface, control hairline, shadow for elevation. */
   popover: cn(
-    "rounded border p-3 shadow-lg",
-    "border-stone-400 bg-stone-50 text-stone-800",
-    "dark:border-stone-600 dark:bg-stone-950 dark:text-stone-200",
+    "rounded-md border p-3 shadow-lg",
+    "border-stone-300/80 bg-stone-50 text-stone-800",
+    "dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200",
   ),
   /** Tooltip bubble: compact inverse surface. pointer-events-none is part
    * of the contract — tooltips are never interactive, and a hoverable

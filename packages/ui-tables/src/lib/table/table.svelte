@@ -164,6 +164,30 @@ surrounding container a height.
      * the in-flight state per row. */
     ondelete?: (row: Row) => unknown;
 
+    /** Called after either editor's save succeeds — the seam for
+     * CLIENT-side refreshes: refresh exactly the queries THIS page
+     * depends on (`onsuccess: () => getRows().refresh()`) instead of
+     * teaching the server handler every query every consumer of the
+     * form might need. Runs after the table's own close-on-success,
+     * and fires even if the user already switched editors — the data
+     * changed regardless. A thrown error lands in FormState.submitError
+     * (same contract as Form's `onsuccess`). */
+    onsuccess?: (
+      context:
+        | { mode: "create"; result: CreateOutput | undefined }
+        | { mode: "edit"; rowId: EditRowKey; result: EditOutput | undefined },
+    ) => unknown;
+
+    /** Called when a save's submission flow throws — the round-trip,
+     * the submit itself, or `onsuccess`. Additive: the same error still
+     * lands in FormState.submitError and renders via the table's
+     * FormError. */
+    onerror?: (
+      context:
+        | { mode: "create"; error: unknown }
+        | { mode: "edit"; rowId: EditRowKey; error: unknown },
+    ) => unknown;
+
     /** The <Column> definitions — columns self-register with the table via
      * context while this renders. */
     children: Snippet;
@@ -214,6 +238,8 @@ surrounding container a height.
     loadingClass,
 
     ondelete,
+    onsuccess,
+    onerror,
 
     children,
     actions,
@@ -1717,17 +1743,23 @@ surrounding container a height.
 
 {#if showEditor && session?.mode === "edit"}
   {#key session.key}
-    <!-- Capture the session so a save resolving AFTER the user switched
-         editors doesn't close the editor that is open now. -->
+    <!-- Capture the session (key AND rowId) so a save resolving AFTER
+         the user switched editors doesn't close the editor that is
+         open now — and still reports the row it actually saved. -->
     {@const succeededKey = session.key}
+    {@const succeededRowId = session.rowId}
     <Form
       form={session.instance}
       schema={editSchema}
       class="block h-full"
-      onsuccess={() => {
+      onsuccess={async (result) => {
         if (sessionKeyFor(controller.editor) === succeededKey) {
           controller.close();
         }
+        await onsuccess?.({ mode: "edit", rowId: succeededRowId, result });
+      }}
+      onerror={async (error) => {
+        await onerror?.({ mode: "edit", rowId: succeededRowId, error });
       }}
     >
       {@render tableMarkup(true)}
@@ -1739,10 +1771,14 @@ surrounding container a height.
     form={session.instance}
     schema={createSchema}
     class="block h-full"
-    onsuccess={() => {
+    onsuccess={async (result) => {
       if (sessionKeyFor(controller.editor) === succeededKey) {
         controller.close();
       }
+      await onsuccess?.({ mode: "create", result });
+    }}
+    onerror={async (error) => {
+      await onerror?.({ mode: "create", error });
     }}
   >
     {@render tableMarkup(true)}

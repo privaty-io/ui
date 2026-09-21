@@ -35,6 +35,16 @@
     withQuarterColumns?: boolean;
     density?: "comfortable" | "compact";
     ondelete?: (row: Item) => unknown;
+    onsuccess?: (context: {
+      mode: "create" | "edit";
+      rowId?: string | number;
+      result: unknown;
+    }) => unknown;
+    onerror?: (context: {
+      mode: "create" | "edit";
+      rowId?: string | number;
+      error: unknown;
+    }) => unknown;
   }
 
   const {
@@ -58,6 +68,8 @@
     withQuarterColumns = false,
     density,
     ondelete,
+    onsuccess,
+    onerror,
   }: Props = $props();
 </script>
 
@@ -104,6 +116,8 @@
     {initialColumn}
     {density}
     {ondelete}
+    {onsuccess}
+    {onerror}
   >
     <Column
       key="name"
