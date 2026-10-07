@@ -24,12 +24,10 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "default": "./src/index.js"
     },
     "./drizzle": {
-      "types": "./dist/drizzle/index.d.ts",
-      "default": "./dist/drizzle/index.js"
+      "default": "./src/drizzle/index.js"
     }
   },
   "peerDependencies": {
@@ -49,5 +47,20 @@
     "publint": "catalog:",
     "typescript": "catalog:",
     "valibot": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./drizzle": {
+        "types": "./dist/drizzle/index.d.ts",
+        "default": "./dist/drizzle/index.js"
+      }
+    }
   }
 }
