@@ -29,9 +29,11 @@ AND dark before review.
 
 core imports nothing above it · forms never imports tables or layouts ·
 tables may use forms, never layouts · **layouts composes CORE ONLY** ·
-apps import packages by name only (`@privaty/*`), never by path. New
-packages get their own eslint layer guards AND bans added to the
-existing ones.
+**query is STANDALONE** (future own-monorepo: imports nothing from the
+ui family, and its engine-free core must never import drizzle — the
+`./drizzle` entry is the only place that may) · apps import packages by
+name only (`@privaty/*`), never by path. New packages get their own
+eslint layer guards AND bans added to the existing ones.
 
 ## Structure conventions
 

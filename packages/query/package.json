@@ -1,0 +1,53 @@
+{
+  "name": "@privaty/query",
+  "version": "0.7.1",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/privaty-io/ui.git",
+    "directory": "packages/query"
+  },
+  "type": "module",
+  "scripts": {
+    "check": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json && publint",
+    "lint": "eslint .",
+    "prepack": "pnpm build"
+  },
+  "files": [
+    "dist",
+    "NOTICE",
+    "!dist/**/*.test.*",
+    "!dist/**/*.spec.*"
+  ],
+  "sideEffects": false,
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./drizzle": {
+      "types": "./dist/drizzle/index.d.ts",
+      "default": "./dist/drizzle/index.js"
+    }
+  },
+  "peerDependencies": {
+    "drizzle-orm": "^1.0.0-rc.4",
+    "valibot": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "drizzle-orm": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@config/eslint": "workspace:*",
+    "@config/typescript": "workspace:*",
+    "drizzle-orm": "1.0.0-rc.4",
+    "eslint": "catalog:",
+    "publint": "catalog:",
+    "typescript": "catalog:",
+    "valibot": "catalog:"
+  }
+}

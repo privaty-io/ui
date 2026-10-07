@@ -1,5 +1,8 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  // Since 2.11 turbo auto-writes a managed AGENTS.md block on every
+  // agent-driven command; CLAUDE.md is this repo's agent contract.
+  "agentGuidance": false,
   "tasks": {
     "dev": {
       "cache": false,
