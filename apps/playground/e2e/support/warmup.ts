@@ -20,6 +20,7 @@ const pages = [
   "/sandbox/layouts",
   "/sandbox/layouts/orders",
   "/sandbox/layouts/sign-in",
+  "/sandbox/table-filter",
 ];
 
 export default async function warmup(config: FullConfig) {

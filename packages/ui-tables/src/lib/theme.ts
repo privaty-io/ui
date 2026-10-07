@@ -88,6 +88,59 @@ const tableTheme = {
     "dark:hover:bg-stone-700/60 dark:active:bg-stone-700",
   ),
 
+  /** The FilterBar: a quiet chip rail in the tiling language. */
+  filterBar: {
+    /** The bar itself — wraps on narrow screens. */
+    bar: "flex flex-wrap items-center gap-1.5",
+    /** An active filter chip: Badge aesthetics at interactive scale. */
+    chip: cn(
+      "inline-flex items-center overflow-hidden rounded-full border",
+      "border-stone-300/80 bg-stone-200/40 text-sm",
+      "transition-colors duration-150",
+      "hover:border-stone-400/80",
+      "dark:border-stone-700 dark:bg-stone-800/40 dark:hover:border-stone-600",
+    ),
+    /** The chip's label button (opens the editor). */
+    chipButton: cn(
+      "cursor-pointer py-0.5 pr-1 pl-2.5 whitespace-nowrap",
+      "hover:bg-stone-200/70 dark:hover:bg-stone-800",
+    ),
+    /** The chip's field/operator text next to the value. */
+    chipMeta: "text-stone-500",
+    /** The chip's remove button. */
+    chipRemove: cn(
+      "cursor-pointer self-stretch py-0.5 pr-2 pl-1",
+      "text-stone-500 hover:bg-stone-200/70 hover:text-stone-800",
+      "dark:hover:bg-stone-800 dark:hover:text-stone-200",
+    ),
+    /** A preset toggle chip; `aria-pressed` carries the state. */
+    preset: cn(
+      "inline-flex cursor-pointer items-center gap-1 rounded-full border",
+      "border-stone-300/80 bg-transparent px-2.5 py-0.5 text-sm",
+      "transition-colors duration-150",
+      "hover:border-stone-400/80 hover:bg-stone-200/40",
+      "aria-pressed:border-stone-500/80 aria-pressed:bg-stone-200/70",
+      "dark:border-stone-700 dark:hover:border-stone-600 dark:hover:bg-stone-800/40",
+      "dark:aria-pressed:border-stone-500 dark:aria-pressed:bg-stone-800",
+    ),
+    /** The add-filter trigger — a ghost chip. */
+    add: cn(
+      "inline-flex cursor-pointer items-center gap-1 rounded-full",
+      "px-2.5 py-0.5 text-sm text-stone-600",
+      "transition-colors duration-150",
+      "hover:bg-stone-200/70 hover:text-stone-800",
+      "dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200",
+    ),
+    /** The quick-search input wrapper width. */
+    search: "w-56",
+    /** A select preset's wrapper width. */
+    presetSelect: "w-40",
+    /** The editor panel inside the popover. */
+    editor: "flex w-64 flex-col gap-2",
+    /** The editor's footer row (apply / remove). */
+    editorFooter: "flex items-center justify-end gap-2 pt-1",
+  },
+
   /** Custom scrollbars (classic-scrollbar environments only). Tracks and
    * corner carry no background COLOR on purpose — transparent tracks
    * don't clip the frame's rounded corners. The corner still needs an

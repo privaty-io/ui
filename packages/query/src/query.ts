@@ -65,6 +65,20 @@ export interface QueryDef<Fs extends Fields = Fields> {
   readonly options: Required<QueryOptions>;
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any -- the erased
+   aliases below exist for GENERIC consumers (UI components treating
+   definitions as data): `any` is the only variance-proof erasure —
+   WhereInput's field map makes specific defs non-assignable to
+   QueryDef<Fields>. */
+/** A query definition with its field typing erased — what a generic
+ * consumer (a table, a filter bar) should accept. */
+export type AnyQueryDef = QueryDef<any>;
+/** A query input with its field typing erased. */
+export type AnyQueryInput = QueryInput<any>;
+/** A where tree with its field typing erased. */
+export type AnyWhereInput = WhereInput<any>;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 const GROUP_KEYS = ["and", "or", "not"] as const;
 
 function conditionSchema(

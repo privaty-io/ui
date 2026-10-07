@@ -21,6 +21,10 @@ export default defineConfig(
       message: "forms must never import layouts.",
     },
     {
+      group: ["@privaty/query", "@privaty/query/**", "**/query/src/**"],
+      message: "forms must never import query.",
+    },
+    {
       group: ["**/ui/src/**"],
       message: "Import core via its package name (@privaty/ui).",
     },

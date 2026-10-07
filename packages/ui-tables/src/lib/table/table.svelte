@@ -32,6 +32,7 @@ surrounding container a height.
     Trash2Icon,
     XIcon,
   } from "@lucide/svelte";
+  import type { AnyQueryDef, AnyQueryInput } from "@privaty/query";
   import type { StandardSchemaV1 } from "@standard-schema/spec";
   import { onDestroy, onMount, untrack, type Snippet } from "svelte";
   import { SvelteMap, SvelteSet } from "svelte/reactivity";
@@ -188,6 +189,19 @@ surrounding container a height.
         | { mode: "edit"; rowId: EditRowKey; error: unknown },
     ) => unknown;
 
+    /** A `@privaty/query` definition — presence switches sorting to
+     * SERVER mode: a sortable column whose def field (`sortField`,
+     * default its `key`) is sortable emits `orderBy` into `queryValue`
+     * instead of sorting client-side; sortable columns without a def
+     * field render plain headers (one table never mixes two sorting
+     * truths). Rows arrive already ordered — feed `queryValue` to the
+     * rows query. */
+    query?: AnyQueryDef;
+    /** The bound wire-format value sort emissions write into — share
+     * it with a FilterBar (which owns `where`) and pass it to your
+     * rows query. The table only ever touches `orderBy`. */
+    queryValue?: AnyQueryInput;
+
     /** The <Column> definitions — columns self-register with the table via
      * context while this renders. */
     children: Snippet;
@@ -205,7 +219,7 @@ surrounding container a height.
     empty?: Snippet;
   };
 
-  const {
+  let {
     rows: rowsProp,
     rowKey,
     hiddenFields,
@@ -240,6 +254,8 @@ surrounding container a height.
     ondelete,
     onsuccess,
     onerror,
+    query,
+    queryValue = $bindable(undefined),
 
     children,
     actions,
@@ -980,6 +996,51 @@ surrounding container a height.
     else sort = undefined;
   }
 
+  // SERVER sorting: with a query definition bound, headers emit orderBy
+  // into queryValue and the table trusts the rows' incoming order.
+  const serverSorted = $derived(query !== undefined);
+
+  /** The def field a column sorts by in server mode — undefined when the
+   * column doesn't participate (no def field, or not sortable there). */
+  function sortFieldFor(column: ColumnRegistration<Row>): string | undefined {
+    if (!query) return undefined;
+    const name = column.sortField ?? column.key;
+    return query.fields[name]?.sortable ? name : undefined;
+  }
+
+  /** What the header chrome displays — the client sort state, or the
+   * bound orderBy mapped back to its column in server mode. */
+  const activeSort = $derived.by(() => {
+    if (!serverSorted) return sort;
+    const term = queryValue?.orderBy?.[0];
+    if (!term) return undefined;
+    const column = orderedColumns.find(
+      (candidate) => (candidate.sortField ?? candidate.key) === term.field,
+    );
+    if (!column) return undefined;
+    return { key: column.key, direction: term.dir ?? ("asc" as const) };
+  });
+
+  function headerSort(column: ColumnRegistration<Row>) {
+    if (!serverSorted) {
+      cycleSort(column.key);
+      return;
+    }
+    const field = sortFieldFor(column);
+    if (!field) return;
+    const current = queryValue?.orderBy?.[0];
+    const { orderBy: _previous, ...rest } = queryValue ?? {};
+    void _previous;
+    if (current?.field !== field) {
+      queryValue = { ...rest, orderBy: [{ field, dir: "asc" }] };
+    } else if ((current.dir ?? "asc") === "asc") {
+      queryValue = { ...rest, orderBy: [{ field, dir: "desc" }] };
+    } else {
+      // Cycle off: drop orderBy, keep whatever others own (where etc.).
+      queryValue = Object.keys(rest).length > 0 ? rest : undefined;
+    }
+  }
+
   function defaultCompare(a: unknown, b: unknown): number {
     if (typeof a === "number" && typeof b === "number") return a - b;
     if (a instanceof Date && b instanceof Date)
@@ -988,6 +1049,7 @@ surrounding container a height.
   }
 
   const sortedRows = $derived.by(() => {
+    if (serverSorted) return rows;
     const active = sort;
     if (!active) return rows;
 
@@ -1447,25 +1509,25 @@ surrounding container a height.
               )}
               style={columnStyle(column)}
               title={column.label}
-              aria-sort={sort?.key === column.key
-                ? sort.direction === "asc"
+              aria-sort={activeSort?.key === column.key
+                ? activeSort.direction === "asc"
                   ? "ascending"
                   : "descending"
                 : undefined}
             >
-              {#if column.sortable}
+              {#if column.sortable && (!serverSorted || sortFieldFor(column) !== undefined)}
                 <button
                   type="button"
                   class={cn(
                     "flex w-full items-center gap-1 overflow-hidden",
                     tableTheme.headerButton,
                   )}
-                  onclick={() => cycleSort(column.key)}
+                  onclick={() => headerSort(column)}
                 >
                   <span class="truncate">{column.label}</span>
-                  {#if sort?.key === column.key}
+                  {#if activeSort?.key === column.key}
                     <span aria-hidden="true">
-                      {sort.direction === "asc" ? "↑" : "↓"}
+                      {activeSort.direction === "asc" ? "↑" : "↓"}
                     </span>
                   {/if}
                 </button>

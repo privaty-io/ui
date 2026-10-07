@@ -135,6 +135,11 @@ interface ColumnRegistration<Row> {
   /** Renders the header as a sort toggle cycling ascending → descending →
    * off. */
   sortable: boolean;
+  /** With a query definition bound to the table: the def FIELD this
+   * column's header sorts by (defaults to `key`). The field may be
+   * bound server-side to ANY column — a joined table's name for a
+   * foreign-key display column, say. */
+  sortField?: string;
   /** Custom comparator for sorting — receives full rows and returns the
    * ascending order; the table negates it for descending. Without one,
    * `value` results are compared: numbers and Dates numerically, everything

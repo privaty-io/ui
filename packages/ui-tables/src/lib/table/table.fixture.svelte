@@ -6,6 +6,9 @@
   import Table from "./table.svelte";
   import type { TableController } from "../table-controller/table-controller.svelte";
   import type { RowsSource } from "../types";
+  import { defineQuery, equality, field } from "@privaty/query";
+  import type { AnyQueryInput } from "@privaty/query";
+  import * as v from "valibot";
 
   interface Item {
     id: string;
@@ -45,9 +48,17 @@
       rowId?: string | number;
       error: unknown;
     }) => unknown;
+    withQuery?: boolean;
+    queryValue?: AnyQueryInput;
   }
 
-  const {
+  // Server-sort rig: the name COLUMN sorts by the supplierName FIELD
+  // (the joined-column case); price has no def field on purpose.
+  const sampleQuery = defineQuery({
+    supplierName: field({ kind: "string", schema: v.string(), ops: equality }),
+  });
+
+  let {
     rows,
     controller,
     createForm,
@@ -70,7 +81,13 @@
     ondelete,
     onsuccess,
     onerror,
+    withQuery = false,
+    queryValue = $bindable(undefined),
   }: Props = $props();
+
+  export function currentQueryValue() {
+    return queryValue;
+  }
 </script>
 
 {#snippet rowDetails({ row }: { row: Item })}
@@ -118,6 +135,8 @@
     {ondelete}
     {onsuccess}
     {onerror}
+    query={withQuery ? sampleQuery : undefined}
+    bind:queryValue
   >
     <Column
       key="name"
@@ -125,6 +144,7 @@
       group={withGroups ? "Product" : undefined}
       value={(row: Item) => row.name}
       sortable
+      sortField="supplierName"
       compare={withCustomCompare
         ? (a: Item, b: Item) => a.price - b.price
         : undefined}

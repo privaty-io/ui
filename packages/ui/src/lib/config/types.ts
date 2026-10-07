@@ -44,6 +44,25 @@ interface UiTableLabels {
   expand: string;
   /** Screen-reader text on the loading veil (`role="status"`). */
   loading: string;
+
+  /** FilterBar: the add-filter trigger. */
+  filterAdd: string;
+  /** FilterBar editor: the field select. */
+  filterField: string;
+  /** FilterBar editor: the operator select. */
+  filterOperator: string;
+  /** FilterBar editor: the value control. */
+  filterValue: string;
+  /** FilterBar editor: the commit button. */
+  filterApply: string;
+  /** FilterBar: the clear-all action. */
+  filterClear: string;
+  /** FilterBar: prefix of a chip's remove-button accessible name. */
+  filterRemove: string;
+  /** FilterBar: the quick-search input's name and placeholder. */
+  filterSearch: string;
+  /** FilterBar editor: placeholder for comma-separated list values. */
+  filterListHint: string;
 }
 
 /** User-facing strings the calendar pickers render. */

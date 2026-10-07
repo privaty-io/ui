@@ -52,6 +52,11 @@
       </a>
     </li>
     <li>
+      <a href={resolve("sandbox/table-filter")}>
+        Filtered table (@privaty/query FilterBar + server sorting)
+      </a>
+    </li>
+    <li>
       <a href={resolve("sandbox/table-static")}>
         Static table (hydration bench — see scripts/hydration-check.mjs)
       </a>

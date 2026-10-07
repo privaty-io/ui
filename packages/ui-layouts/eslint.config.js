@@ -14,8 +14,12 @@ export default defineConfig(
         "@privaty/ui-tables/**",
         "**/ui-forms/src/**",
         "**/ui-tables/src/**",
+        "@privaty/query",
+        "@privaty/query/**",
+        "**/query/src/**",
       ],
-      message: "layouts are composed of core only — never forms or tables.",
+      message:
+        "layouts are composed of core only — never forms, tables, or query.",
     },
     {
       group: ["**/ui/src/**"],

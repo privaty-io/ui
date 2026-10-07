@@ -30,6 +30,16 @@ describe("defaultUiConfig", () => {
         empty: "No rows",
         expand: "Expand row",
         loading: "Loading",
+
+        filterAdd: "Filter",
+        filterField: "Field",
+        filterOperator: "Operator",
+        filterValue: "Value",
+        filterApply: "Apply",
+        filterClear: "Clear filters",
+        filterRemove: "Remove filter",
+        filterSearch: "Search",
+        filterListHint: "Comma-separated values",
       },
       calendar: {
         previousMonth: "Previous month",

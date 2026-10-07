@@ -52,7 +52,9 @@
     "@privaty/ui": "workspace:^",
     "@privaty/ui-forms": "workspace:^",
     "@sveltejs/kit": "^3.0.0-next.0",
-    "svelte": "^5.29.0"
+    "svelte": "^5.29.0",
+    "@privaty/query": "workspace:^",
+    "valibot": "^1.0.0"
   },
   "dependencies": {
     "@lucide/svelte": "catalog:",
@@ -61,6 +63,7 @@
   "devDependencies": {
     "@config/eslint": "workspace:*",
     "@config/typescript": "workspace:*",
+    "@privaty/query": "workspace:*",
     "@privaty/ui": "workspace:*",
     "@privaty/ui-forms": "workspace:*",
     "@sveltejs/kit": "catalog:",
@@ -69,6 +72,7 @@
     "publint": "catalog:",
     "svelte": "catalog:",
     "svelte-check": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "valibot": "catalog:"
   }
 }

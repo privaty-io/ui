@@ -20,5 +20,9 @@ export default defineConfig(
       ],
       message: "tables must never import layouts.",
     },
+    {
+      group: ["**/query/src/**"],
+      message: "Import query via its package name (@privaty/query).",
+    },
   ),
 );

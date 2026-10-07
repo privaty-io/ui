@@ -34,6 +34,11 @@ column must be destroyed and recreated to change.
     /** Renders the header as a sort toggle cycling ascending → descending →
      * off. Defaults to false. */
     sortable?: boolean;
+    /** With a query definition bound to the table: the def FIELD this
+     * column's header sorts by (defaults to `key`). Lets a column that
+     * DISPLAYS a joined value (a supplier name behind a foreign-key id)
+     * sort by a field the server binds to the joined column. */
+    sortField?: string;
     /** Custom comparator for sorting — receives full rows and returns the
      * ascending order; the table negates it for descending. Without one,
      * `value` results are compared: numbers and Dates numerically, everything
@@ -76,6 +81,7 @@ column must be destroyed and recreated to change.
     width,
     pin,
     sortable = false,
+    sortField,
     compare,
     createSeed,
     tooltip,
@@ -98,6 +104,7 @@ column must be destroyed and recreated to change.
     width,
     pin,
     sortable,
+    sortField,
     compare,
     createSeed,
     tooltip,

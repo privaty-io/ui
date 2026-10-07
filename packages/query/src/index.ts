@@ -38,6 +38,9 @@ export type { AnyFieldDef, FieldDef, FieldOptions } from "./fields.js";
 
 export { defineQuery } from "./query.js";
 export type {
+  AnyQueryDef,
+  AnyQueryInput,
+  AnyWhereInput,
   Fields,
   OrderByInput,
   QueryDef,

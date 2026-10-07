@@ -910,3 +910,65 @@ describe("empty state", () => {
     await expect.element(screen.getByText("No rows")).toBeInTheDocument();
   });
 });
+
+describe("server sorting (query mode)", () => {
+  test("participating headers emit orderBy through sortField; others go plain", async () => {
+    const screen = await render(Fixture, {
+      rows: items(),
+      withQuery: true,
+    });
+
+    // name sorts by the supplierName FIELD (the joined-column case)…
+    const header = screen.getByRole("button", { name: "Name" });
+    await header.click();
+    expect(screen.component.currentQueryValue()).toEqual({
+      orderBy: [{ field: "supplierName", dir: "asc" }],
+    });
+    await header.click();
+    expect(screen.component.currentQueryValue()).toEqual({
+      orderBy: [{ field: "supplierName", dir: "desc" }],
+    });
+    await header.click();
+    expect(screen.component.currentQueryValue()).toBeUndefined();
+
+    // …while sortable Price has no def field: plain header, no button.
+    expect(
+      screen.container.querySelector('th[title="Price"] button'),
+    ).toBeNull();
+  });
+
+  test("rows pass through unsorted — the server owns the order", async () => {
+    const screen = await render(Fixture, {
+      rows: items(),
+      withQuery: true,
+    });
+
+    await screen.getByRole("button", { name: "Name" }).click();
+    // Client order unchanged (Rioja first, as the rows prop says).
+    await expect
+      .poll(() => firstCells(screen.container))
+      .toEqual(["Rioja", "Comté", "Sourdough"]);
+    // The header chrome still reflects the bound sort.
+    const th = screen.container.querySelector(
+      'th[aria-sort="ascending"]',
+    ) as HTMLElement;
+    expect(th?.textContent).toContain("Name");
+  });
+
+  test("cycling off preserves what others own in queryValue", async () => {
+    const screen = await render(Fixture, {
+      rows: items(),
+      withQuery: true,
+      queryValue: { where: { supplierName: { eq: "x" } } },
+    });
+
+    const header = screen.getByRole("button", { name: "Name" });
+    await header.click();
+    await header.click();
+    await header.click();
+    // orderBy cycled off; the where a FilterBar owns survives.
+    expect(screen.component.currentQueryValue()).toEqual({
+      where: { supplierName: { eq: "x" } },
+    });
+  });
+});

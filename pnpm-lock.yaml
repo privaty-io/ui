@@ -277,6 +277,9 @@ importers:
       '@lucide/svelte':
         specifier: 'catalog:'
         version: 1.52.0(svelte@5.57.1(@typescript-eslint/types@8.71.1))
+      '@privaty/query':
+        specifier: workspace:*
+        version: link:../../packages/query
       '@privaty/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -511,6 +514,9 @@ importers:
       '@config/typescript':
         specifier: workspace:*
         version: link:../../configs/typescript
+      '@privaty/query':
+        specifier: workspace:*
+        version: link:../query
       '@privaty/ui':
         specifier: workspace:*
         version: link:../ui
@@ -538,6 +544,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
 
 packages:
 

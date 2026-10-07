@@ -11,6 +11,8 @@ export default defineConfig(
       "@privaty/ui-tables/**",
       "@privaty/ui-layouts",
       "@privaty/ui-layouts/**",
+      "@privaty/query",
+      "@privaty/query/**",
       "**/ui-forms/src/**",
       "**/ui-tables/src/**",
       "**/ui-layouts/src/**",

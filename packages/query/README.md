@@ -121,9 +121,10 @@ handle that in a custom converter until the roadmap item lands.
 
 ## Roadmap
 
-1. **Tables-v2 integration**: a filter-builder UI in `@privaty/ui-tables`
-   that renders controls from a query definition and emits the wire
-   format.
+1. ~~Tables-v2 integration~~ — DONE: `@privaty/ui-tables` ships
+   `FilterBar` (chips, presets, quick search) and server sorting via
+   `Table`'s `query`/`queryValue`; `AnyQueryDef`/`AnyQueryInput` exist
+   for such generic consumers.
 2. **Wire-format specification**: the JSON format documented as a
    versioned spec file (the cross-language artifact — same philosophy
    as `@privaty/db` shipping raw SQL next to its TS schemas).

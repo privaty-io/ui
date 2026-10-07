@@ -349,6 +349,32 @@ scrolls internally.
   on every refresh, single-flight refreshes after edits included:
   `<Table rows={await rowsQuery} loading={rowsQuery.loading} …>`.
 
+## Filtering & server sorting (`@privaty/query`)
+
+`FilterBar` is a schema-driven editor for the `@privaty/query` wire
+format: chips (implicit AND) whose field/operator/value editors derive
+entirely from the definition, an optional quick `search` input
+(`contains` on a chosen field), and `presets` — toggle chips or selects
+contributing declared where-fragments, with state bindable via
+`presetState` so a global-filter store drives them through the same
+value. It is deliberately standalone: not table-specific, place it
+anywhere.
+
+```svelte
+<FilterBar query={productQuery} bind:value={queryValue} {presets} />
+<Table rows={rowsQuery} rowKey={(r) => r.id} query={productQuery} bind:queryValue>
+```
+
+Binding a `query` definition to the Table switches sorting to SERVER
+mode: a sortable column whose def field (`sortField`, default its
+`key`) is sortable emits `orderBy` into the shared `queryValue`, and
+rows pass through untouched — feed the value to your rows query
+(validate server-side with `def.schema`). `sortField` is how a column
+DISPLAYING a joined value sorts by it: the converter binds the field
+to the joined column at the edge. Sortable columns without a def field
+render plain headers — one table never mixes two sorting truths.
+Without `query`, client sorting is unchanged.
+
 ## Theming
 
 Per-instance: `class` (root scroll wrapper), `tableClass`, `headerCellClass`,
