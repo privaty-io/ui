@@ -29,7 +29,7 @@
     "@sveltejs/kit": "catalog:",
     "@sveltejs/vite-plugin-svelte": "catalog:",
     "@tailwindcss/vite": "catalog:",
-    "@types/node": "^24.13.4",
+    "@types/node": "^24.19.1",
     "eslint": "catalog:",
     "svelte": "catalog:",
     "svelte-check": "catalog:",
